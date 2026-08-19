@@ -27,8 +27,8 @@ function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <button className="rounded-md border-2 border-green-700 px-5 py-2 text-xs text-green-700 font-semibold">LOGIN</button>
-                    <button className="rounded-md border-2 border-red-500 bg-red-500 px-5 py-2 text-xs text-white font-semibold">REGISTER</button>
+                    <button className="rounded-xl border-2 border-green-700 px-5 py-2 text-xs text-green-700 font-semibold">LOGIN</button>
+                    <button className="rounded-xl border-2 border-red-500 bg-red-500 px-5 py-2 text-xs text-white font-semibold">REGISTER</button>
                 </div>
         </nav>
     );
