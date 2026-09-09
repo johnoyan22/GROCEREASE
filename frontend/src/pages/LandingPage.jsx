@@ -1,5 +1,6 @@
-import Navbar from "../components/NavBar";
-import HeroSection from "../components/HeroSection";
+import Navbar from "../components/Shoppers/Navbar";
+import HeroSection from "../components/Shoppers/HeroSection";
+
 function LandingPage() {
     return (
         <div className="">
