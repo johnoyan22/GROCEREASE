@@ -1,9 +1,12 @@
 import Sidebar from "../../components/inventory/sidebar";
 import Topbar from "../../components/inventory/Topbar";
 import StatCards  from "../../components/inventory/StatCards"; 
+import PendingTasks from "../../components/inventory/PendingTasks";
+import RecentUpdates from "../../components/inventory/RecentUpdates";
+
 function InventoryDashboard() {
     return (
-        <div className="flex min-h-screen bg-gra-50 text-gray-800">
+        <div className="flex min-h-screen bg-gray-50 text-gray-800">
             <Sidebar/>
             <div className="flex-1 flex flex-col"> 
                 <Topbar/>
@@ -13,6 +16,11 @@ function InventoryDashboard() {
                         <p className="text-sm">Welcome Back! Here's an overview of your inventory tasks and updates.</p>
                     </div>
                     <StatCards/>
+                    <div className="grid grid-cols-2 gap-4">
+                        <PendingTasks/>
+                        <RecentUpdates/>
+                    </div>
+                    
                 </main>
             </div> 
         </div>
