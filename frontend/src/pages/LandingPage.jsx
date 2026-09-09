@@ -1,12 +1,13 @@
-import Navbar from "../components/NavBar";
-import HeroSection from "../components/HeroSection";
-import CategorySection from "../components/CategorySection";
+import Navbar from "../components/Shoppers/Navbar";
+import HeroSection from "../components/Shoppers/HeroSection";
+import CategorySection from "../components/Shoppers/CategorySection";
+
 function LandingPage() {
     return (
         <div className="">
-            <Navbar/>
-            <HeroSection/>
-            <CategorySection/>
+            <Navbar />
+            <HeroSection />
+            <CategorySection />
         </div>
     );
 }
