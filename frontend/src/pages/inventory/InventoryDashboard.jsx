@@ -1,9 +1,9 @@
-import InventoryLayout from "../../components/inventory/InventoryLayout";
-import StatCards  from "../../components/inventory/StatCards"; 
-import PendingTasks from "../../components/inventory/PendingTasks";
-import RecentUpdates from "../../components/inventory/RecentUpdates";
-import RecentActivity from "../../components/inventory/RecentActivity";
-import InventorySummary from "../../components/inventory/InventorySummary";
+import InventoryLayout from "../../components/inventory/layout/InventoryLayout";
+import StatCards from "../../components/inventory/dashboard/StatCards";
+import PendingTasks from "../../components/inventory/dashboard/PendingTasks";
+import RecentUpdates from "../../components/inventory/dashboard/RecentUpdates";
+import RecentActivity from "../../components/inventory/dashboard/RecentActivity";
+import InventorySummary from "../../components/inventory/dashboard/InventorySummary";
 
 function InventoryDashboard() {
     return (

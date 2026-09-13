@@ -1,4 +1,4 @@
-// CC0 SVG sources from SVG Repo:
+// Shared inventory icons. CC0 SVG sources from SVG Repo:
 // https://www.svgrepo.com/svg/343042/clipboard-check
 // https://www.svgrepo.com/svg/343352/warning-triangle
 // https://www.svgrepo.com/svg/343260/refresh-alt
@@ -89,6 +89,60 @@ export function InventoryTip({ className = "h-4 w-4" }) {
     >
       <path d="M8 0a5 5 0 0 0-2.82 9L6 11a.5.5 0 0 0 0 1 .5.5 0 0 0 0 1 .5.5 0 0 0 0 1 .5.5 0 0 0 0 1h.41c.34.55.92.93 1.58 1 .68-.07 1.26-.45 1.6-.99L10 15a.5.5 0 0 0 0-1 .5.5 0 0 0 0-1 .5.5 0 0 0 0-1 .5.5 0 0 0 0-1l.8-2A5 5 0 0 0 8 0Zm2.25 8.21-.25.17-.11.29L9 10.81a.3.3 0 0 1-.27.19H7.22a.29.29 0 0 1-.22-.19l-.87-2.14L6 8.38l-.25-.18A3.88 3.88 0 0 1 4 5a4 4 0 0 1 8 0 3.9 3.9 0 0 1-1.75 3.21Z" />
       <path d="M10.29 3A3.14 3.14 0 0 0 8 2v1c.59 0 1.12.24 1.5.62.28.39.46.86.5 1.37l1 .01a3.2 3.2 0 0 0-.72-2Z" />
+    </svg>
+  );
+}
+
+export function ProductBoxIcon({ className = "h-5 w-5" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4Z" />
+      <path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" />
+    </svg>
+  );
+}
+
+export function PauseCircleIcon({ className = "h-5 w-5" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 9v6M14 9v6" />
+    </svg>
+  );
+}
+
+export function CategoryTagIcon({ className = "h-5 w-5" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z" />
+      <path d="M7 7h.01" />
     </svg>
   );
 }

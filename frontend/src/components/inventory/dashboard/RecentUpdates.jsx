@@ -1,4 +1,4 @@
-import { LowStockIcon, StockUpdateIcon, VerificationIcon } from "./InventoryIcons";
+import { LowStockIcon, StockUpdateIcon, VerificationIcon } from "../shared/InventoryIcons";
 
 const updates = [
     {

@@ -1,4 +1,4 @@
-import { InventoryTip } from "./InventoryIcons";
+import { InventoryTip } from "../shared/InventoryIcons";
 
 const inventoryStatuses = [
   {

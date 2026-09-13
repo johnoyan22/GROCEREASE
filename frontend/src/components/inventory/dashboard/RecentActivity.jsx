@@ -1,4 +1,4 @@
-import { StockUpdateIcon, VerificationIcon } from "./InventoryIcons";
+import { StockUpdateIcon, VerificationIcon } from "../shared/InventoryIcons";
 
 const recentActivities = [
   {
