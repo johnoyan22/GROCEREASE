@@ -1,6 +1,6 @@
 // SupervisorData.js
 // Static mock data only — there is no backend. Everything here is
-// held in memory and edited through React state in SupervisorDashboardPage.jsx.
+// held in memory and edited through React state in SupervisorApp.jsx.
 
 export const storeInfo = {
   name: 'Colonnade Supermarket',

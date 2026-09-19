@@ -12,9 +12,12 @@ import {
   SideCard,
   StatCard,
   TipBanner,
+  statusTone,
+  stockTone,
+  useTableQuery,
 } from './SupervisorUI'
-import { statusTone, stockTone, useTableQuery } from './SupervisorHelpers'
 import { inventoryItems, storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
 const filterOptions = [
   { value: 'all', label: 'All' },
@@ -23,7 +26,8 @@ const filterOptions = [
   { value: 'Availability change', label: 'Availability change' },
 ]
 
-export function SupervisorStockApprovals({ stockRequests, onApproveStock, onReviewStock }) {
+export function SupervisorStockApprovals() {
+  const { stockRequests, approveStock, reviewStock } = useSupervisor()
   const table = useTableQuery(stockRequests, ['id', 'itemName', 'category', 'submittedBy', 'requestedUpdate'])
   const visible = table.filtered.filter((item) => table.filter === 'all' || item.requestedUpdate === table.filter)
   const pageRows = visible.slice((table.page - 1) * 5, table.page * 5)
@@ -42,10 +46,10 @@ export function SupervisorStockApprovals({ stockRequests, onApproveStock, onRevi
       label: 'Action',
       render: (row) => (
         <div className="flex gap-2">
-          <button type="button" onClick={() => onReviewStock(row.id)} className="rounded-lg bg-rose-100 px-3 py-1 text-sm text-rose-700">
+          <button type="button" onClick={() => reviewStock(row.id)} className="rounded-lg bg-rose-100 px-3 py-1 text-sm text-rose-700">
             Review
           </button>
-          <button type="button" onClick={() => onApproveStock(row.id)} className="rounded-lg bg-green-700 px-3 py-1 text-sm text-white">
+          <button type="button" onClick={() => approveStock(row.id)} className="rounded-lg bg-green-700 px-3 py-1 text-sm text-white">
             Approved
           </button>
         </div>

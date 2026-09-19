@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { UserRound } from 'lucide-react'
 import { PageHeader } from './SupervisorUI'
 import { storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
-export function SupervisorProfile({ profile, onSaveProfile }) {
+export function SupervisorProfile() {
+  const { profile, saveProfile } = useSupervisor()
   const [form, setForm] = useState({ ...profile, password: '', confirmPassword: '' })
   const [message, setMessage] = useState('')
 
@@ -40,7 +42,7 @@ export function SupervisorProfile({ profile, onSaveProfile }) {
       setMessage('Password and confirm password must match.')
       return
     }
-    onSaveProfile({ ...form, password: '', confirmPassword: '' })
+    saveProfile({ ...form, password: '', confirmPassword: '' })
     setForm((current) => ({ ...current, password: '', confirmPassword: '' }))
     setMessage('Profile saved.')
   }

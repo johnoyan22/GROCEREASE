@@ -13,9 +13,11 @@ import {
   StatCard,
   Tabs,
   TipBanner,
+  statusTone,
+  useTableQuery,
 } from './SupervisorUI'
-import { statusTone, useTableQuery } from './SupervisorHelpers'
 import { shiftCapacity, storeInfo, workerActivity } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
 const tabs = [
   { value: 'directory', label: 'Workers Directory' },
@@ -31,7 +33,8 @@ const availabilityFilters = [
   { value: 'Offline', label: 'Offline' },
 ]
 
-export function SupervisorWorkers({ workers, orders, onAssignWorker }) {
+export function SupervisorWorkers() {
+  const { workers, orders, assignWorker } = useSupervisor()
   const [tab, setTab] = useState('directory')
   const [selectedWorker, setSelectedWorker] = useState(null)
   const table = useTableQuery(workers, ['name', 'role', 'availability'])
@@ -124,7 +127,7 @@ export function SupervisorWorkers({ workers, orders, onAssignWorker }) {
                     <select
                       className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
                       defaultValue=""
-                      onChange={(event) => event.target.value && onAssignWorker(order.id, event.target.value)}
+                      onChange={(event) => event.target.value && assignWorker(order.id, event.target.value)}
                     >
                       <option value="">Assign available worker</option>
                       {workers.filter((w) => w.availability === 'Available').map((worker) => (

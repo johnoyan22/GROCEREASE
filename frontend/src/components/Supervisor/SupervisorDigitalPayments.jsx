@@ -13,9 +13,11 @@ import {
   StatCard,
   Tabs,
   TipBanner,
+  statusTone,
+  useTableQuery,
 } from './SupervisorUI'
-import { statusTone, useTableQuery } from './SupervisorHelpers'
 import { storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
 const tabs = [
   { value: 'all', label: 'All Payment' },
@@ -29,7 +31,8 @@ function peso(amount) {
   return `₱${amount.toFixed(2)}`
 }
 
-export function SupervisorDigitalPayments({ payments, onVerifyPayment, onViewPayment }) {
+export function SupervisorDigitalPayments() {
+  const { payments, verifyPayment } = useSupervisor()
   const table = useTableQuery(payments, ['id', 'customer', 'orderId', 'method', 'status'])
 
   const visible = useMemo(() => {
@@ -54,11 +57,11 @@ export function SupervisorDigitalPayments({ payments, onVerifyPayment, onViewPay
       label: 'Action',
       render: (row) => (
         <div className="flex gap-2">
-          <button type="button" onClick={() => onViewPayment(row.id)} className="rounded-lg border border-slate-300 px-3 py-1 text-sm">
+          <button type="button" className="rounded-lg border border-slate-300 px-3 py-1 text-sm">
             View
           </button>
           {row.status === 'Pending' ? (
-            <button type="button" onClick={() => onVerifyPayment(row.id)} className="rounded-lg bg-green-700 px-3 py-1 text-sm text-white">
+            <button type="button" onClick={() => verifyPayment(row.id)} className="rounded-lg bg-green-700 px-3 py-1 text-sm text-white">
               Verify
             </button>
           ) : null}

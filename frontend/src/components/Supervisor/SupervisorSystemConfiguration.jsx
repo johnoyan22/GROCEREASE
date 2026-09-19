@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { PageHeader } from './SupervisorUI'
 import { storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
-export function SupervisorSystemConfiguration({ config, onSaveConfig }) {
+export function SupervisorSystemConfiguration() {
+  const { config, saveConfig } = useSupervisor()
   const [form, setForm] = useState(config)
   const [saved, setSaved] = useState(false)
 
@@ -14,7 +16,7 @@ export function SupervisorSystemConfiguration({ config, onSaveConfig }) {
 
   function submit(event) {
     event.preventDefault()
-    onSaveConfig(form)
+    saveConfig(form)
     setSaved(true)
   }
 

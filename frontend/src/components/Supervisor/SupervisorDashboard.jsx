@@ -1,4 +1,5 @@
 // SupervisorDashboard.jsx
+import { Link } from 'react-router-dom'
 import { Bell, CheckCircle2, ClipboardList, Package, RefreshCw, ShoppingCart, UserRound } from 'lucide-react'
 import {
   Badge,
@@ -9,11 +10,15 @@ import {
   ProgressBar,
   SideCard,
   StatCard,
+  statusTone,
+  stockTone,
+  useTableQuery,
 } from './SupervisorUI'
-import { statusTone, stockTone, useTableQuery } from './SupervisorHelpers'
 import { dailySales, inventoryItems, storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
-export function SupervisorDashboard({ orders, workers, notifications, onUpdateOrderStatus, onNavigate }) {
+export function SupervisorDashboard() {
+  const { orders, workers, notifications, updateOrderStatus, supervisorPath } = useSupervisor()
   const activeOrders = orders.filter((order) => order.status !== 'Completed')
   const table = useTableQuery(activeOrders, ['id', 'customer', 'status', 'paymentMethod'])
   const workerName = Object.fromEntries(workers.map((worker) => [worker.id, worker.name]))
@@ -40,7 +45,7 @@ export function SupervisorDashboard({ orders, workers, notifications, onUpdateOr
       render: (row) => (
         <button
           type="button"
-          onClick={() => onUpdateOrderStatus(row.id)}
+          onClick={() => updateOrderStatus(row.id)}
           className="rounded-lg border border-green-700 px-3 py-1 text-sm text-green-700 hover:bg-green-700 hover:text-white"
         >
           Update
@@ -74,9 +79,9 @@ export function SupervisorDashboard({ orders, workers, notifications, onUpdateOr
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-semibold">Active Orders</h2>
-              <button type="button" onClick={() => onNavigate('orders')} className="text-sm font-medium text-green-700">
+              <Link to={supervisorPath('orders')} className="text-sm font-medium text-green-700">
                 View all orders
-              </button>
+              </Link>
             </div>
             <DataTable columns={columns} rows={table.rows} />
             <Pagination page={table.page} pageCount={table.pageCount} total={table.total} label="active orders" onPageChange={table.setPage} />
@@ -85,9 +90,9 @@ export function SupervisorDashboard({ orders, workers, notifications, onUpdateOr
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-semibold">Recent Notifications</h2>
-              <button type="button" onClick={() => onNavigate('notifications')} className="text-sm font-medium text-green-700">
+              <Link to={supervisorPath('notifications')} className="text-sm font-medium text-green-700">
                 View all
-              </button>
+              </Link>
             </div>
             <ul className="space-y-3">
               {notifications.slice(0, 4).map((item) => (
@@ -106,9 +111,9 @@ export function SupervisorDashboard({ orders, workers, notifications, onUpdateOr
           <SideCard
             title="Inventory Stock Monitoring"
             action={
-              <button type="button" onClick={() => onNavigate('stock-approvals')} className="text-xs text-green-700">
+              <Link to={supervisorPath('stock-approvals')} className="text-xs text-green-700">
                 Go to Stock Approvals →
-              </button>
+              </Link>
             }
           >
             <ul className="space-y-3">
@@ -141,9 +146,9 @@ export function SupervisorDashboard({ orders, workers, notifications, onUpdateOr
           <SideCard
             title="Daily Sales Performances"
             action={
-              <button type="button" onClick={() => onNavigate('sales-reports')} className="text-xs text-green-700">
+              <Link to={supervisorPath('sales-reports')} className="text-xs text-green-700">
                 Go to sales reports →
-              </button>
+              </Link>
             }
           >
             <BarChart items={dailySales.map((item) => ({ label: item.day, value: item.amount }))} maxValue={800} />

@@ -13,9 +13,11 @@ import {
   StatCard,
   Tabs,
   TipBanner,
+  statusTone,
+  useTableQuery,
 } from './SupervisorUI'
-import { statusTone, useTableQuery } from './SupervisorHelpers'
 import { returnReasons, storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
 const tabs = [
   { value: 'all', label: 'All Payment' },
@@ -24,7 +26,8 @@ const tabs = [
   { value: 'Resolved', label: 'Resolved' },
 ]
 
-export function SupervisorReturnRefund({ returns, onUpdateReturnStatus }) {
+export function SupervisorReturnRefund() {
+  const { returns, updateReturnStatus } = useSupervisor()
   const table = useTableQuery(returns, ['id', 'customer', 'orderId', 'type', 'reason', 'status'])
 
   const visible = useMemo(() => {
@@ -49,9 +52,9 @@ export function SupervisorReturnRefund({ returns, onUpdateReturnStatus }) {
       label: 'Action',
       render: (row) => (
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => onUpdateReturnStatus(row.id, 'In Review')} className="rounded-lg border px-3 py-1 text-sm">Review</button>
-          <button type="button" onClick={() => onUpdateReturnStatus(row.id, 'Approved')} className="rounded-lg bg-green-700 px-3 py-1 text-sm text-white">Approve</button>
-          <button type="button" onClick={() => onUpdateReturnStatus(row.id, 'Rejected')} className="rounded-lg bg-red-50 px-3 py-1 text-sm text-red-600">Reject</button>
+          <button type="button" onClick={() => updateReturnStatus(row.id, 'In Review')} className="rounded-lg border px-3 py-1 text-sm">Review</button>
+          <button type="button" onClick={() => updateReturnStatus(row.id, 'Approved')} className="rounded-lg bg-green-700 px-3 py-1 text-sm text-white">Approve</button>
+          <button type="button" onClick={() => updateReturnStatus(row.id, 'Rejected')} className="rounded-lg bg-red-50 px-3 py-1 text-sm text-red-600">Reject</button>
         </div>
       ),
     },

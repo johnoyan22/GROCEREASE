@@ -2,8 +2,11 @@
 import { Bell } from 'lucide-react'
 import { PageHeader } from './SupervisorUI'
 import { storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
-export function SupervisorNotifications({ notifications, onMarkRead, onMarkAllRead }) {
+export function SupervisorNotifications() {
+  const { notifications, markNotificationRead, markAllNotificationsRead } = useSupervisor()
+
   return (
     <div>
       <PageHeader
@@ -13,7 +16,7 @@ export function SupervisorNotifications({ notifications, onMarkRead, onMarkAllRe
         storeAddress={storeInfo.address}
       />
       <div className="mb-4 flex justify-end">
-        <button type="button" onClick={onMarkAllRead} className="text-sm font-medium text-green-700">
+        <button type="button" onClick={markAllNotificationsRead} className="text-sm font-medium text-green-700">
           Mark all as read
         </button>
       </div>
@@ -22,7 +25,7 @@ export function SupervisorNotifications({ notifications, onMarkRead, onMarkAllRe
           <li key={item.id}>
             <button
               type="button"
-              onClick={() => onMarkRead(item.id)}
+              onClick={() => markNotificationRead(item.id)}
               className="flex w-full items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-green-300"
             >
               <span className="rounded-full bg-green-50 p-2 text-green-700">

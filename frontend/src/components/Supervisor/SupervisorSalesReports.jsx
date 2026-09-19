@@ -2,12 +2,14 @@
 import { Banknote, ShoppingBag, TrendingUp, Wallet } from 'lucide-react'
 import { BarChart, DataTable, PageHeader, ProgressBar, SideCard, StatCard } from './SupervisorUI'
 import { categorySales, dailySales, salesByPayment, storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
 function peso(amount) {
   return `₱${amount.toFixed(2)}`
 }
 
-export function SupervisorSalesReports({ orders }) {
+export function SupervisorSalesReports() {
+  const { orders } = useSupervisor()
   const todayTotal = orders.reduce((sum, order) => sum + (order.total || 0), 0) || 1673
   const weekTotal = dailySales.reduce((sum, item) => sum + item.amount, 0)
   const avgOrder = orders.length ? todayTotal / orders.length : 209.13

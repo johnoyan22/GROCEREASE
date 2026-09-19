@@ -12,9 +12,11 @@ import {
   StatCard,
   Tabs,
   TipBanner,
+  statusTone,
+  useTableQuery,
 } from './SupervisorUI'
-import { statusTone, useTableQuery } from './SupervisorHelpers'
 import { storeInfo } from './SupervisorData'
+import { useSupervisor } from './SupervisorContext'
 
 const tabs = [
   { value: 'active', label: 'Active Orders' },
@@ -23,7 +25,8 @@ const tabs = [
   { value: 'Prepaid', label: 'Prepaid' },
 ]
 
-export function SupervisorOrders({ orders, workers, onUpdateOrderStatus, onAssignWorker }) {
+export function SupervisorOrders() {
+  const { orders, workers, updateOrderStatus, assignWorker } = useSupervisor()
   const workerName = Object.fromEntries(workers.map((worker) => [worker.id, worker.name]))
   const availableWorkers = workers.filter((worker) => worker.availability === 'Available')
   const table = useTableQuery(orders, ['id', 'customer', 'status', 'paymentMethod'])
@@ -52,7 +55,7 @@ export function SupervisorOrders({ orders, workers, onUpdateOrderStatus, onAssig
           <select
             className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
             defaultValue=""
-            onChange={(event) => event.target.value && onAssignWorker(row.id, event.target.value)}
+            onChange={(event) => event.target.value && assignWorker(row.id, event.target.value)}
           >
             <option value="">Assign...</option>
             {availableWorkers.map((worker) => (
@@ -68,7 +71,7 @@ export function SupervisorOrders({ orders, workers, onUpdateOrderStatus, onAssig
       render: (row) => (
         <button
           type="button"
-          onClick={() => onUpdateOrderStatus(row.id)}
+          onClick={() => updateOrderStatus(row.id)}
           className="rounded-lg border border-green-700 px-3 py-1 text-sm text-green-700 hover:bg-green-700 hover:text-white"
         >
           Update
