@@ -9,10 +9,8 @@ import {
   ProgressBar,
   SideCard,
   StatCard,
-  statusTone,
-  stockTone,
-  useTableQuery,
 } from './SupervisorUI'
+import { statusTone, stockTone, useTableQuery } from './SupervisorHelpers'
 import { dailySales, inventoryItems, storeInfo } from './SupervisorData'
 
 export function SupervisorDashboard({ orders, workers, notifications, onUpdateOrderStatus, onNavigate }) {

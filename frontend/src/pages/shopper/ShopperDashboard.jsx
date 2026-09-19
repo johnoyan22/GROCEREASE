@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ShopperSidebar from '../components/Shoppers/ShopperSidebar';
-import ShopperHeader from '../components/Shoppers/ShopperHeader';
-import ShopperMainContent from '../components/Shoppers/ShopperMainContent';
-import ShopperBrowseProducts from '../components/Shoppers/ShopperBrowseProducts';
-import ShopperAIRecommendations from '../components/Shoppers/ShopperAIrecommendations';
-import ShopperMyOrders from '../components/Shoppers/ShopperMyOrders';
-import ShopperPickupInformation from '../components/Shoppers/ShopperPickupInformation';
-import ShopperNotifications from '../components/Shoppers/ShopperNotifications';
-import ShopperMyProfile from '../components/Shoppers/ShopperMyProfile';
-import ShopperPaymentMethods from '../components/Shoppers/ShopperPaymentMethods';
-import ShopperHistory from '../components/Shoppers/ShopperHistory';
-import ShopperSettings from '../components/Shoppers/ShopperSettings';
+import ShopperSidebar from '../../components/Shoppers/ShopperSidebar';
+import ShopperHeader from '../../components/Shoppers/ShopperHeader';
+import ShopperMainContent from '../../components/Shoppers/ShopperMainContent';
+import ShopperBrowseProducts from '../../components/Shoppers/ShopperBrowseProducts';
+import ShopperAIRecommendations from '../../components/Shoppers/ShopperAIrecommendations';
+import ShopperMyOrders from '../../components/Shoppers/ShopperMyOrders';
+import ShopperPickupInformation from '../../components/Shoppers/ShopperPickupInformation';
+import ShopperNotifications from '../../components/Shoppers/ShopperNotifications';
+import ShopperMyProfile from '../../components/Shoppers/ShopperMyProfile';
+import ShopperPaymentMethods from '../../components/Shoppers/ShopperPaymentMethods';
+import ShopperHistory from '../../components/Shoppers/ShopperHistory';
+import ShopperSettings from '../../components/Shoppers/ShopperSettings';
 
 export default function ShopperDashboard() {
   const navigate = useNavigate();

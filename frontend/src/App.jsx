@@ -1,20 +1,12 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import Register from './pages/Register';
-import LoginPage from './pages/LoginPage';
-import ShopperDashboard from './pages/ShopperDashboard';
+import { BrowserRouter } from 'react-router-dom'
+import AppRoutes from './routes/AppRoutes'
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<ShopperDashboard />} />
-      </Routes>
+      <AppRoutes />
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -1,5 +1,5 @@
-import herobg from "../assets/images/herobg.png";
-import map from "../assets/images/map.png";
+import herobg from "../../assets/images/herobg.png";
+import map from "../../assets/images/map.png";
 
 function HeroSection() {
   return (

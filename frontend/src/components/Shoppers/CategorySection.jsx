@@ -1,3 +1,4 @@
+// Landing-page categories for the Shopper interface.
 function CategorySection() {
   return (
     <section className="mx-auto mt-16 max-w-7xl px-8">

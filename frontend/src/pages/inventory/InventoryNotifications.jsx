@@ -12,7 +12,7 @@ const initialNotifications = [
   { id: 6, message: "Low stock alert: Selecta Fortified Milk has 3 units remaining.", sender: "System", date: "May 21, 2024 08:45 AM", priority: "High", isRead: true, icon: "L", iconColor: "bg-orange-50 text-orange-700", dotColor: "bg-orange-500", details: "The current quantity is below the configured reorder level." },
 ];
 
-function SupervisorNotifications() {
+function InventoryNotifications() {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [activeTab, setActiveTab] = useState("All");
   const [expandedId, setExpandedId] = useState(null);
@@ -58,4 +58,4 @@ function SupervisorNotifications() {
   );
 }
 
-export default SupervisorNotifications;
+export default InventoryNotifications;

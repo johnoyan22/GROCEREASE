@@ -1,5 +1,5 @@
-import RegisterHero from '../components/Shoppers/registerHero';
-import RegisterForm from '../components/Shoppers/registerForm';
+import RegisterHero from '../../components/Shoppers/registerHero';
+import RegisterForm from '../../components/Shoppers/registerForm';
 
 function Register() {
   return (

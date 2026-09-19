@@ -12,10 +12,8 @@ import {
   SideCard,
   StatCard,
   TipBanner,
-  statusTone,
-  stockTone,
-  useTableQuery,
 } from './SupervisorUI'
+import { statusTone, stockTone, useTableQuery } from './SupervisorHelpers'
 import { inventoryItems, storeInfo } from './SupervisorData'
 
 const filterOptions = [

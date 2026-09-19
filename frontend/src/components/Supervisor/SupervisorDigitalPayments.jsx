@@ -13,9 +13,8 @@ import {
   StatCard,
   Tabs,
   TipBanner,
-  statusTone,
-  useTableQuery,
 } from './SupervisorUI'
+import { statusTone, useTableQuery } from './SupervisorHelpers'
 import { storeInfo } from './SupervisorData'
 
 const tabs = [

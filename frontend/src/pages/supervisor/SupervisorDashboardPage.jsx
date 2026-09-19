@@ -1,23 +1,23 @@
-// SupervisorApp.jsx
-// Entry point for the whole Supervisor frontend. Drop <SupervisorApp /> into
+// SupervisorDashboardPage.jsx
+// Page-level entry point for the whole Supervisor frontend.
 // your project. There is no backend here — all data lives in React state and
 // resets on page reload. Swap the useState calls for real API calls later
 // without touching any of the page components.
 
 import { useState } from 'react'
-import { SupervisorSidebar } from './SupervisorSidebar'
-import { SupervisorHeader } from './SupervisorHeader'
-import { SupervisorDashboard } from './SupervisorDashboard'
-import { SupervisorStockApprovals } from './SupervisorStockApprovals'
-import { SupervisorOrders } from './SupervisorOrders'
-import { SupervisorWorkers } from './SupervisorWorkers'
-import { SupervisorDigitalPayments } from './SupervisorDigitalPayments'
-import { SupervisorSalesReports } from './SupervisorSalesReports'
-import { SupervisorReturnRefund } from './SupervisorReturnRefund'
-import { SupervisorSystemConfiguration } from './SupervisorSystemConfiguration'
-import { SupervisorProfile } from './SupervisorProfile'
-import { SupervisorNotifications } from './SupervisorNotifications'
-import { SupervisorLogout } from './SupervisorLogout'
+import { SupervisorSidebar } from '../../components/Supervisor/SupervisorSidebar'
+import { SupervisorHeader } from '../../components/Supervisor/SupervisorHeader'
+import { SupervisorDashboard } from '../../components/Supervisor/SupervisorDashboard'
+import { SupervisorStockApprovals } from '../../components/Supervisor/SupervisorStockApprovals'
+import { SupervisorOrders } from '../../components/Supervisor/SupervisorOrders'
+import { SupervisorWorkers } from '../../components/Supervisor/SupervisorWorkers'
+import { SupervisorDigitalPayments } from '../../components/Supervisor/SupervisorDigitalPayments'
+import { SupervisorSalesReports } from '../../components/Supervisor/SupervisorSalesReports'
+import { SupervisorReturnRefund } from '../../components/Supervisor/SupervisorReturnRefund'
+import { SupervisorSystemConfiguration } from '../../components/Supervisor/SupervisorSystemConfiguration'
+import { SupervisorProfile } from '../../components/Supervisor/SupervisorProfile'
+import { SupervisorNotifications } from '../../components/Supervisor/SupervisorNotifications'
+import { SupervisorLogout } from '../../components/Supervisor/SupervisorLogout'
 import {
   initialNotifications,
   initialOrders,
@@ -27,7 +27,7 @@ import {
   initialWorkers,
   profileDefault,
   systemConfigDefault,
-} from './SupervisorData'
+} from '../../components/Supervisor/SupervisorData'
 
 const nextStatus = {
   'Pending Assignment': 'Preparing',
@@ -36,7 +36,7 @@ const nextStatus = {
   Completed: 'Completed',
 }
 
-export default function SupervisorApp() {
+export default function SupervisorDashboardPage() {
   const [page, setPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
