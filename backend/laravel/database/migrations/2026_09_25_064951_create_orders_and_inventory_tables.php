@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('orders', function (Blueprint $table) {
             $table->id('order_id');
-            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('grocer_users', 'user_id')->onDelete('cascade');
             $table->enum('order_status', ['Pending', 'Preparing', 'Ready for Pickup', 'Completed', 'Cancelled'])->default('Pending');
             $table->boolean('priority_order')->default(false);
             $table->decimal('priority_fee', 10, 2)->default(0.00);

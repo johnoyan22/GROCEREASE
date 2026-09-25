@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('cop_restrictions', function (Blueprint $table) {
             $table->id('restriction_id');
-            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('grocer_users', 'user_id')->onDelete('cascade');
             $table->foreignId('admin_id')->nullable()->constrained('super_admins', 'admin_id')->nullOnDelete();
             $table->boolean('is_restricted')->default(false);
             $table->integer('violation_count')->default(0);
@@ -29,7 +29,7 @@ return new class extends Migration {
 
         Schema::create('ai_recommendations', function (Blueprint $table) {
             $table->id('ai_id');
-            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('grocer_users', 'user_id')->onDelete('cascade');
             $table->foreignId('store_inventory_id')->constrained('store_inventory', 'store_inventory_id')->onDelete('cascade');
             $table->timestamps();
         });

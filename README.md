@@ -1,8 +1,8 @@
-# GrocerEase Frontend
+# GrocerEase
 
-GrocerEase is currently under frontend development using **React**, **Vite**, and **Tailwind CSS**.
+GrocerEase uses **React**, **Vite**, and **Tailwind CSS** for its frontend and **Laravel** with **MySQL/MariaDB** for its backend.
 
-The README will be updated later when backend development begins.
+For a step-by-step local database and backend setup, see [the backend guide](backend/laravel/README.md).
 
 ## Requirements
 
