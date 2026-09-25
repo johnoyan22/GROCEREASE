@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { User, Mail, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, Mail, Lock, Phone, MapPin } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 function RegisterForm() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    phoneNumber: '',
+    address: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
   });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -19,9 +24,56 @@ function RegisterForm() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    console.log('Form Submitted:', formData);
+    setErrorMessage('');
+
+    // Basic client-side validation
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage('Passwords do not match.');
+      return;
+    }
+
+    // Split full name into first/last for the backend
+    const nameParts = formData.fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/register/shopper', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.email,
+          phone_number: formData.phoneNumber,
+          password: formData.password,
+          address: formData.address, // optional
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.message || 'Registration failed.');
+        setLoading(false);
+        return;
+      }
+
+      alert('Account created successfully! You can now log in.');
+      navigate('/login');
+    } catch (error) {
+      console.error('Registration error:', error);
+      setErrorMessage('Cannot connect to backend server. Make sure php artisan serve is running.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,7 +86,13 @@ function RegisterForm() {
           Sign up and start your easy grocery shopping journey.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {errorMessage && (
+          <div className="mb-4 text-center text-xs font-semibold text-red-600 bg-red-50 border border-red-200 py-2 px-3 rounded-md">
+            {errorMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleRegister} className="space-y-4">
           {/* Full Name */}
           <div>
             <label className="block text-xs font-bold text-black mb-1.5">Full Name</label>
@@ -65,6 +123,39 @@ function RegisterForm() {
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
+              />
+            </div>
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <label className="block text-xs font-bold text-black mb-1.5">Phone Number</label>
+            <div className="relative">
+              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <input
+                type="tel"
+                name="phoneNumber"
+                placeholder="09XXXXXXXXX"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Address (optional) */}
+          <div>
+            <label className="block text-xs font-bold text-black mb-1.5">Address <span className="text-gray-400 font-normal">(optional)</span></label>
+            <div className="relative">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <input
+                type="text"
+                name="address"
+                placeholder="Enter your address"
+                value={formData.address}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
               />
             </div>
           </div>
@@ -122,9 +213,10 @@ function RegisterForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-2"
+            disabled={loading}
+            className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-2 disabled:opacity-60"
           >
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
       </div>
