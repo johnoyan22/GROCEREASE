@@ -1,32 +1,59 @@
 import { useState } from 'react';
-import { User, Lock } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../services/api';
 
 function LoginForm() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    fullName: '',
-    password: '',
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    navigate('/dashboard');
-  };
+    setErrorMessage('');
+    setLoading(true);
 
-  const handleFillDemo = () => {
-    setFormData({
-      fullName: 'Shopper Guest',
-      password: 'demoPassword123',
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.message || 'Invalid email or password.');
+        setLoading(false);
+        return;
+      }
+
+      // 1. Store session info
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_role', data.role);
+      localStorage.setItem('user_profile', JSON.stringify(data.profile));
+
+      // 2. Redirect based on role
+      if (data.role === 'inventory_worker') {
+        navigate('/inventory/dashboard');
+      } else if (data.role === 'supervisor') {
+        navigate('/supervisor/dashboard');
+      } else if (data.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/shopper/dashboard');
+      }
+    } catch (error) {
+      console.error('Error connecting to backend:', error);
+      setErrorMessage('Cannot connect to backend server. Make sure php artisan serve is running.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,29 +66,24 @@ function LoginForm() {
           Login to your account and continue shopping
         </p>
 
-        {/* Demo Credentials Helper */}
-        <div className="mb-4 text-center">
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="text-[11px] font-bold text-[#006e00] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 py-1.5 px-3 rounded-md transition"
-          >
-            ⚡ Fill Demo Credentials
-          </button>
-        </div>
+        {errorMessage && (
+          <div className="mb-4 text-center text-xs font-semibold text-red-600 bg-red-50 border border-red-200 py-2 px-3 rounded-md">
+            {errorMessage}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Full Name */}
+        <form onSubmit={handleLogin} className="space-y-6">
+          {/* Email */}
           <div>
-            <label className="block text-xs font-bold text-black mb-2">Full Name</label>
+            <label className="block text-xs font-bold text-black mb-2">Email</label>
             <div className="relative">
-              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
-                type="text"
-                name="fullName"
-                placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={handleChange}
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
@@ -76,9 +98,9 @@ function LoginForm() {
               <input
                 type="password"
                 name="password"
-                placeholder="Create your password"
-                value={formData.password}
-                onChange={handleChange}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
@@ -93,9 +115,10 @@ function LoginForm() {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-4"
+            disabled={loading}
+            className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-4 disabled:opacity-60"
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

@@ -12,13 +12,15 @@ import ShopperMyProfile from '../../components/Shoppers/ShopperMyProfile';
 import ShopperPaymentMethods from '../../components/Shoppers/ShopperPaymentMethods';
 import ShopperHistory from '../../components/Shoppers/ShopperHistory';
 import ShopperSettings from '../../components/Shoppers/ShopperSettings';
+import { logoutSession } from '../../services/api';
 
 export default function ShopperDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Settings');
 
-  const handleLogout = () => {
-    navigate('/login');
+  const handleLogout = async () => {
+    await logoutSession();
+    navigate('/login', { replace: true });
   };
 
   return (

@@ -1,4 +1,6 @@
 import logo from "../../../assets/images/Logo.png";
+import { useNavigate } from "react-router-dom";
+import { logoutSession } from "../../../services/api";
 
 const navigationItems = [
   { label: "Dashboard", href: "/inventory/dashboard", icon: "dashboard" },
@@ -97,6 +99,12 @@ function NavIcon({ name }) {
 }
 
 function Sidebar({ activePage, isOpen, onClose }) {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logoutSession();
+    navigate("/login", { replace: true });
+  };
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-40 flex h-screen w-64 shrink-0 transform flex-col justify-between border-r border-gray-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:translate-x-0 ${
@@ -150,6 +158,7 @@ function Sidebar({ activePage, isOpen, onClose }) {
       <div className="border-t border-gray-100 p-3">
         <button
           type="button"
+          onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
