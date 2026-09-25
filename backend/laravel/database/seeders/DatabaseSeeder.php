@@ -83,5 +83,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(AssignedInventoryWorkerSeeder::class);
+        $this->call(ProductSeeder::class);
     }
 }
