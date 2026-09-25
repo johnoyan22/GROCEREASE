@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { logoutSession } from '../../services/api';
 import { 
   LayoutDashboard, 
   KeyRound, 
@@ -24,6 +25,13 @@ const navItems = [
 ];
 
 export default function AdminLayout({ children }) {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logoutSession();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-slate-800 antialiased font-sans">
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-30">
@@ -86,7 +94,7 @@ export default function AdminLayout({ children }) {
             )}
           </NavLink>
           <button
-            onClick={() => alert('Logging out...')}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all"
           >
             <LogOut size={18} />

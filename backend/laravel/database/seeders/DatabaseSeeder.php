@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         ]);
         DB::table('workers')->insert([
             'profile_id' => $workerProfileId,
+            'password_hash' => $defaultPassword,
             'worker_incentives' => 0.00,
             'order_handled' => 0,
             'created_at' => now(),
@@ -80,5 +81,7 @@ class DatabaseSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        $this->call(AssignedInventoryWorkerSeeder::class);
     }
 }

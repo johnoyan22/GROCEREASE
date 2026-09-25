@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../services/api';
 
 function LoginForm() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/login', {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,11 +34,12 @@ function LoginForm() {
       }
 
       // 1. Store session info
+      localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user_role', data.role);
       localStorage.setItem('user_profile', JSON.stringify(data.profile));
 
       // 2. Redirect based on role
-      if (data.role === 'worker') {
+      if (data.role === 'inventory_worker') {
         navigate('/inventory/dashboard');
       } else if (data.role === 'supervisor') {
         navigate('/supervisor/dashboard');

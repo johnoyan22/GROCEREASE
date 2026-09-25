@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { User, Mail, Lock, Phone, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../services/api';
 
 function RegisterForm() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ function RegisterForm() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/register/shopper', {
+      const response = await fetch(`${API_BASE_URL}/register/shopper`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
