@@ -1,6 +1,6 @@
-import Navbar from "../../components/Shoppers/Navbar";
-import HeroSection from "../../components/Shoppers/HeroSection";
-import CategorySection from "../../components/Shoppers/CategorySection";
+import Navbar from "../../components/public/Navbar";
+import HeroSection from "../../components/public/HeroSection";
+import CategorySection from "../../components/public/CategorySection";
 
 function LandingPage() {
     return (

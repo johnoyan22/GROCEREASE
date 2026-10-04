@@ -142,7 +142,7 @@ class AuthenticationTest extends TestCase
 
         $login
             ->assertOk()
-            ->assertJsonPath('role', 'inventory_worker')
+            ->assertJsonPath('role', 'assigned_inventory')
             ->assertJsonPath('profile.email', 'inventory@grocerease.com')
             ->assertJsonPath('account.status', 'Active')
             ->assertJsonStructure([

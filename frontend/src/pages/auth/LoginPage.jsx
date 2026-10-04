@@ -1,5 +1,5 @@
-import LoginHero from '../../components/Shoppers/loginHero';
-import LoginForm from '../../components/Shoppers/loginForm';
+import LoginHero from '../../components/auth/loginHero';
+import LoginForm from '../../components/auth/loginForm';
 
 function LoginPage() {
   return (

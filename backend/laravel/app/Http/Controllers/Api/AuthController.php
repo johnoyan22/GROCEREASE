@@ -181,7 +181,7 @@ class AuthController extends Controller
             $account instanceof SuperAdmin => Str::lower($account->role_type),
             $account instanceof Worker => 'worker',
             $account instanceof GrocerUser => 'shopper',
-            $account instanceof AssignedInventoryWorker => 'inventory_worker'
+            $account instanceof AssignedInventoryWorker => 'assigned_inventory'
         };
     }
 

@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../../services/api';
+import { API_BASE_URL, clearSession } from '../../services/api';
+
+const roleRoutes = {
+  shopper: '/shopper/dashboard',
+  assigned_inventory: '/inventory/dashboard',
+  supervisor: '/supervisor/dashboard',
+  admin: '/admin/dashboard',
+};
 
 function LoginForm() {
   const navigate = useNavigate();
@@ -33,21 +40,20 @@ function LoginForm() {
         return;
       }
 
-      // 1. Store session info
+      const destination = roleRoutes[data.role];
+
+      if (!destination) {
+        clearSession();
+        setErrorMessage(`This account role (${data.role || 'unknown'}) does not have a dashboard yet.`);
+        return;
+      }
+
+      // Store session info after confirming the role is supported.
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user_role', data.role);
       localStorage.setItem('user_profile', JSON.stringify(data.profile));
 
-      // 2. Redirect based on role
-      if (data.role === 'inventory_worker') {
-        navigate('/inventory/dashboard');
-      } else if (data.role === 'supervisor') {
-        navigate('/supervisor/dashboard');
-      } else if (data.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/shopper/dashboard');
-      }
+      navigate(destination);
     } catch (error) {
       console.error('Error connecting to backend:', error);
       setErrorMessage('Cannot connect to backend server. Make sure php artisan serve is running.');

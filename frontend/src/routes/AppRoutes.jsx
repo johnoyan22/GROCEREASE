@@ -1,7 +1,7 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
 
-import LandingPage from '../pages/shopper/LandingPage';
-import LoginPage from '../pages/shopper/LoginPage';
+import LandingPage from '../pages/public/LandingPage';
+import LoginPage from '../pages/auth/LoginPage';
 import Register from '../pages/shopper/Register';
 import ShopperDashboard from '../pages/shopper/ShopperDashboard';
 
