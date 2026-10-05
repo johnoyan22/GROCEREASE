@@ -1,14 +1,15 @@
 import { useState } from "react";
 
 const emptyProduct = {
-  name: "",
-  size: "",
+  product_name: "",
   sku: "",
   barcode: "",
+  size: "",
   category: "Staples",
-  price: "",
-  stock: "",
-  availability: "Available",
+  base_price: "",
+  selling_price: "",
+  hard_stock_qty: "",
+  soft_stock_qty: "0",
   status: "Active",
 };
 
@@ -30,8 +31,10 @@ function ProductFormModal({ product, onClose, onSave }) {
 
     onSave({
       ...formData,
-      price: Number(formData.price),
-      stock: Number(formData.stock),
+      base_price: Number(formData.base_price),
+      selling_price: formData.selling_price === "" ? null : Number(formData.selling_price),
+      hard_stock_qty: Number(formData.hard_stock_qty),
+      soft_stock_qty: Number(formData.soft_stock_qty),
     });
   }
 
@@ -45,11 +48,10 @@ function ProductFormModal({ product, onClose, onSave }) {
             <h2 id="product-form-title" className="text-lg font-bold text-gray-900">
               {isEditing ? "Edit Product" : "Add New Product"}
             </h2>
-            <p className="mt-1 text-xs text-gray-500">Enter the product information below.</p>
+            <p className="mt-1 text-xs text-gray-500">Enter the product and store stock details below.</p>
           </div>
-
           <button type="button" aria-label="Close product form" onClick={onClose} className="rounded-md p-2 text-gray-500 hover:bg-gray-100">
-            ✕
+            ×
           </button>
         </div>
 
@@ -57,24 +59,20 @@ function ProductFormModal({ product, onClose, onSave }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium text-gray-700">
               Product name
-              <input required name="name" value={formData.name} onChange={handleChange} className={inputClass} />
+              <input required name="product_name" value={formData.product_name} onChange={handleChange} className={inputClass} />
             </label>
-
             <label className="text-sm font-medium text-gray-700">
               Size
               <input required name="size" value={formData.size} onChange={handleChange} placeholder="Example: 1 kg" className={inputClass} />
             </label>
-
             <label className="text-sm font-medium text-gray-700">
               SKU
               <input required name="sku" value={formData.sku} onChange={handleChange} className={inputClass} />
             </label>
-
             <label className="text-sm font-medium text-gray-700">
               Barcode
               <input required name="barcode" value={formData.barcode} onChange={handleChange} className={inputClass} />
             </label>
-
             <label className="text-sm font-medium text-gray-700">
               Category
               <select name="category" value={formData.category} onChange={handleChange} className={inputClass}>
@@ -87,17 +85,22 @@ function ProductFormModal({ product, onClose, onSave }) {
                 <option>Household</option>
               </select>
             </label>
-
             <label className="text-sm font-medium text-gray-700">
-              Price
-              <input required min="0" step="0.01" type="number" name="price" value={formData.price} onChange={handleChange} className={inputClass} />
+              Base price
+              <input required min="0" step="0.01" type="number" name="base_price" value={formData.base_price} onChange={handleChange} className={inputClass} />
             </label>
-
             <label className="text-sm font-medium text-gray-700">
-              Stock quantity
-              <input required min="0" type="number" name="stock" value={formData.stock} onChange={handleChange} className={inputClass} />
+              Store selling price <span className="font-normal text-gray-400">(optional)</span>
+              <input min="0" step="0.01" type="number" name="selling_price" value={formData.selling_price ?? ""} onChange={handleChange} className={inputClass} />
             </label>
-
+            <label className="text-sm font-medium text-gray-700">
+              Physical stock
+              <input required min="0" type="number" name="hard_stock_qty" value={formData.hard_stock_qty} onChange={handleChange} className={inputClass} />
+            </label>
+            <label className="text-sm font-medium text-gray-700">
+              Reserved stock
+              <input required min="0" type="number" name="soft_stock_qty" value={formData.soft_stock_qty} onChange={handleChange} className={inputClass} />
+            </label>
             <label className="text-sm font-medium text-gray-700">
               Status
               <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>

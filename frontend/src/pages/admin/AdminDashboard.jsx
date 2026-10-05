@@ -104,7 +104,7 @@ export default function AdminDashboard() {
               {[
                 { role: 'Shoppers', count: '864 Users', tags: ['Browse', 'Order'] },
                 { role: 'Supervisors', count: '48 Users', tags: ['Approve', 'Monitor'] },
-                { role: 'Inventory Workers', count: '24 Users', tags: ['Stock In', 'Stock Out'] },
+                { role: 'Assigned Inventory', count: '24 Users', tags: ['Stock In', 'Stock Out'] },
                 { role: 'Administrators', count: '6 Users', tags: ['All Access'] },
               ].map((r, i) => (
                 <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors">

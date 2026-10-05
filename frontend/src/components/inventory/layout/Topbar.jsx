@@ -1,4 +1,4 @@
-// Shared top navigation for Inventory Worker pages.
+// Shared top navigation for Assigned Inventory pages.
 function Topbar({ onMenuClick }) {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-3 sm:px-6">
@@ -52,7 +52,7 @@ function Topbar({ onMenuClick }) {
           </div>
           <div className="hidden text-left md:block">
             <p className="text-xs font-bold text-gray-800 leading-none">Juan Dela Cruz</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Inventory Worker</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">Assigned Inventory</p>
           </div>
           <svg className="hidden h-4 w-4 cursor-pointer text-gray-400 sm:block" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />

@@ -122,6 +122,7 @@ export function SupervisorProvider({ children, basePath = '/supervisor', loginPa
   return <SupervisorContext.Provider value={value}>{children}</SupervisorContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- Provider and context hook are intentionally kept together.
 export function useSupervisor() {
   const ctx = useContext(SupervisorContext)
   if (!ctx) {

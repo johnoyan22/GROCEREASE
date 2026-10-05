@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { User, Mail, Lock, Phone, MapPin } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../../services/api';
+import { Link } from 'react-router-dom';
 
 function RegisterForm() {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -15,7 +13,6 @@ function RegisterForm() {
     agreeToTerms: false,
   });
   const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -25,7 +22,7 @@ function RegisterForm() {
     }));
   };
 
-  const handleRegister = async (e) => {
+  const handleRegister = (e) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -35,46 +32,7 @@ function RegisterForm() {
       return;
     }
 
-    // Split full name into first/last for the backend
-    const nameParts = formData.fullName.trim().split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-
-    setLoading(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/register/shopper`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          email: formData.email,
-          phone_number: formData.phoneNumber,
-          password: formData.password,
-          address: formData.address, // optional
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setErrorMessage(data.message || 'Registration failed.');
-        setLoading(false);
-        return;
-      }
-
-      alert('Account created successfully! You can now log in.');
-      navigate('/login');
-    } catch (error) {
-      console.error('Registration error:', error);
-      setErrorMessage('Cannot connect to backend server. Make sure php artisan serve is running.');
-    } finally {
-      setLoading(false);
-    }
+    setErrorMessage('Registration is a UI prototype. Backend account creation is pending.');
   };
 
   return (
@@ -84,7 +42,7 @@ function RegisterForm() {
           Create Your Account
         </h1>
         <p className="text-xs font-medium text-center text-gray-500 mb-8">
-          Sign up and start your easy grocery shopping journey.
+          Frontend prototype only. Account creation is not connected.
         </p>
 
         {errorMessage && (
@@ -214,10 +172,9 @@ function RegisterForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
             className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-2 disabled:opacity-60"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            Create Account
           </button>
         </form>
       </div>

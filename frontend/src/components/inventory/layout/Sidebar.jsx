@@ -1,6 +1,5 @@
 import logo from "../../../assets/images/Logo.png";
 import { useNavigate } from "react-router-dom";
-import { logoutSession } from "../../../services/api";
 
 const navigationItems = [
   { label: "Dashboard", href: "/inventory/dashboard", icon: "dashboard" },
@@ -101,8 +100,7 @@ function NavIcon({ name }) {
 function Sidebar({ activePage, isOpen, onClose }) {
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logoutSession();
+  const handleLogout = () => {
     navigate("/login", { replace: true });
   };
   return (
@@ -119,7 +117,7 @@ function Sidebar({ activePage, isOpen, onClose }) {
             <h1 className="text-base font-bold leading-tight text-gray-800">
               Grocer<span className="text-green-700">Ease</span>
             </h1>
-            <p className="text-[11px] text-gray-400">Inventory Worker Portal</p>
+            <p className="text-[11px] text-gray-400">Assigned Inventory Portal</p>
           </div>
 
           <button

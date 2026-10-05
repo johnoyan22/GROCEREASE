@@ -1,65 +1,15 @@
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { API_BASE_URL, clearSession } from '../../services/api';
-
-const roleRoutes = {
-  shopper: '/shopper/dashboard',
-  assigned_inventory: '/inventory/dashboard',
-  supervisor: '/supervisor/dashboard',
-  admin: '/admin/dashboard',
-};
+import { Link } from 'react-router-dom';
 
 function LoginForm() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setLoading(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setErrorMessage(data.message || 'Invalid email or password.');
-        setLoading(false);
-        return;
-      }
-
-      const destination = roleRoutes[data.role];
-
-      if (!destination) {
-        clearSession();
-        setErrorMessage(`This account role (${data.role || 'unknown'}) does not have a dashboard yet.`);
-        return;
-      }
-
-      // Store session info after confirming the role is supported.
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('user_role', data.role);
-      localStorage.setItem('user_profile', JSON.stringify(data.profile));
-
-      navigate(destination);
-    } catch (error) {
-      console.error('Error connecting to backend:', error);
-      setErrorMessage('Cannot connect to backend server. Make sure php artisan serve is running.');
-    } finally {
-      setLoading(false);
-    }
+    setErrorMessage('Login is a UI prototype. Backend authentication is pending. Visit a role dashboard route directly to preview it.');
   };
 
   return (
@@ -69,7 +19,7 @@ function LoginForm() {
           Welcome Back
         </h1>
         <p className="text-xs font-medium text-center text-gray-500 mb-6">
-          Login to your account and continue shopping
+          Frontend prototype only. Authentication is not connected.
         </p>
 
         {errorMessage && (
@@ -121,10 +71,9 @@ function LoginForm() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
             className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-4 disabled:opacity-60"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            Login
           </button>
         </form>
 

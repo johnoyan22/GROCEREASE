@@ -1,5 +1,4 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { logoutSession } from '../../services/api';
 import { 
   LayoutDashboard, 
   KeyRound, 
@@ -27,8 +26,7 @@ const navItems = [
 export default function AdminLayout({ children }) {
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logoutSession();
+  const handleLogout = () => {
     navigate('/login', { replace: true });
   };
 

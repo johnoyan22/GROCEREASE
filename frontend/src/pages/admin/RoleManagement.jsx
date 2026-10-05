@@ -11,7 +11,7 @@ import {
 export default function RoleManagement() {
   const roles = [
     {
-      role: 'Shoppers',
+      role: 'Shopper',
       desc: 'Place orders and track deliveries',
       count: '864 Users',
       access: 'Limited',
@@ -20,7 +20,7 @@ export default function RoleManagement() {
       status: 'Active',
     },
     {
-      role: 'Supervisors',
+      role: 'Supervisor',
       desc: 'Approve orders and monitor operations',
       count: '48 Users',
       access: 'Limited',
@@ -29,7 +29,7 @@ export default function RoleManagement() {
       status: 'Active',
     },
     {
-      role: 'Inventory Workers',
+      role: 'Assigned Inventory',
       desc: 'Manage inventory and stock levels',
       count: '24 Users',
       access: 'Limited',
@@ -38,7 +38,7 @@ export default function RoleManagement() {
       status: 'Active',
     },
     {
-      role: 'Administrators',
+      role: 'Admin',
       desc: 'Full system access and configuration',
       count: '6 Users',
       access: 'Full',
@@ -176,10 +176,10 @@ export default function RoleManagement() {
           <thead>
             <tr className="text-slate-400 border-b border-slate-100">
               <th className="pb-3 font-semibold">Module</th>
-              <th className="pb-3 font-semibold text-center">Shoppers</th>
-              <th className="pb-3 font-semibold text-center">Supervisors</th>
-              <th className="pb-3 font-semibold text-center">Inventory Workers</th>
-              <th className="pb-3 font-semibold text-center">Administrators</th>
+              <th className="pb-3 font-semibold text-center">Shopper</th>
+              <th className="pb-3 font-semibold text-center">Supervisor</th>
+              <th className="pb-3 font-semibold text-center">Assigned Inventory</th>
+              <th className="pb-3 font-semibold text-center">Admin</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

@@ -95,10 +95,12 @@ const toneMap = {
   Offline: 'red',
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- Shared UI helpers stay alongside the supervisor UI primitives.
 export function statusTone(value) {
   return toneMap[value] || 'gray'
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- Shared UI helpers stay alongside the supervisor UI primitives.
 export function stockTone(percent) {
   if (percent <= 30) return 'red'
   if (percent <= 60) return 'amber'
@@ -137,13 +139,14 @@ export function ProgressBar({ value, tone = 'green' }) {
 
 export function DonutChart({ totalLabel = 'Total', totalValue, segments }) {
   const sum = segments.reduce((acc, seg) => acc + seg.value, 0) || 1
-  let cursor = 0
-  const stops = segments.map((seg) => {
-    const start = (cursor / sum) * 360
-    cursor += seg.value
-    const end = (cursor / sum) * 360
-    return `${seg.color} ${start}deg ${end}deg`
-  })
+  const stops = segments.reduce((result, seg) => {
+    const start = (result.cursor / sum) * 360
+    const end = ((result.cursor + seg.value) / sum) * 360
+    return {
+      cursor: result.cursor + seg.value,
+      stops: [...result.stops, `${seg.color} ${start}deg ${end}deg`],
+    }
+  }, { cursor: 0, stops: [] }).stops
 
   return (
     <div className="flex items-center gap-4">
@@ -343,6 +346,7 @@ export function TipBanner({ text, linkText = 'Learn more' }) {
 
 // ---------- data hook ----------
 
+// eslint-disable-next-line react-refresh/only-export-components -- This reusable hook is intentionally grouped with its related table UI.
 export function useTableQuery(data, searchKeys) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')

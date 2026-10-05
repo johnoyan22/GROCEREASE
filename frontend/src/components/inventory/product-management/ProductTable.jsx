@@ -23,49 +23,56 @@ function formatUpdatedAt(value) {
   };
 }
 
-function ProductTable({ products }) {
-  function getStockStyle(stock) {
-    if (stock === 0) return "text-red-600";
-    if (stock <= 20) return "text-orange-600";
-    return "text-green-700";
-  }
+function getStockStyle(stock) {
+  if (stock === 0) return "text-red-600";
+  if (stock <= 20) return "text-orange-600";
+  return "text-green-700";
+}
 
-  function getStockLabel(stock) {
-    if (stock === 0) return "Out of Stock";
-    if (stock <= 20) return "Low Stock";
-    return "In Stock";
-  }
+function getStockLabel(stock) {
+  if (stock === 0) return "Out of Stock";
+  if (stock <= 20) return "Low Stock";
+  return "In Stock";
+}
 
+function ProductTable({ products, onEdit }) {
   return (
     <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] text-left text-xs">
+        <table className="w-full min-w-[1050px] text-left text-xs">
           <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
             <tr>
               <th scope="col" className="px-4 py-3 font-medium">Product</th>
+              <th scope="col" className="px-4 py-3 font-medium">SKU</th>
               <th scope="col" className="px-4 py-3 font-medium">Category</th>
-              <th scope="col" className="px-4 py-3 font-medium">Base Cost</th>
+              <th scope="col" className="px-4 py-3 font-medium">Base Price</th>
               <th scope="col" className="px-4 py-3 font-medium">Selling Price</th>
               <th scope="col" className="px-4 py-3 font-medium">Physical Stock</th>
               <th scope="col" className="px-4 py-3 font-medium">Reserved Stock</th>
-              <th scope="col" className="px-4 py-3 font-medium">Availability</th>
+              <th scope="col" className="px-4 py-3 font-medium">Status</th>
               <th scope="col" className="px-4 py-3 font-medium">Last Updated</th>
+              <th scope="col" className="px-4 py-3 font-medium">Action</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-100 text-gray-700">
             {products.map((product) => {
               const updatedAt = formatUpdatedAt(product.updated_at);
+              const sellingPrice = product.selling_price ?? product.base_price;
 
               return (
                 <tr key={product.store_inventory_id} className="hover:bg-gray-50/70">
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{product.product_name}</p>
-                    <p className="mt-0.5 text-[10px] text-gray-500">Product #{product.product_id}</p>
+                    <p className="mt-0.5 text-[10px] text-gray-500">{product.size} · {product.barcode}</p>
                   </td>
+                  <td className="px-4 py-3">{product.sku}</td>
                   <td className="px-4 py-3">{product.category}</td>
-                  <td className="px-4 py-3">{moneyFormatter.format(product.base_cost)}</td>
-                  <td className="px-4 py-3 font-medium">{moneyFormatter.format(product.selling_price)}</td>
+                  <td className="px-4 py-3">{moneyFormatter.format(product.base_price)}</td>
+                  <td className="px-4 py-3 font-medium">
+                    {moneyFormatter.format(sellingPrice)}
+                    {product.selling_price == null && <span className="ml-1 text-[10px] font-normal text-gray-400">(base)</span>}
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-semibold text-gray-800">{product.hard_stock_qty}</p>
                     <p className={`mt-0.5 text-[10px] ${getStockStyle(product.hard_stock_qty)}`}>
@@ -73,15 +80,15 @@ function ProductTable({ products }) {
                     </p>
                   </td>
                   <td className="px-4 py-3">{product.soft_stock_qty}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-gray-500">
-                      <span className={`h-2 w-2 rounded-full ${product.availability === "Available" ? "bg-green-600" : "bg-red-500"}`} />
-                      {product.availability}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3">{product.status}</td>
+                  <td className="whitespace-nowrap px-4 py-3">
                     <p>{updatedAt.date}</p>
                     <p className="mt-0.5 text-[10px] text-gray-500">{updatedAt.time}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button type="button" onClick={() => onEdit(product)} className="font-medium text-green-700 hover:text-green-900">
+                      Edit
+                    </button>
                   </td>
                 </tr>
               );
