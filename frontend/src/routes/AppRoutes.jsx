@@ -13,8 +13,7 @@ import LowStockMonitoring from '../pages/inventory/LowStockMonitoring';
 import SubmitStockUpdate from '../pages/inventory/SubmitStockUpdate';
 import InventoryNotifications from '../pages/inventory/InventoryNotifications';
 import ActivityLog from '../pages/inventory/ActivityLog';
-
-import SupervisorDashboardPage from '../pages/supervisor/SupervisorDashboardPage';
+import SupervisorApp from '../components/Supervisor/SupervisorApp';
 
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
@@ -43,7 +42,7 @@ function AppRoutes() {
       <Route path="/inventory/notifications" element={<InventoryNotifications />} />
       <Route path="/inventory/activity" element={<ActivityLog />} />
 
-      <Route path="/supervisor/dashboard" element={<SupervisorDashboardPage />} />
+      <Route path="/supervisor/*" element={<SupervisorApp />} />
 
       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />

@@ -20,7 +20,7 @@ import { shiftCapacity, storeInfo, workerActivity } from './SupervisorData'
 import { useSupervisor } from './SupervisorContext'
 
 const tabs = [
-  { value: 'directory', label: 'Workers Directory' },
+  { value: 'directory', label: 'Grocery Worker Directory' },
   { value: 'assignment', label: 'Assignment' },
   { value: 'performance', label: 'Performance' },
   { value: 'incentives', label: 'Incentives' },
@@ -49,7 +49,7 @@ export function SupervisorWorkers() {
   const pendingOrders = orders.filter((order) => order.status === 'Pending Assignment')
 
   const columns = [
-    { key: 'name', label: 'Worker', render: (row) => <span className="inline-flex items-center gap-2"><UserRound size={14} /> {row.name}</span> },
+    { key: 'name', label: 'Grocery Worker', render: (row) => <span className="inline-flex items-center gap-2"><UserRound size={14} /> {row.name}</span> },
     { key: 'role', label: 'Role', render: (row) => <Badge tone={statusTone(row.role)}>{row.role}</Badge> },
     { key: 'assigned', label: 'Current Assigned', render: (row) => (row.assignedOrderId ? `Order ${row.assignedOrderId}` : 'None') },
     { key: 'availability', label: 'Availability', render: (row) => <Badge tone={statusTone(row.availability)}>{row.availability}</Badge> },
@@ -64,8 +64,8 @@ export function SupervisorWorkers() {
   return (
     <div>
       <PageHeader
-        title="Workers"
-        subtitle="Manage workers, view performance, and monitor incentives earnings."
+        title="Grocery Workers"
+        subtitle="Assign grocery workers to customer orders and monitor preparation progress."
         storeName={storeInfo.name}
         storeAddress={storeInfo.address}
       />
@@ -84,9 +84,9 @@ export function SupervisorWorkers() {
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold">
-              {tab === 'incentives' ? 'Incentives' : tab === 'performance' ? 'Performance' : 'Worker Directory'}
+              {tab === 'incentives' ? 'Incentives' : tab === 'performance' ? 'Performance' : 'Grocery Worker Directory'}
             </h2>
-            <SearchInput value={table.search} onChange={table.setSearch} placeholder="Search Workers..." />
+            <SearchInput value={table.search} onChange={table.setSearch} placeholder="Search grocery workers..." />
           </div>
           {tab === 'directory' ? (
             <div className="mb-4">
@@ -139,7 +139,7 @@ export function SupervisorWorkers() {
               )}
             </div>
           ) : (
-            <DataTable columns={columns} rows={pageRows} />
+              <DataTable columns={columns} rows={pageRows} />
           )}
 
           {tab === 'directory' || tab === 'incentives' ? (
@@ -202,7 +202,7 @@ export function SupervisorWorkers() {
         </div>
       ) : null}
 
-      <TipBanner text="Workers marked as Available can be assigned to new orders. Monitor shift coverage to maintain optimal productivity." />
+      <TipBanner text="Grocery workers marked as Available can be assigned to new orders. Inventory workers manage products and stock separately." />
     </div>
   )
 }
