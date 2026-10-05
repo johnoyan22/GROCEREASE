@@ -47,7 +47,7 @@ export function SupervisorOrders() {
     { key: 'status', label: 'Order Status', render: (row) => <Badge tone={statusTone(row.status)}>{row.status}</Badge> },
     {
       key: 'worker',
-      label: 'Assigned worker',
+      label: 'Assigned picker/packer',
       render: (row) =>
         row.workerId ? (
           <span className="inline-flex items-center gap-2"><UserRound size={14} /> {workerName[row.workerId]}</span>
@@ -147,7 +147,7 @@ export function SupervisorOrders() {
           </SideCard>
         </div>
       </div>
-      <TipBanner text="Assign available workers to pending orders first so pickup times stay on schedule." />
+      <TipBanner text="Assign available pickers or packers to pending orders first so pickup times stay on schedule." />
     </div>
   )
 }

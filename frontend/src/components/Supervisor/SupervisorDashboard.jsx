@@ -31,7 +31,7 @@ export function SupervisorDashboard() {
     { key: 'status', label: 'Order Status', render: (row) => <Badge tone={statusTone(row.status)}>{row.status}</Badge> },
     {
       key: 'worker',
-      label: 'Worker',
+      label: 'Picker/Packer',
       render: (row) => (
         <span className="inline-flex items-center gap-2">
           <UserRound size={14} /> {row.workerId ? workerName[row.workerId] : 'Unassigned'}
@@ -62,7 +62,7 @@ export function SupervisorDashboard() {
     <div>
       <PageHeader
         title="Dashboard"
-        subtitle="Overview of active orders, notification, and workers status."
+        subtitle="Overview of active orders, notifications, and picker/packer status."
         storeName={storeInfo.name}
         storeAddress={storeInfo.address}
       />
@@ -129,9 +129,9 @@ export function SupervisorDashboard() {
             </ul>
           </SideCard>
 
-          <SideCard title="Worker Overview">
+          <SideCard title="Picker/Packer Overview">
             <p className="text-sm text-slate-600">
-              Available workers {available} of {workers.length} total.
+              Available pickers/packers {available} of {workers.length} total.
             </p>
             <ul className="mt-3 space-y-1 text-sm">
               <li className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-600" /> Available ({available})</li>

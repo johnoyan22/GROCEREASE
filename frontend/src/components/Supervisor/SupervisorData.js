@@ -132,7 +132,7 @@ export const initialNotifications = [
   { id: 1, title: 'Item is running low on stock', description: 'Sardines is below the threshold at Colonnade. Review the stock approval request SA-23-234.', date: 'July 30, 2026', time: '3:00 PM', unread: true },
   { id: 2, title: 'Payment Successful (Cash on pick up)', description: 'Your payment for Order #0001234 has been received. The order can now proceed to packing.', date: 'July 30, 2026', time: '2:48 PM', unread: true },
   { id: 3, title: 'Payment Successful (Debit Card)', description: 'Debit card payment for Order #0001236 was verified successfully.', date: 'July 30, 2026', time: '2:05 PM', unread: false },
-  { id: 4, title: 'John Reyes Started Preparing', description: 'Worker John Reyes started preparing order ORD-0001234.', date: 'July 30, 2026', time: '2:10 PM', unread: false },
-  { id: 5, title: 'New Order Received', description: 'A new pickup order ORD-0001242 is waiting for worker assignment.', date: 'July 28, 2026', time: '4:55 PM', unread: true },
+  { id: 4, title: 'John Reyes Started Preparing', description: 'Picker/packer John Reyes started preparing order ORD-0001234.', date: 'July 30, 2026', time: '2:10 PM', unread: false },
+  { id: 5, title: 'New Order Received', description: 'A new pickup order ORD-0001242 is waiting for picker/packer assignment.', date: 'July 28, 2026', time: '4:55 PM', unread: true },
   { id: 6, title: 'Order Received', description: 'Order ORD-0001239 is ready to be assigned to an available picker.', date: 'July 28, 2026', time: '4:20 PM', unread: false },
 ]

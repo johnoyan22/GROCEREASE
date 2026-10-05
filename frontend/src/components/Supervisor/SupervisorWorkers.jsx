@@ -20,14 +20,14 @@ import { shiftCapacity, storeInfo, workerActivity } from './SupervisorData'
 import { useSupervisor } from './SupervisorContext'
 
 const tabs = [
-  { value: 'directory', label: 'Grocery Worker Directory' },
+  { value: 'directory', label: 'Picker/Packer Directory' },
   { value: 'assignment', label: 'Assignment' },
   { value: 'performance', label: 'Performance' },
   { value: 'incentives', label: 'Incentives' },
 ]
 
 const availabilityFilters = [
-  { value: 'all', label: 'All Workers' },
+  { value: 'all', label: 'All Pickers/Packers' },
   { value: 'Available', label: 'Available' },
   { value: 'Busy', label: 'Busy' },
   { value: 'Offline', label: 'Offline' },
@@ -49,7 +49,7 @@ export function SupervisorWorkers() {
   const pendingOrders = orders.filter((order) => order.status === 'Pending Assignment')
 
   const columns = [
-    { key: 'name', label: 'Grocery Worker', render: (row) => <span className="inline-flex items-center gap-2"><UserRound size={14} /> {row.name}</span> },
+    { key: 'name', label: 'Picker/Packer', render: (row) => <span className="inline-flex items-center gap-2"><UserRound size={14} /> {row.name}</span> },
     { key: 'role', label: 'Role', render: (row) => <Badge tone={statusTone(row.role)}>{row.role}</Badge> },
     { key: 'assigned', label: 'Current Assigned', render: (row) => (row.assignedOrderId ? `Order ${row.assignedOrderId}` : 'None') },
     { key: 'availability', label: 'Availability', render: (row) => <Badge tone={statusTone(row.availability)}>{row.availability}</Badge> },
@@ -64,8 +64,8 @@ export function SupervisorWorkers() {
   return (
     <div>
       <PageHeader
-        title="Grocery Workers"
-        subtitle="Assign grocery workers to customer orders and monitor preparation progress."
+        title="Pickers & Packers"
+        subtitle="Assign pickers and packers to customer orders and monitor preparation progress."
         storeName={storeInfo.name}
         storeAddress={storeInfo.address}
       />
@@ -74,7 +74,7 @@ export function SupervisorWorkers() {
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Users} label="Total Workers" value={workers.length} hint="All registered" hintTone="gray" />
+        <StatCard icon={Users} label="Total Pickers/Packers" value={workers.length} hint="Operational roster" hintTone="gray" />
         <StatCard label="Available" value={workers.filter((w) => w.availability === 'Available').length} hint="Ready for assignment" />
         <StatCard label="Busy" value={workers.filter((w) => w.availability === 'Busy').length} hint="Currently on task" hintTone="orange" />
         <StatCard label="Avg Completion Rate" value={`${avgRate}%`} hint="Across current store" />
@@ -84,9 +84,9 @@ export function SupervisorWorkers() {
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold">
-              {tab === 'incentives' ? 'Incentives' : tab === 'performance' ? 'Performance' : 'Grocery Worker Directory'}
+              {tab === 'incentives' ? 'Incentives' : tab === 'performance' ? 'Performance' : 'Picker/Packer Directory'}
             </h2>
-            <SearchInput value={table.search} onChange={table.setSearch} placeholder="Search grocery workers..." />
+            <SearchInput value={table.search} onChange={table.setSearch} placeholder="Search pickers and packers..." />
           </div>
           {tab === 'directory' ? (
             <div className="mb-4">
@@ -97,7 +97,7 @@ export function SupervisorWorkers() {
           {tab === 'incentives' ? (
             <DataTable
               columns={[
-                { key: 'name', label: 'Worker' },
+                { key: 'name', label: 'Picker/Packer' },
                 { key: 'ordersCompleted', label: 'Completed' },
                 { key: 'bonus', label: 'Estimated Incentive', render: (row) => `₱${(row.ordersCompleted * 15).toFixed(2)}` },
               ]}
@@ -106,7 +106,7 @@ export function SupervisorWorkers() {
           ) : tab === 'performance' ? (
             <DataTable
               columns={[
-                { key: 'name', label: 'Worker' },
+                { key: 'name', label: 'Picker/Packer' },
                 { key: 'completionRate', label: 'Completion Rate', render: (row) => `${row.completionRate}%` },
                 { key: 'avgPrepTime', label: 'Avg Prep' },
                 { key: 'ordersCompleted', label: 'Orders' },
@@ -129,7 +129,7 @@ export function SupervisorWorkers() {
                       defaultValue=""
                       onChange={(event) => event.target.value && assignWorker(order.id, event.target.value)}
                     >
-                      <option value="">Assign available worker</option>
+                      <option value="">Assign available picker/packer</option>
                       {workers.filter((w) => w.availability === 'Available').map((worker) => (
                         <option key={worker.id} value={worker.id}>{worker.name}</option>
                       ))}
@@ -143,7 +143,7 @@ export function SupervisorWorkers() {
           )}
 
           {tab === 'directory' || tab === 'incentives' ? (
-            <Pagination page={table.page} pageCount={Math.max(1, Math.ceil(visible.length / 5))} total={visible.length} label="Workers" onPageChange={table.setPage} />
+            <Pagination page={table.page} pageCount={Math.max(1, Math.ceil(visible.length / 5))} total={visible.length} label="Pickers/Packers" onPageChange={table.setPage} />
           ) : null}
         </section>
 
@@ -161,7 +161,7 @@ export function SupervisorWorkers() {
               ))}
             </ul>
           </SideCard>
-          <SideCard title="Worker Performance Overview">
+          <SideCard title="Picker/Packer Performance Overview">
             <ul className="space-y-2 text-sm">
               {[...workers].sort((a, b) => b.completionRate - a.completionRate).slice(0, 4).map((worker) => (
                 <li key={worker.id} className="flex justify-between">
@@ -171,7 +171,7 @@ export function SupervisorWorkers() {
               ))}
             </ul>
           </SideCard>
-          <SideCard title="Recent Worker Activity">
+          <SideCard title="Recent Picker/Packer Activity">
             <ul className="space-y-3 text-sm">
               {workerActivity.map((item) => (
                 <li key={item.id}>
@@ -202,7 +202,7 @@ export function SupervisorWorkers() {
         </div>
       ) : null}
 
-      <TipBanner text="Grocery workers marked as Available can be assigned to new orders. Inventory workers manage products and stock separately." />
+      <TipBanner text="Available pickers and packers can be assigned to new orders. Inventory Workers manage products and stock separately." />
     </div>
   )
 }

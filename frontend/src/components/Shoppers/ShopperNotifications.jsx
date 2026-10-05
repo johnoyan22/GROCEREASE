@@ -29,7 +29,7 @@ export default function ShopperNotifications() {
     {
       id: 4,
       title: 'Order Received',
-      description: 'We have received your order #0001234. You will be notified once an inventory worker is assigned to your order.',
+      description: 'We have received your order #0001234. You will be notified once a picker or packer is assigned to your order.',
       date: 'July 28, 2026',
       time: '4:55 PM',
       unread: true,
@@ -37,7 +37,7 @@ export default function ShopperNotifications() {
     {
       id: 5,
       title: 'Order Received',
-      description: 'We have received your order #0001234. You will be notified once an inventory worker is assigned to your order.',
+      description: 'We have received your order #0001234. You will be notified once a picker or packer is assigned to your order.',
       date: 'July 28, 2026',
       time: '4:55 PM',
       unread: true,

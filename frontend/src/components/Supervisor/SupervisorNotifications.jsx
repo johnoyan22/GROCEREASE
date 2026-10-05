@@ -11,7 +11,7 @@ export function SupervisorNotifications() {
     <div>
       <PageHeader
         title="Notifications"
-        subtitle="Stay updated on orders, payments, stock, and worker activity."
+        subtitle="Stay updated on orders, payments, stock, and picker/packer activity."
         storeName={storeInfo.name}
         storeAddress={storeInfo.address}
       />

@@ -10,9 +10,9 @@ export default function ShopperPickupInformation() {
       </div>
 
       <div className="max-w-4xl space-y-3">
-        {/* Step 1 Card: Searching for Worker */}
+        {/* Step 1 Card: Searching for a Picker/Packer */}
         <div className="border border-gray-300 rounded-xl p-5 flex items-center gap-6 bg-white shadow-sm">
-          {/* Radar / Worker Search Illustration */}
+          {/* Radar / Picker/Packer Search Illustration */}
           <div className="w-48 h-36 border border-gray-100 rounded-lg bg-emerald-50/30 flex items-center justify-center relative shrink-0 overflow-hidden">
             <div className="absolute w-28 h-28 border border-green-200/60 rounded-full flex items-center justify-center">
               <div className="w-16 h-16 border border-green-300/80 rounded-full flex items-center justify-center">
@@ -42,10 +42,10 @@ export default function ShopperPickupInformation() {
               Order #0001234
             </span>
             <h2 className="text-base font-extrabold text-black leading-tight">
-              Searching for available worker...
+              Searching for an available picker/packer...
             </h2>
             <p className="text-xs text-gray-600 mt-1 max-w-md">
-              We're finding the best available worker to prepare your order. This may take a few moments.
+              We're finding an available picker or packer to prepare your order. This may take a few moments.
             </p>
 
             {/* Progress Bar */}
@@ -58,7 +58,7 @@ export default function ShopperPickupInformation() {
               <Clock className="w-4 h-4 text-gray-700 shrink-0" />
               <div>
                 <p className="text-xs font-bold text-black leading-none">Please wait</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">You will be notified once a worker accepts your order</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">You will be notified once a picker or packer accepts your order</p>
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function ShopperPickupInformation() {
               <div className="flex items-center gap-2 border-r border-gray-200 pr-2">
                 <User className="w-5 h-5 text-gray-700 shrink-0" />
                 <div className="truncate">
-                  <span className="text-[10px] text-gray-500 block leading-none">Assigned worker</span>
+                  <span className="text-[10px] text-gray-500 block leading-none">Assigned picker/packer</span>
                   <span className="text-xs font-bold text-black truncate block mt-0.5">Juan Dela Cruz</span>
                 </div>
               </div>

@@ -19,7 +19,7 @@ const navItems = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
   { key: 'stock-approvals', label: 'Stock Approvals', icon: ClipboardList },
   { key: 'orders', label: 'Orders', hint: 'Active & History', icon: ShoppingCart },
-  { key: 'workers', label: 'Grocery Workers', hint: 'Assignment & Performance', icon: Users },
+  { key: 'workers', label: 'Pickers & Packers', hint: 'Assignment & Performance', icon: Users },
   { key: 'digital-payments', label: 'Digital Payments', icon: CreditCard },
   { key: 'sales-reports', label: 'Sales Reports', icon: Gauge },
   { key: 'return-refund', label: 'Return & Refund', icon: RotateCcw },

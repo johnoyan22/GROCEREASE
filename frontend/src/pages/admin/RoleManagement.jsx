@@ -29,7 +29,7 @@ export default function RoleManagement() {
       status: 'Active',
     },
     {
-      role: 'Assigned Inventory',
+      role: 'Inventory Worker',
       desc: 'Manage inventory and stock levels',
       count: '24 Users',
       access: 'Limited',
@@ -178,7 +178,7 @@ export default function RoleManagement() {
               <th className="pb-3 font-semibold">Module</th>
               <th className="pb-3 font-semibold text-center">Shopper</th>
               <th className="pb-3 font-semibold text-center">Supervisor</th>
-              <th className="pb-3 font-semibold text-center">Assigned Inventory</th>
+              <th className="pb-3 font-semibold text-center">Inventory Worker</th>
               <th className="pb-3 font-semibold text-center">Admin</th>
             </tr>
           </thead>
