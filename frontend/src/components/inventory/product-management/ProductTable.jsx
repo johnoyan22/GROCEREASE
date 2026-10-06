@@ -1,12 +1,12 @@
+import { Pencil } from "lucide-react";
+
 const moneyFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
   currency: "PHP",
 });
 
 function formatUpdatedAt(value) {
-  if (!value) {
-    return { date: "—", time: "" };
-  }
+  if (!value) return { date: "—", time: "" };
 
   const updatedAt = new Date(value);
 
@@ -39,55 +39,62 @@ function ProductTable({ products, onEdit }) {
   return (
     <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1050px] text-left text-xs">
+        <table className="w-full min-w-[960px] text-left text-xs">
           <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
             <tr>
               <th scope="col" className="px-4 py-3 font-medium">Product</th>
-              <th scope="col" className="px-4 py-3 font-medium">SKU</th>
+              <th scope="col" className="px-4 py-3 font-medium">SKU / Barcode</th>
               <th scope="col" className="px-4 py-3 font-medium">Category</th>
-              <th scope="col" className="px-4 py-3 font-medium">Base Price</th>
-              <th scope="col" className="px-4 py-3 font-medium">Selling Price</th>
-              <th scope="col" className="px-4 py-3 font-medium">Physical Stock</th>
-              <th scope="col" className="px-4 py-3 font-medium">Reserved Stock</th>
+              <th scope="col" className="px-4 py-3 font-medium">Price</th>
+              <th scope="col" className="px-4 py-3 font-medium">Stock Quantity</th>
+              <th scope="col" className="px-4 py-3 font-medium">Availability</th>
               <th scope="col" className="px-4 py-3 font-medium">Status</th>
               <th scope="col" className="px-4 py-3 font-medium">Last Updated</th>
-              <th scope="col" className="px-4 py-3 font-medium">Action</th>
+              <th scope="col" className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
-
           <tbody className="divide-y divide-gray-100 text-gray-700">
             {products.map((product) => {
               const updatedAt = formatUpdatedAt(product.updated_at);
-              const sellingPrice = product.selling_price ?? product.base_price;
+              const availableStock = product.hard_stock_qty - (product.soft_stock_qty ?? 0);
+              const availability = product.status === "Active" && availableStock > 0 ? "Available" : "Unavailable";
 
               return (
-                <tr key={product.store_inventory_id} className="hover:bg-gray-50/70">
+                <tr key={product.store_inventory_id ?? product.product_id} className="hover:bg-gray-50/70">
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{product.product_name}</p>
-                    <p className="mt-0.5 text-[10px] text-gray-500">{product.size} · {product.barcode}</p>
+                    <p className="mt-0.5 text-[10px] text-gray-500">{product.size}</p>
                   </td>
-                  <td className="px-4 py-3">{product.sku}</td>
+                  <td className="px-4 py-3">
+                    <p>{product.sku}</p>
+                    <p className="mt-0.5 text-[10px] text-gray-500">{product.barcode}</p>
+                  </td>
                   <td className="px-4 py-3">{product.category}</td>
-                  <td className="px-4 py-3">{moneyFormatter.format(product.base_price)}</td>
-                  <td className="px-4 py-3 font-medium">
-                    {moneyFormatter.format(sellingPrice)}
-                    {product.selling_price == null && <span className="ml-1 text-[10px] font-normal text-gray-400">(base)</span>}
-                  </td>
+                  <td className="px-4 py-3 font-medium">{moneyFormatter.format(product.selling_price)}</td>
                   <td className="px-4 py-3">
                     <p className="font-semibold text-gray-800">{product.hard_stock_qty}</p>
                     <p className={`mt-0.5 text-[10px] ${getStockStyle(product.hard_stock_qty)}`}>
                       {getStockLabel(product.hard_stock_qty)}
                     </p>
                   </td>
-                  <td className="px-4 py-3">{product.soft_stock_qty}</td>
-                  <td className="px-4 py-3">{product.status}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1.5 ${availability === "Available" ? "text-green-700" : "text-red-600"}`}>
+                      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${availability === "Available" ? "bg-green-600" : "bg-red-500"}`} />
+                      {availability}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded px-2 py-1 text-[10px] ${product.status === "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                      {product.status}
+                    </span>
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <p>{updatedAt.date}</p>
                     <p className="mt-0.5 text-[10px] text-gray-500">{updatedAt.time}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <button type="button" onClick={() => onEdit(product)} className="font-medium text-green-700 hover:text-green-900">
-                      Edit
+                    <button type="button" aria-label={`Edit ${product.product_name}`} onClick={() => onEdit(product)} className="rounded-lg border border-gray-200 p-2 text-gray-700 hover:bg-gray-50">
+                      <Pencil size={14} aria-hidden="true" />
                     </button>
                   </td>
                 </tr>

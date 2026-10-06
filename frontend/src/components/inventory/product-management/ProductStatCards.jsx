@@ -7,8 +7,8 @@ import {
 } from "../shared/InventoryIcons";
 
 function ProductStatCards({ products }) {
-  const availableProducts = products.filter((product) => product.hard_stock_qty > 0).length;
-  const outOfStockProducts = products.filter((product) => product.hard_stock_qty === 0).length;
+  const activeProducts = products.filter((product) => product.status === "Active").length;
+  const inactiveProducts = products.filter((product) => product.status === "Inactive").length;
   const categoryCount = new Set(products.map((product) => product.category)).size;
   const latestUpdatedAt = products
     .map((product) => product.updated_at)
@@ -35,16 +35,16 @@ function ProductStatCards({ products }) {
       color: "bg-green-50 text-green-700",
     },
     {
-      title: "Available",
-      value: availableProducts,
-      description: "With physical stock",
+      title: "Active Products",
+      value: activeProducts,
+      description: "Currently available for sale",
       icon: <VerificationIcon className="h-5 w-5" />,
       color: "bg-blue-50 text-blue-700",
     },
     {
-      title: "Out of Stock",
-      value: outOfStockProducts,
-      description: "Needs replenishment",
+      title: "Inactive Products",
+      value: inactiveProducts,
+      description: "Temporarily unavailable",
       icon: <PauseCircleIcon />,
       color: "bg-orange-50 text-orange-700",
     },

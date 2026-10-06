@@ -14,6 +14,8 @@ import {
   ChevronDown
 } from 'lucide-react';
 
+import { logout } from '../../services/api';
+
 const navItems = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/roles', label: 'Role Management', icon: KeyRound },
@@ -26,8 +28,14 @@ const navItems = [
 export default function AdminLayout({ children }) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    navigate('/login', { replace: true });
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', { replace: true});
+    } catch (error) {
+      console.error('Could not log out:', error);
+      alert('Logout failed. Please try again');
+    }
   };
 
   return (

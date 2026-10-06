@@ -1,15 +1,43 @@
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { login } from '../../services/api';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = (e) => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMessage('Login is a UI prototype. Backend authentication is pending. Visit a role dashboard route directly to preview it.');
+    setErrorMessage('');
+    setIsLoading(true);
+
+    try {
+      const user = await login({ email, password });
+
+      const dashboardByRole = {
+        shopper: '/shopper/dashboard',
+        inventory_worker: '/inventory/dashboard',
+        supervisor: '/supervisor',
+        admin: '/admin/dashboard',
+      };
+
+      const destination = dashboardByRole[user.role?.slug];
+
+      if (!destination) {
+        throw new Error('This account role does not have a dashboard yet.');
+      }
+
+      navigate(destination);
+    } catch (error) {
+      setErrorMessage(error.message || 'Login failed. Please try again.')
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -18,9 +46,6 @@ function LoginForm() {
         <h1 className="text-3xl font-black text-center text-black tracking-tight mb-2">
           Welcome Back
         </h1>
-        <p className="text-xs font-medium text-center text-gray-500 mb-6">
-          Frontend prototype only. Authentication is not connected.
-        </p>
 
         {errorMessage && (
           <div className="mb-4 text-center text-xs font-semibold text-red-600 bg-red-50 border border-red-200 py-2 px-3 rounded-md">
@@ -71,9 +96,10 @@ function LoginForm() {
           {/* Submit */}
           <button
             type="submit"
+            disabled={isLoading}
             className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-4 disabled:opacity-60"
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

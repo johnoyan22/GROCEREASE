@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useState } from "react";
 
 const emptyProduct = {
@@ -6,15 +7,15 @@ const emptyProduct = {
   barcode: "",
   size: "",
   category: "Staples",
-  base_price: "",
   selling_price: "",
-  hard_stock_qty: "",
-  soft_stock_qty: "0",
+  stock_quantity: "",
   status: "Active",
 };
 
 function ProductFormModal({ product, onClose, onSave }) {
-  const [formData, setFormData] = useState(product || emptyProduct);
+  const [formData, setFormData] = useState(() => product
+    ? { ...product, stock_quantity: product.hard_stock_qty }
+    : emptyProduct);
   const isEditing = Boolean(product);
 
   function handleChange(event) {
@@ -28,13 +29,13 @@ function ProductFormModal({ product, onClose, onSave }) {
 
   function handleSubmit(event) {
     event.preventDefault();
+    const { stock_quantity: stockQuantity, ...productFields } = formData;
 
     onSave({
-      ...formData,
-      base_price: Number(formData.base_price),
-      selling_price: formData.selling_price === "" ? null : Number(formData.selling_price),
-      hard_stock_qty: Number(formData.hard_stock_qty),
-      soft_stock_qty: Number(formData.soft_stock_qty),
+      ...productFields,
+      selling_price: Number(formData.selling_price),
+      hard_stock_qty: Number(stockQuantity),
+      soft_stock_qty: product?.soft_stock_qty ?? 0,
     });
   }
 
@@ -50,9 +51,7 @@ function ProductFormModal({ product, onClose, onSave }) {
             </h2>
             <p className="mt-1 text-xs text-gray-500">Enter the product and store stock details below.</p>
           </div>
-          <button type="button" aria-label="Close product form" onClick={onClose} className="rounded-md p-2 text-gray-500 hover:bg-gray-100">
-            ×
-          </button>
+          <button type="button" aria-label="Close product form" onClick={onClose} className="rounded-md p-2 text-gray-500 hover:bg-gray-100"><X size={18} aria-hidden="true" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5">
@@ -86,20 +85,12 @@ function ProductFormModal({ product, onClose, onSave }) {
               </select>
             </label>
             <label className="text-sm font-medium text-gray-700">
-              Base price
-              <input required min="0" step="0.01" type="number" name="base_price" value={formData.base_price} onChange={handleChange} className={inputClass} />
+              Price
+              <input required min="0" step="0.01" type="number" name="selling_price" value={formData.selling_price} onChange={handleChange} className={inputClass} />
             </label>
             <label className="text-sm font-medium text-gray-700">
-              Store selling price <span className="font-normal text-gray-400">(optional)</span>
-              <input min="0" step="0.01" type="number" name="selling_price" value={formData.selling_price ?? ""} onChange={handleChange} className={inputClass} />
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              Physical stock
-              <input required min="0" type="number" name="hard_stock_qty" value={formData.hard_stock_qty} onChange={handleChange} className={inputClass} />
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              Reserved stock
-              <input required min="0" type="number" name="soft_stock_qty" value={formData.soft_stock_qty} onChange={handleChange} className={inputClass} />
+              Stock quantity
+              <input required min="0" type="number" name="stock_quantity" value={formData.stock_quantity} onChange={handleChange} className={inputClass} />
             </label>
             <label className="text-sm font-medium text-gray-700">
               Status
