@@ -33,7 +33,6 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
 
       <Route element={<ProtectedRoute allowedRoles={['shopper']}/>}>
-        <Route path="/dashboard" element={<ShopperDashboard />} />
         <Route path="/shopper/dashboard" element={<ShopperDashboard />} />
       </Route>
 

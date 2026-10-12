@@ -17,6 +17,13 @@ class Profile extends Model
         'imagesrc',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'phone_verified_at' => 'datetime',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');

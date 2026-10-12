@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { User, Mail, Lock, Phone, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { register } from '../../services/api';
 
 function RegisterForm() {
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phoneNumber: '',
     address: '',
@@ -12,7 +14,10 @@ function RegisterForm() {
     confirmPassword: '',
     agreeToTerms: false,
   });
+
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,17 +27,42 @@ function RegisterForm() {
     }));
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async(e) => {
     e.preventDefault();
+    
+    if (isSubmitting) {
+      return;
+    }
+
     setErrorMessage('');
 
-    // Basic client-side validation
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage('Passwords do not match.');
       return;
     }
 
-    setErrorMessage('Registration is a UI prototype. Backend account creation is pending.');
+    setIsSubmitting(true);
+
+    try {
+    await register({
+      first_name: formData.firstName.trim(),
+      last_name: formData.lastName.trim(),
+      email: formData.email.trim(),
+      phone_number: formData.phoneNumber.trim(),
+      address: formData.address.trim() || null,
+      password: formData.password,
+      password_confirmation: formData.confirmPassword,
+      agree_to_terms: formData.agreeToTerms,
+    });
+
+    navigate('/login', { replace: true });
+  } catch (error) {
+    setErrorMessage(
+      error.message || 'Registration failed. Please try again.'
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
   };
 
   return (
@@ -41,9 +71,9 @@ function RegisterForm() {
         <h1 className="text-3xl font-black text-center text-black tracking-tight mb-2">
           Create Your Account
         </h1>
-        <p className="text-xs font-medium text-center text-gray-500 mb-8">
-          Frontend prototype only. Account creation is not connected.
-        </p>
+      <p className="text-xs font-medium text-center text-gray-500 mb-8">
+        Create your account, then sign in.
+      </p>
 
         {errorMessage && (
           <div className="mb-4 text-center text-xs font-semibold text-red-600 bg-red-50 border border-red-200 py-2 px-3 rounded-md">
@@ -52,22 +82,52 @@ function RegisterForm() {
         )}
 
         <form onSubmit={handleRegister} className="space-y-4">
-          {/* Full Name */}
+         {/* First and Last Name */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-black mb-1.5">Full Name</label>
+            <label
+              htmlFor="firstName"
+              className="block text-xs font-bold text-black mb-1.5"
+            >
+              First Name
+            </label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
+                id="firstName"
                 type="text"
-                name="fullName"
-                placeholder="Enter your full name"
-                value={formData.fullName}
+                name="firstName"
+                placeholder="First name"
+                value={formData.firstName}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
           </div>
+
+          <div>
+            <label
+              htmlFor="lastName"
+              className="block text-xs font-bold text-black mb-1.5"
+            >
+              Last Name
+            </label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <input
+                id="lastName"
+                type="text"
+                name="lastName"
+                placeholder="Last name"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                required
+              />
+            </div>
+          </div>
+        </div>
 
           {/* Email Address */}
           <div>
@@ -171,10 +231,11 @@ function RegisterForm() {
 
           {/* Submit Button */}
           <button
+            disabled={isSubmitting}
             type="submit"
             className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-2 disabled:opacity-60"
           >
-            Create Account
+            {isSubmitting ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
       </div>

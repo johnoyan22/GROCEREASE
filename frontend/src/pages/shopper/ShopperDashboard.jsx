@@ -15,7 +15,7 @@ import ShopperSettings from '../../components/Shoppers/ShopperSettings';
 
 export default function ShopperDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Settings');
+  const [activeTab, setActiveTab] = useState('Dashboard');
 
   const handleLogout = () => {
     navigate('/login', { replace: true });

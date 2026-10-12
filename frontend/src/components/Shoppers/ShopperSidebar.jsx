@@ -3,14 +3,28 @@ import {
   User, CreditCard, History, Settings, LogOut 
 } from 'lucide-react';
 import Logo from '../../assets/images/Logo.png';
+import { logout } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 
-function ShopperSidebar({ activeTab, setActiveTab, onLogout }) {
+function ShopperSidebar({ activeTab, setActiveTab }) {
+  const navigate = useNavigate();
+
   const getButtonClass = (tabName) => {
     const baseClass = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border";
     return activeTab === tabName 
       ? `${baseClass} bg-[#006e00] text-white border-[#006e00] shadow-sm` 
       : `${baseClass} text-gray-700 hover:bg-gray-100 border-gray-200`;
   };
+
+    const handleLogout = async () => {
+      try {
+        await logout();
+        navigate('/login', { replace: true});
+      } catch (error) {
+        console.error('Could not log out:', error);
+        alert('Logout failed. Please try again');
+      }
+    };
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between p-4 z-10 shrink-0">
@@ -125,7 +139,7 @@ function ShopperSidebar({ activeTab, setActiveTab, onLogout }) {
         </button>
 
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 mt-2 transition"
         >
           <LogOut className="w-4 h-4" />

@@ -55,6 +55,18 @@ export async function login(credentials) {
   return data.user;
 }
 
+export async function register(details) {
+  const xsrfToken = await getXsrfToken();
+
+  return sendRequest('/register', {
+    method: 'POST',
+    headers: {
+      'X-XSRF-TOKEN': xsrfToken,
+    },
+    body: JSON.stringify(details),
+  });
+}
+
 export async function getCurrentUser() {
   const data = await sendRequest('/user');
   return data;

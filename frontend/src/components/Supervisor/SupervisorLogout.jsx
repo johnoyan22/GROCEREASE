@@ -2,14 +2,20 @@
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from './SupervisorUI'
 import { storeInfo } from './SupervisorData'
+import { logout } from '../../services/api'
 
-export function SupervisorLogout({ onStaySignedIn, onLogout, loginPath = '/login' }) {
+export function SupervisorLogout({ onStaySignedIn }) {
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    onLogout?.()
-    navigate(loginPath, { replace: true })
-  }
+  const handleLogout = async() => {
+    try {
+      await logout()
+      navigate('/login', { replace: true})
+    } catch (error) {
+      console.error('Could not logout:', error)
+      alert('Logout failed. Please try again')
+    }
+  };
 
   const handleStaySignedIn = () => {
     if (onStaySignedIn) {

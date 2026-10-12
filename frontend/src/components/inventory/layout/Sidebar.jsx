@@ -1,5 +1,6 @@
 import logo from "../../../assets/images/Logo.png";
 import { useNavigate } from "react-router-dom";
+import { logout } from '../../../services/api';
 
 const navigationItems = [
   { label: "Dashboard", href: "/inventory/dashboard", icon: "dashboard" },
@@ -23,6 +24,7 @@ function NavIcon({ name }) {
     strokeLinejoin: "round",
     "aria-hidden": true,
   };
+    
 
   if (name === "dashboard") {
     return (
@@ -100,9 +102,15 @@ function NavIcon({ name }) {
 function Sidebar({ activePage, isOpen, onClose }) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    navigate("/login", { replace: true });
-  };
+  const handleLogout = async () => {
+      try {
+        await logout();
+        navigate('/login', { replace: true});
+      } catch (error) {
+        console.error('Could not log out:', error);
+        alert('Logout failed. Please try again');
+      }
+    };
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-40 flex h-screen w-64 shrink-0 transform flex-col justify-between border-r border-gray-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:translate-x-0 ${
@@ -163,7 +171,7 @@ function Sidebar({ activePage, isOpen, onClose }) {
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <path d="m16 17 5-5-5-5M21 12H9" />
           </svg>
-          <span>Logout</span>
+         <span >Logout</span>
         </button>
       </div>
     </aside>
