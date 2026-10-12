@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { 
-  User, Lock, Phone, Mail, Bell, ShoppingCart, Sparkles, Receipt, 
-  Store, History, Wallet, Settings as SettingsIcon 
+import {
+  User, Lock, Mail, Bell, ShoppingCart, Sparkles, Receipt,
+  Store, History, Wallet, Settings as SettingsIcon
 } from 'lucide-react';
 
 // Place ToggleSwitch OUTSIDE ShopperSettings here
@@ -24,7 +24,8 @@ const ToggleSwitch = ({ enabled, setEnabled }) => (
   </div>
 );
 
-export default function ShopperSettings() {
+export default function ShopperSettings({ user }) {
+  const fullName =`${user?.profile?.first_name || ''} ${user?.profile?.last_name || ''}`.trim();
   // Notification States
   const [orderStatus, setOrderStatus] = useState(true);
   const [paymentAlerts, setPaymentAlerts] = useState(true);
@@ -46,8 +47,9 @@ export default function ShopperSettings() {
       {/* Page Title Header */}
       <div className="mb-6">
         <h1 className="text-sm font-bold text-black">Settings</h1>
-        <p className="text-xs text-gray-600 mt-0.5">
-          Manage your account, notification, pickup, and shopping preferences.
+        <p className="text-xs text-amber-700 mt-2">
+          Account information is live. The preference controls below are previews
+          only and are not saved yet.
         </p>
       </div>
 
@@ -65,39 +67,53 @@ export default function ShopperSettings() {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <User className="w-4 h-4 text-gray-500" />
-                  <span>Username</span>
+                  <span>Full Name</span>
                 </div>
-                <span className="font-semibold text-black">Juan Dela Cruz</span>
+                <span className="font-semibold text-black text-right break-words">
+                  {fullName || 'Not provided'}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Mail className="w-4 h-4 text-gray-500" />
                   <span>Email Address</span>
                 </div>
-                <span className="font-semibold text-black">Juan@gmail.com</span>
+                <span className="font-semibold text-black text-right break-all">
+                  {user?.email || 'Not provided'}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Lock className="w-4 h-4 text-gray-500" />
                   <span>Change Password</span>
                 </div>
-                <button className="text-[11px] font-bold text-[#006e00] hover:underline">
-                  Change
+                <button
+                  type="button"
+                  disabled
+                  className="text-[11px] font-semibold text-gray-400 cursor-not-allowed"
+                >
+                  Not available yet
                 </button>
               </div>
 
-              <div className="flex items-center justify-between pt-0.5">
+              <div className="flex items-center justify-between gap-3 pt-0.5">
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span>Mobile Verfiaction</span>
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <span>Email Verification</span>
                 </div>
-                <span className="border border-green-600 text-[#006e00] text-[10px] font-bold px-2 py-0.5 rounded">
-                  Verified
+                <span
+                  className={`border text-[10px] font-bold px-2 py-0.5 rounded ${
+                    user?.email_verified_at
+                      ? 'border-green-600 text-[#006e00]'
+                      : 'border-amber-500 text-amber-700'
+                  }`}
+                >
+                  {user?.email_verified_at ? 'Verified' : 'Not verified'}
                 </span>
               </div>
             </div>
@@ -175,7 +191,9 @@ export default function ShopperSettings() {
                   <Store className="w-4 h-4 text-gray-500" />
                   <span className="text-[11px]">Preferred Pickup Branch</span>
                 </div>
-                <span className="text-[10px] text-gray-800 font-medium">colonnade Mall,Colon, Cebu City</span>
+                <span className="text-[10px] text-gray-800 font-medium">
+                  Not configured
+                </span>
               </div>
 
               <div className="flex items-center justify-between pb-2 border-b border-gray-200">
@@ -238,11 +256,19 @@ export default function ShopperSettings() {
 
         {/* Footer Action Buttons */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button className="border border-red-300 text-gray-700 hover:bg-gray-50 text-xs font-semibold px-4 py-1.5 rounded-lg transition">
+          <button
+            type="button"
+            disabled
+            className="border border-gray-300 text-gray-400 text-xs font-semibold px-4 py-1.5 rounded-lg cursor-not-allowed"
+          >
             Cancel
           </button>
-          <button className="bg-[#006e00] hover:bg-green-800 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition shadow-xs">
-            Save Changes
+          <button
+            type="button"
+            disabled
+            className="bg-gray-200 text-gray-500 text-xs font-semibold px-4 py-1.5 rounded-lg cursor-not-allowed"
+          >
+            Save Preferences — unavailable
           </button>
         </div>
       </div>

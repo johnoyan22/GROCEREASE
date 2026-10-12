@@ -19,7 +19,7 @@ class CredentialsShopperSeeder extends Seeder
         $password = 'password123';
         $firstName = 'Antonio';
         $lastName = 'Ilogaena';
-        $phoneNumber = '09923145523';
+        $phoneNumber = '+639923145523';
 
         $shopperRole = Role::where('slug', 'shopper')->firstOrFail();
 

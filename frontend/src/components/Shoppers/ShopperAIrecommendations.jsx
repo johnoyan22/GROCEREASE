@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { 
-  Search, ShoppingCart, Bell, ChevronDown, User, MessageSquare, 
+import { MessageSquare, 
   Image as ImageIcon, ArrowRight, Sparkles, Lightbulb 
 } from 'lucide-react';
 
@@ -22,46 +21,7 @@ export default function ShopperAIRecommendations() {
 
   return (
     <div className="flex-1 bg-white min-h-screen flex flex-col font-sans">
-      {/* Top Navigation Bar */}
-      <header className="border-b border-gray-200 px-6 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1 max-w-xl">
-          <button className="text-gray-700 hover:text-black">
-            <div className="w-6 h-0.5 bg-black mb-1"></div>
-            <div className="w-6 h-0.5 bg-black mb-1"></div>
-            <div className="w-6 h-0.5 bg-black"></div>
-          </button>
-          
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search for products, categories..."
-              className="w-full border border-gray-400 rounded-lg px-4 py-1.5 pr-10 text-xs focus:outline-none focus:border-[#006e00]"
-            />
-            <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-700" />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-5">
-          <button className="relative text-gray-700 hover:text-black">
-            <ShoppingCart className="w-6 h-6" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">1</span>
-          </button>
-          
-          <button className="relative text-gray-700 hover:text-black">
-            <Bell className="w-6 h-6" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">1</span>
-          </button>
-
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800 cursor-pointer">
-            <div className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center">
-              <User className="w-4 h-4" />
-            </div>
-            <span>Shopper</span>
-            <ChevronDown className="w-3.5 h-3.5" />
-          </div>
-        </div>
-      </header>
-
+    
       {/* Main Content Area */}
       <main className="p-6 max-w-5xl">
         {/* Header Title */}

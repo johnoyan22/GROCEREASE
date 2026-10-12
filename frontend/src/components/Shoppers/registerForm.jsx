@@ -27,9 +27,9 @@ function RegisterForm() {
     }));
   };
 
-  const handleRegister = async(e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    
+
     if (isSubmitting) {
       return;
     }
@@ -44,27 +44,34 @@ function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-    await register({
-      first_name: formData.firstName.trim(),
-      last_name: formData.lastName.trim(),
-      email: formData.email.trim(),
-      phone_number: formData.phoneNumber.trim(),
-      address: formData.address.trim() || null,
-      password: formData.password,
-      password_confirmation: formData.confirmPassword,
-      agree_to_terms: formData.agreeToTerms,
-    });
+      const response = await register({
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone_number: formData.phoneNumber.trim(),
+        address: formData.address.trim() || null,
+        password: formData.password,
+        password_confirmation: formData.confirmPassword,
+        agree_to_terms: formData.agreeToTerms,
+      });
 
-    navigate('/login', { replace: true });
-  } catch (error) {
-    setErrorMessage(
-      error.message || 'Registration failed. Please try again.'
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
+      navigate('/verify-email', {
+        replace: true,
+        state: {
+          registration: {
+            email: response.user.email,
+            verificationEmailSent: response.verification_email_sent,
+          },
+        },
+      });
+    } catch (error) {
+      setErrorMessage(
+        error.message || 'Registration failed. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
   return (
     <div className="w-1/2 border border-gray-300 rounded-3xl p-8 lg:p-10 flex flex-col justify-between bg-white">
       <div>
@@ -72,7 +79,7 @@ function RegisterForm() {
           Create Your Account
         </h1>
       <p className="text-xs font-medium text-center text-gray-500 mb-8">
-        Create your account, then sign in.
+        Create your account, then sign in to verify your email.
       </p>
 
         {errorMessage && (

@@ -19,7 +19,7 @@ class CredentialsInventorySeeder extends Seeder
         $password = 'password123';
         $firstName = 'Hal';
         $lastName = 'Jordan';
-        $phoneNumber = '09198752311';
+        $phoneNumber = '+639198752312';
 
         $inventoryRole = Role::where('slug', 'inventory_worker')->firstOrFail();
 

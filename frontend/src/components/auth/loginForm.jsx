@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { login } from '../../services/api';
 
 function LoginForm() {
@@ -9,10 +9,16 @@ function LoginForm() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    if (isLoading) {
+      return;
+    }
+
     setErrorMessage('');
     setIsLoading(true);
 
@@ -32,9 +38,20 @@ function LoginForm() {
         throw new Error('This account role does not have a dashboard yet.');
       }
 
-      navigate(destination);
+      const unverifiedShopper =
+        user.role?.slug === 'shopper' && !user.email_verified_at;
+
+      const verificationLogin =
+        searchParams.get('verification') === 'required';
+
+      if (unverifiedShopper || verificationLogin) {
+        navigate('/verify-email', { replace: true });
+        return;
+      }
+
+      navigate(destination, { replace: true });
     } catch (error) {
-      setErrorMessage(error.message || 'Login failed. Please try again.')
+      setErrorMessage(error.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

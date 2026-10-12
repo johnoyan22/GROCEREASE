@@ -20,7 +20,7 @@ class CredentialsAdminSeeder extends Seeder
         $password = 'password123';
         $firstName = 'Lorem';
         $lastName = 'Ipsum';
-        $phoneNumber = '09876312522';
+        $phoneNumber = '+639876312522';
 
         $adminRole = Role::where('slug', 'admin')->firstOrFail();
 

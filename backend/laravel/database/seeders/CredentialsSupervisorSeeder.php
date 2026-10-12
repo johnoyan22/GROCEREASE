@@ -19,7 +19,7 @@ class CredentialsSupervisorSeeder extends Seeder
         $password = 'password123';
         $firstName = 'Miguel';
         $lastName = 'Ohara';
-        $phoneNumber = '09198752311';
+        $phoneNumber = '+639198752311';
 
         $supervisorRole = Role::where('slug', 'supervisor')->firstOrFail();
 

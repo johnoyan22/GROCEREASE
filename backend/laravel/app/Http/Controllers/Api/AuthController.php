@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
-use App\Models\Role;
-use App\Models\User;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     public function login(Request $request)
@@ -56,12 +57,24 @@ class AuthController extends Controller
             'agree_to_terms' => ['required', 'accepted'],
             'role' => ['prohibited'],
             'role_id' => ['prohibited'],
-            'phone_verified_at' => ['prohibited'],
+            'email_verified_at' => ['prohibited'],
         ]);
 
         if (str_starts_with($validated['phone_number'], '09')) {
             $validated['phone_number'] = '+63' . substr($validated['phone_number'],1);
         }
+
+        Validator::make(
+        [
+            'phone_number' => $validated['phone_number'],
+        ],
+        [
+            'phone_number' => ['unique:profiles,phone_number'],
+        ],
+        [
+            'phone_number.unique' => 'This phone number is already registered.',
+        ]
+        )->validate();
 
         $shopperRole = Role::where('slug' , 'shopper')->first();
 
@@ -88,10 +101,28 @@ class AuthController extends Controller
             return $user;
         });
 
+             $verificationEmailSent = true;
+
+        try {
+            event(new Registered($user));
+        } catch (\Throwable $exception) {
+            $verificationEmailSent = false;
+
+            Log::warning('Registration saved, but verification notification failed.', [
+                'user_id' => $user->id,
+                'exception_class' => $exception::class,
+            ]);
+        }
+
         return response()->json([
-            'message' => 'Account created successfully.',
+            'message' => $verificationEmailSent
+                ? 'Account created successfully. Please sign in and verify your email.'
+                : 'Account created successfully, but the verification email could not be sent. Please sign in and request another link.',
             'user' => $user->load(['role', 'profile']),
+            'email_verification_required' => true,
+            'verification_email_sent' => $verificationEmailSent,
         ], 201);
+
     }
 
     public function logout(Request $request)

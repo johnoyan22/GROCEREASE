@@ -1,10 +1,141 @@
 import { useState } from 'react';
-import { 
-  User, Edit3, Mail, Phone, MapPin, Building, Calendar, Store, ShoppingBag 
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Edit3 } from 'lucide-react';
+import { updateShopperProfile } from '../../services/api';
 
-export default function ShopperMyProfile() {
-  const [aiRecommendationEnabled, setAiRecommendationEnabled] = useState(true);
+export default function ShopperMyProfile({ user, onProfileUpdated }) {
+  const navigate = useNavigate();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [draft, setDraft] = useState({
+    first_name: '',
+    last_name: '',
+    address: '',
+  });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const profile = user?.profile;
+
+  function startEditing() {
+    setDraft({
+      first_name: profile.first_name || '',
+      last_name: profile.last_name || '',
+      address: profile.address || '',
+    });
+    setFieldErrors({});
+    setErrorMessage('');
+    setSuccessMessage('');
+    setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    if (isSaving) return;
+
+    setFieldErrors({});
+    setErrorMessage('');
+    setIsEditing(false);
+  }
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      [name]: value,
+    }));
+
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      [name]: [],
+    }));
+    setErrorMessage('');
+  }
+
+  async function handleSave(event) {
+    event.preventDefault();
+
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setFieldErrors({});
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const result = await updateShopperProfile({
+        first_name: draft.first_name.trim(),
+        last_name: draft.last_name.trim(),
+        address: draft.address.trim() || null,
+      });
+
+      onProfileUpdated(result.user);
+      setIsEditing(false);
+      setSuccessMessage(result.message);
+    } catch (error) {
+      if (error.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (error.status === 422) {
+        setFieldErrors(error.errors || {});
+        setErrorMessage('Please correct the highlighted fields.');
+      } else if (error.status === 419) {
+        setErrorMessage(
+          'Your security session expired. Refresh the page and try again.'
+        );
+      } else if (error.status === 403) {
+        setErrorMessage(
+          'You no longer have permission to update this profile. Refresh the page to check your account.'
+        );
+      } else if (error.status === 404) {
+        setErrorMessage(
+          'Your profile could not be found. Please contact your administrator.'
+        );
+      } else {
+        setErrorMessage(
+          'Could not confirm the save. Check your connection and reload your profile before trying again.'
+        );
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (!profile) {
+    return (
+      <div className="p-6">
+        <p role="alert" className="text-sm text-red-600">
+          Your account does not have a profile. Please contact your administrator.
+        </p>
+      </div>
+    );
+  }
+
+  const fullName =
+    `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+
+  const savedDetails = [
+    ['Full name', fullName || 'Not provided'],
+    ['Email address', user.email],
+    ['Phone number', profile.phone_number || 'Not provided'],
+    ['Address', profile.address || 'Not provided'],
+    ['Account role', user.role?.name || 'Shopper'],
+    [
+      'Email verification',
+      user.email_verified_at ? 'Verified' : 'Not verified',
+    ],
+  ];
+
+  const editableFields = [
+    { name: 'first_name', label: 'First name', required: true },
+    { name: 'last_name', label: 'Last name', required: true },
+    { name: 'address', label: 'Address', required: false },
+  ];
+
 
   return (
     <div className="flex-1 bg-white min-h-screen p-6 font-sans">
@@ -15,183 +146,130 @@ export default function ShopperMyProfile() {
       </div>
 
       <div className="max-w-5xl space-y-4">
-        {/* Main Personal Details Card */}
-        <div className="border border-green-600 rounded-xl p-5 bg-white shadow-xs relative">
-          {/* Top User Header & Edit Button */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+        {successMessage && (
+          <p role='status' className='rounded-lg border border-green-200 bg-green-50 p-3 text-xs text-green-800'>
+            {successMessage}
+          </p>
+        )}
+        {errorMessage && (
+          <p role='alert' className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            {errorMessage}
+          </p>
+        )}
+
+         <section className="border border-green-600 rounded-xl p-5 bg-white shadow-xs">
+          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center bg-gray-50 text-gray-700">
-                <User className="w-5 h-5 stroke-[1.5]" />
+              <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center bg-gray-50">
+                <User className="w-5 h-5 text-gray-700" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-black">Juan Dela Cruz</h2>
-                <span className="text-[11px] text-gray-500 block">Shopper</span>
+                <h2 className="text-sm font-bold text-black">
+                  {fullName || 'Shopper'}
+                </h2>
+                <p className="text-[11px] text-gray-500">Shopper</p>
               </div>
             </div>
 
-            <button className="border border-green-700 text-[#006e00] text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-green-50 transition flex items-center gap-1.5">
-              <Edit3 className="w-3.5 h-3.5" />
-              Edit Profile
-            </button>
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={startEditing}
+                className="border border-green-700 text-[#006e00] text-xs font-bold px-3 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2"
+              >
+                <Edit3 className="w-4 h-4" />
+                Edit Profile
+              </button>
+            )}
           </div>
 
-          {/* Details Grid (Two Columns) */}
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-xs">
-            {/* Left Column */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <User className="w-4 h-4 text-gray-800" />
-                  <span>Full Name</span>
-                </div>
-                <span className="font-semibold text-black">Juan Dela Cruz</span>
-              </div>
+          {isEditing ? (
+            <form onSubmit={handleSave} className="space-y-4">
+              <fieldset
+                disabled={isSaving}
+                className="grid gap-4 sm:grid-cols-2"
+              >
+                <legend className="sr-only">Edit personal details</legend>
 
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Mail className="w-4 h-4 text-gray-800" />
-                  <span>Email Address</span>
-                </div>
-                <span className="font-semibold text-black">Juan@gmail.com</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Phone className="w-4 h-4 text-gray-800" />
-                  <span>Phone #</span>
-                </div>
-                <span className="font-semibold text-black">+63123456789</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <MapPin className="w-4 h-4 text-gray-800" />
-                  <span>Address</span>
-                </div>
-                <span className="font-semibold text-black">Bulacao St.jude</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Building className="w-4 h-4 text-gray-800" />
-                  <span>City</span>
-                </div>
-                <span className="font-semibold text-black">Bulacao City</span>
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-3 border-l border-gray-200 pl-8">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Building className="w-4 h-4 text-gray-800" />
-                  <span>Province</span>
-                </div>
-                <span className="font-semibold text-black">Bulacao Cebu</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <MapPin className="w-4 h-4 text-gray-800" />
-                  <span>Postal Code</span>
-                </div>
-                <span className="font-semibold text-black">6000</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Calendar className="w-4 h-4 text-gray-800" />
-                  <span>Date of birth</span>
-                </div>
-                <span className="font-semibold text-black">January 22 2004</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <Store className="w-4 h-4 text-gray-800" />
-                  <span>Preferred Pick up Branch</span>
-                </div>
-                <span className="font-semibold text-black">GrocerEase</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Cards Row */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Account Information Card */}
-          <div className="border border-gray-300 rounded-xl p-4 bg-white">
-            <div className="flex items-center gap-2 mb-3">
-              <User className="w-4 h-4 text-gray-700" />
-              <h3 className="text-xs font-bold text-black">Account Information</h3>
-            </div>
-
-            <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between pb-1.5 border-b border-gray-200">
-                <span className="text-gray-600">Username</span>
-                <span className="font-semibold text-black">JuanDelaCruz</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-1.5 border-b border-gray-200">
-                <span className="text-gray-600">Password</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-black">**********</span>
-                  <button className="text-[11px] font-bold text-[#006e00] hover:underline">
-                    Change
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-gray-600">Account Status</span>
-                <span className="border border-green-600 text-[#006e00] text-[10px] font-bold px-2 py-0.5 rounded">
-                  Active
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Shopping Preferences Card */}
-          <div className="border border-gray-300 rounded-xl p-4 bg-white">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1 bg-green-100 rounded-full text-green-800">
-                <ShoppingBag className="w-3.5 h-3.5" />
-              </div>
-              <h3 className="text-xs font-bold text-black">Shopping Preferences</h3>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between pb-1.5 border-b border-gray-200">
-                <span className="text-gray-600">Preferred Payment Method</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-gray-800">Debit Card ending in 4567</span>
-                  <button className="text-[11px] font-bold text-[#006e00] hover:underline">
-                    Change
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-1 border-t border-gray-200">
-                <span className="text-gray-600">AI Recommendation</span>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setAiRecommendationEnabled(!aiRecommendationEnabled)}
-                    className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 ${
-                      aiRecommendationEnabled ? 'bg-[#006e00]' : 'bg-gray-300'
-                    }`}
+                {editableFields.map((field) => (
+                  <div
+                    key={field.name}
+                    className={field.name === 'address' ? 'sm:col-span-2' : ''}
                   >
-                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
-                      aiRecommendationEnabled ? 'translate-x-4' : 'translate-x-0'
-                    }`} />
-                  </button>
-                  <span className="text-[11px] font-medium text-gray-700">
-                    {aiRecommendationEnabled ? 'Enabled' : 'Disabled'}
-                  </span>
-                </div>
+                    <label
+                      htmlFor={`profile-${field.name}`}
+                      className="block text-xs font-semibold text-gray-700 mb-2"
+                    >
+                      {field.label}
+                    </label>
+                    <input
+                      id={`profile-${field.name}`}
+                      name={field.name}
+                      type="text"
+                      value={draft[field.name]}
+                      onChange={handleChange}
+                      required={field.required}
+                      maxLength={255}
+                      aria-invalid={Boolean(fieldErrors[field.name]?.length)}
+                      aria-describedby={
+                        fieldErrors[field.name]?.length
+                          ? `profile-${field.name}-error`
+                          : undefined
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-green-700 disabled:bg-gray-100"
+                    />
+                    {fieldErrors[field.name]?.length > 0 && (
+                      <p
+                        id={`profile-${field.name}-error`}
+                        className="mt-1 text-xs text-red-600"
+                      >
+                        {fieldErrors[field.name][0]}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </fieldset>
+
+              <p className="text-xs text-gray-500">
+                Email and phone number cannot be changed through this form.
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                  disabled={isSaving}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="rounded-lg bg-[#006e00] px-4 py-2 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-50"
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
-            </div>
-          </div>
-        </div>
+            </form>
+          ) : (
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {savedDetails.map(([label, value]) => (
+                <div key={label} className="border-b border-gray-200 pb-3">
+                  <dt className="text-xs text-gray-600">{label}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-black break-words">
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </section>
+
+        <p className="text-xs text-gray-500">
+          Password changes and account activation/deactivation will be added in
+          their dedicated batches.
+        </p>
       </div>
     </div>
   );

@@ -35,9 +35,11 @@ async function sendRequest(path, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || 'The request failed.');
+    const error = new Error(data.message || 'The request failed.');
+    error.status = response.status;
+    error.errors = data.errors || {};
+    throw error;
   }
-
   return data;
 }
 
@@ -80,5 +82,32 @@ export async function logout() {
     headers: {
       'X-XSRF-TOKEN': xsrfToken,
     },
+  });
+}
+
+export async function resendVerificationEmail() {
+  const xsrfToken = await getXsrfToken();
+
+  return sendRequest('/email/verification-notification', {
+    method: 'POST',
+    headers: {
+      'X-XSRF-TOKEN': xsrfToken,
+    },
+  });
+}
+
+export async function updateShopperProfile(details) {
+  const xsrfToken = await getXsrfToken();
+
+  return sendRequest('/shopper/profile', {
+    method: 'PUT',
+    headers: {
+      'X-XSRF-TOKEN': xsrfToken,
+    },
+    body: JSON.stringify({
+      first_name: details.first_name,
+      last_name: details.last_name,
+      address: details.address,
+    }),
   });
 }

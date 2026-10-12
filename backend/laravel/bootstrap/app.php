@@ -1,10 +1,11 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-
-use App\Http\Middleware\EnsureUserHasRole;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,10 +16,40 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);
+
+        $middleware->redirectGuestsTo(
+            fn (Request $request) =>
+                rtrim(config('app.frontend_url'), '/')
+                .'/login?verification=required'
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request, \Throwable $exception) =>
+                $request->is('api/*') || $request->expectsJson()
+        );
+
+        $exceptions->render(
+            function (HttpException $exception, Request $request) {
+                if (! $request->routeIs('verification.verify')
+                    || $exception->getStatusCode() !== 403) {
+                    return null;
+                }
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'This verification link is invalid, expired, or does not belong to your account.',
+                    ], 403);
+                }
+
+                return redirect()->away(
+                    rtrim(config('app.frontend_url'), '/')
+                    .'/verify-email?status=invalid'
+                );
+            }
+        );
     })->create();

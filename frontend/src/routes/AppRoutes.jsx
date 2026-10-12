@@ -1,6 +1,8 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 
+import VerifyEmailPage from '../pages/auth/VerifyEmailPage';
+
 import LandingPage from '../pages/public/LandingPage';
 import LoginPage from '../pages/auth/LoginPage';
 import Register from '../pages/shopper/Register';
@@ -31,10 +33,11 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-      <Route element={<ProtectedRoute allowedRoles={['shopper']}/>}>
-        <Route path="/shopper/dashboard" element={<ShopperDashboard />} />
-      </Route>
+    <Route element={<ProtectedRoute allowedRoles={['shopper']} requireVerifiedEmail/>}>
+      <Route path="/shopper/dashboard" element={<ShopperDashboard />} />
+    </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['inventory_worker']}/>}>
         <Route path="/inventory/dashboard" element={<InventoryDashboard />} />
