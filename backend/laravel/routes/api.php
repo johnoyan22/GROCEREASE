@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\InventoryProductController;
 use Illuminate\Support\Facades\Route;
+require __DIR__.'/supervisor_stock_approvals.php';
 
 // Public account endpoints
 Route::post('/register/shopper', [AuthController::class, 'registerShopper']);
