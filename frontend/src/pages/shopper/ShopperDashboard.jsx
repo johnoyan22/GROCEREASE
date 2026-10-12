@@ -16,6 +16,7 @@ import ShopperSettings from '../../components/Shoppers/ShopperSettings';
 export default function ShopperDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleLogout = () => {
     navigate('/login', { replace: true });
@@ -30,11 +31,16 @@ export default function ShopperDashboard() {
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {activeTab !== 'AI' && <ShopperHeader />}
+        {activeTab !== 'AI' && (
+          <ShopperHeader 
+            searchTerm={searchTerm} 
+            onSearchChange={setSearchTerm} 
+          />
+        )}
 
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'Dashboard' && <ShopperMainContent setActiveTab={setActiveTab} />}
-          {activeTab === 'Browse' && <ShopperBrowseProducts />}
+          {activeTab === 'Browse' && <ShopperBrowseProducts searchTerm={searchTerm} />}
           {activeTab === 'AI' && <ShopperAIRecommendations />}
           {activeTab === 'Orders' && <ShopperMyOrders />}
           {(activeTab === 'Pickup' || activeTab === 'Pick up Information') && <ShopperPickupInformation />}

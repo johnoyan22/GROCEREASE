@@ -342,6 +342,20 @@ Inspect the most recent Laravel errors with:
 Get-Content storage\logs\laravel.log -Tail 100
 ```
 
+### "CSRF token mismatch" / HTTP 419 when saving a product
+
+Laravel Sanctum protects stateful browser requests with a CSRF token. Before a
+product is created or updated, the frontend must request
+`/sanctum/csrf-cookie`, send the returned `XSRF-TOKEN` cookie back as the
+`X-XSRF-TOKEN` request header, and include cookies with the product request.
+The product page now does this for both POST and PUT requests. Do not disable
+CSRF validation for these routes as a workaround.
+
+If the error persists, use `localhost` consistently for both
+`http://localhost:5173` and `http://localhost:8000`, clear the browser cookies
+for `localhost`, reload the page, and try again. Also verify that the Vite
+origin is listed in Laravel's CORS and Sanctum stateful-domain settings.
+
 Common log messages include:
 
 | Error | Likely cause | Resolution |

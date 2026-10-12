@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const BACKEND_URL = API_URL.replace('/api', '');
 
-async function getXsrfToken() {
+export async function getXsrfToken() {
   const response = await fetch(`${BACKEND_URL}/sanctum/csrf-cookie`, {
     credentials: 'include',
   });

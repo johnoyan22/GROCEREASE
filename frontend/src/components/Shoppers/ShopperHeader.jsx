@@ -1,12 +1,14 @@
 import { Search, ShoppingCart, Bell, User, ChevronDown } from 'lucide-react';
 
-function ShopperHeader() {
+function ShopperHeader({ searchTerm, onSearchChange }) {
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
       <div className="flex items-center gap-4 flex-1 max-w-2xl">
         <div className="relative w-full">
           <input 
             type="text" 
+            value={searchTerm || ''}
+            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
             placeholder="Search for products, categories..."
             className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-[#006e00]"
           />

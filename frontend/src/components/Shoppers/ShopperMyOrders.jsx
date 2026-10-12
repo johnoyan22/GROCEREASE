@@ -1,40 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Calendar, ArrowRight, ShoppingBag } from 'lucide-react';
 
 export default function ShopperMyOrders() {
   const [activeTab, setActiveTab] = useState('All Orders');
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const orders = [
-    {
-      id: '#0001234',
-      date: 'July 28, 2026',
-      itemCount: 3,
-      total: '₱ 210.00',
-      status: 'To pay',
-      items: [
-        { name: 'Bananas', qty: 1, image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=150&q=80' },
-        { name: 'Milk', qty: 1, image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=150&q=80' },
-        { name: 'Eggs', qty: 1, image: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=150&q=80' },
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+        const response = await axios.get(`${apiUrl}/orders`);
+        setOrders(response.data.data || response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch orders:", err);
+        setLoading(false);
+      }
+    };
 
-  // 1. Dynamic order filtering
+    fetchOrders();
+  }, []);
+
+  const handlePayOrder = async (orderId) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+      await axios.put(`${apiUrl}/orders/${orderId}/pay`);
+      alert("Order paid successfully!");
+      
+      // Re-fetch orders to update the list view
+      const response = await axios.get(`${apiUrl}/orders`);
+      setOrders(response.data.data || response.data);
+    } catch (err) {
+      console.error("Failed to process payment:", err);
+      alert("Error processing payment.");
+    }
+  };
+
   const filteredOrders = activeTab === 'All Orders' 
     ? orders 
-    : orders.filter(order => order.status.toLowerCase() === activeTab.toLowerCase());
+    : orders.filter(order => (order.status || '').toLowerCase() === activeTab.toLowerCase());
 
-  // 2. Tab counts recalculated dynamically from dataset
   const getTabCount = (tabName) => {
     if (tabName === 'All Orders') return null;
-    return orders.filter(order => order.status.toLowerCase() === tabName.toLowerCase()).length;
+    return orders.filter(order => (order.status || '').toLowerCase() === tabName.toLowerCase()).length;
   };
 
   const tabs = ['All Orders', 'To pay', 'Processing', 'Successful', 'Cancelled'];
 
+  if (loading) {
+    return <div className="flex-1 p-10 text-center text-xs text-gray-500 bg-white">Loading your orders from database...</div>;
+  }
+
   return (
     <div className="flex-1 bg-white min-h-screen p-6 font-sans">
-      {/* Title */}
       <div className="mb-4">
         <h1 className="text-sm font-bold text-black">My Orders</h1>
         <p className="text-xs text-gray-600 mt-0.5">Track, View and reorder your purchases.</p>
@@ -53,7 +73,7 @@ export default function ShopperMyOrders() {
               }`}
             >
               <span>{tabName}</span>
-              {count !== null && (
+              {count !== null && count > 0 && (
                 <span className="bg-gray-200 text-black text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                   {count}
                 </span>
@@ -66,7 +86,6 @@ export default function ShopperMyOrders() {
         })}
       </div>
 
-      {/* Dynamic Subheading Status Banner */}
       <div className="mb-3">
         <h2 className="text-xs font-bold text-black">Current Orders ({activeTab})</h2>
         <p className="text-[11px] text-gray-500">
@@ -77,53 +96,60 @@ export default function ShopperMyOrders() {
       {/* Order Cards List or Empty State */}
       <div className="space-y-4">
         {filteredOrders.length > 0 ? (
-          filteredOrders.map((order) => (
-            <div key={order.id} className="border border-gray-400 rounded-xl p-4 flex items-center justify-between bg-white">
-              {/* Left Details & Items */}
-              <div className="flex items-center gap-6">
-                <div>
-                  <h3 className="text-sm font-bold text-black">Order {order.id}</h3>
-                  <div className="flex items-center gap-1 text-[11px] text-gray-600 mt-1">
-                    <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{order.date} · {order.itemCount} Items</span>
+          filteredOrders.map((order) => {
+            const orderId = order.order_id || order.id;
+            const orderTotal = Number(order.total) || 0;
+            const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Recent';
+            const orderItems = order.items || [];
+
+            return (
+              <div key={orderId} className="border border-gray-300 rounded-xl p-4 flex items-center justify-between bg-white shadow-sm">
+                <div className="flex items-center gap-6">
+                  <div>
+                    <h3 className="text-sm font-bold text-black">Order #{orderId}</h3>
+                    <div className="flex items-center gap-1 text-[11px] text-gray-600 mt-1">
+                      <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                      <span>{orderDate} · {orderItems.length} Items</span>
+                    </div>
+                  </div>
+
+                  {/* Items Thumbnails */}
+                  <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                    {orderItems.map((item, idx) => (
+                      <div key={idx} className="relative border border-green-200 rounded-lg p-1 w-12 h-12 flex items-center justify-center bg-white">
+                        <img src={item.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=150&q=80'} alt={item.name} className="max-h-full max-w-full object-contain" />
+                        <span className="absolute bottom-0.5 right-1 text-[10px] font-bold text-black">
+                          x{item.quantity || item.qty}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Items Thumbnails */}
-                <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="relative border border-green-200 rounded-lg p-1 w-12 h-12 flex items-center justify-center bg-white">
-                      <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain" />
-                      <span className="absolute bottom-0.5 right-1 text-[10px] font-bold text-black">
-                        x{item.qty}
-                      </span>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-6 border-l border-gray-300 pl-6">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-600 block">Total</span>
+                    <span className="text-xs font-black text-black">₱ {orderTotal.toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
+                      {order.status || 'To pay'}
+                    </span>
+                    {(order.status === 'To pay' || !order.status) && (
+                      <button 
+                        onClick={() => handlePayOrder(orderId)}
+                        className="bg-[#006e00] text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-green-800 transition flex items-center gap-1"
+                      >
+                        Checkout <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Right Action & Price */}
-              <div className="flex items-center gap-6 border-l border-gray-300 pl-6">
-                <div>
-                  <span className="text-[10px] font-bold text-gray-600 block">Total</span>
-                  <span className="text-xs font-black text-black">{order.total}</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button className="text-xs font-bold text-[#006e00] hover:underline flex items-center gap-0.5">
-                    View Details <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                  {order.status === 'To pay' && (
-                    <button className="bg-[#006e00] text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-green-800 transition flex items-center gap-1">
-                      Checkout <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
-          /* 3. Empty State View */
           <div className="border border-dashed border-gray-300 rounded-xl p-12 text-center bg-gray-50/50">
             <ShoppingBag className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-xs font-semibold text-gray-600">No orders found in "{activeTab}".</p>
