@@ -7,6 +7,20 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [passwordInputType, setPasswordInputType] = useState('password');
+  const [isChecked, setIsChecked] = useState(false);
+
+function togglePasswordVisibility(event) {
+  const checked = event.target.checked;
+
+  setIsChecked(checked);
+
+  if (checked) {
+    setPasswordInputType('text');
+  } else {
+    setPasswordInputType('password');
+  }
+}
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -38,11 +52,9 @@ function LoginForm() {
         throw new Error('This account role does not have a dashboard yet.');
       }
 
-      const unverifiedShopper =
-        user.role?.slug === 'shopper' && !user.email_verified_at;
+      const unverifiedShopper = user.role?.slug === 'shopper' && !user.email_verified_at;
 
-      const verificationLogin =
-        searchParams.get('verification') === 'required';
+      const verificationLogin = user.role?.slug === 'shopper' && searchParams.get('verification') === 'required';
 
       if (unverifiedShopper || verificationLogin) {
         navigate('/verify-email', { replace: true });
@@ -94,7 +106,7 @@ function LoginForm() {
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
-                type="password"
+                type={passwordInputType}
                 name="password"
                 placeholder="Enter your password"
                 value={password}
@@ -103,6 +115,17 @@ function LoginForm() {
                 required
               />
             </div>
+
+            <label className="mt-2 ml-2 flex items-center gap-2 text-xs font-semibold text-[#006e00]">
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={togglePasswordVisibility}
+                disabled={isLoading}
+              />
+              <span>Show password</span>
+            </label>
+
             <div className="text-right mt-2">
               <a href="#" className="text-[11px] text-[#006e00] font-semibold hover:underline">
                 Forgot Password?

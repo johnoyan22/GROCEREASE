@@ -111,3 +111,35 @@ export async function updateShopperProfile(details) {
     }),
   });
 }
+
+export async function changeShopperPassword(details) {
+  const xsrfToken = await getXsrfToken();
+
+  return sendRequest('/shopper/password', {
+    method: 'PUT',
+    headers: {
+      'X-XSRF-TOKEN': xsrfToken,
+    },
+    body: JSON.stringify({
+      current_password: details.current_password,
+      password: details.password,
+      password_confirmation: details.password_confirmation,
+    }),
+  });
+}
+
+export async function changeSupervisorPassword(details) {
+  const xsrfToken = await getXsrfToken();
+
+  return sendRequest('/supervisor/password', {
+    method: 'PUT',
+    headers: {
+      'X-XSRF-TOKEN': xsrfToken,
+    },
+    body: JSON.stringify({
+      current_password: details.current_password,
+      password: details.password,
+      password_confirmation: details.password_confirmation,
+    }),
+  });
+}

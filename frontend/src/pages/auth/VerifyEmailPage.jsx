@@ -147,6 +147,12 @@ function VerifyEmailPage() {
     }
   }
 
+  let isNonShopper = false;
+
+  if (user && user.role) {
+    isNonShopper = user.role.slug !== 'shopper';
+  }
+
   const isVerified = Boolean(user?.email_verified_at);
   const dashboardPath = dashboardByRole[user?.role?.slug];
 
@@ -224,11 +230,28 @@ function VerifyEmailPage() {
               the account you just registered.
             </p>
           </div>
+                ) : isNonShopper ? (
+          <div className="mt-6 space-y-4">
+            <h1 className="text-2xl font-bold">Account access</h1>
+
+            <p className="text-gray-600">
+              Email verification is required for Shopper accounts.
+              You can continue to your dashboard.
+            </p>
+
+            <Link
+              to={dashboardPath}
+              className="inline-block rounded-lg bg-[#006e00] px-4 py-3 font-semibold text-white"
+            >
+              Continue to dashboard
+            </Link>
+          </div>
         ) : isVerified ? (
           <div className="mt-6 space-y-4">
             <h1 className="text-2xl font-bold text-[#006e00]">
               Email verified
             </h1>
+
             <p className="text-gray-600">
               Laravel confirms that {user.email} is verified.
             </p>

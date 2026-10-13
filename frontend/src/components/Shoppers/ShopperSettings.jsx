@@ -3,6 +3,8 @@ import {
   User, Lock, Mail, Bell, ShoppingCart, Sparkles, Receipt,
   Store, History, Wallet, Settings as SettingsIcon
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { changeShopperPassword } from '../../services/api';
 
 // Place ToggleSwitch OUTSIDE ShopperSettings here
 const ToggleSwitch = ({ enabled, setEnabled }) => (
@@ -41,6 +43,133 @@ export default function ShopperSettings({ user }) {
   // App Preference States
   const [historyForRec, setHistoryForRec] = useState(true);
   const [budgetMonitoring, setBudgetMonitoring] = useState(true);
+
+  const navigate = useNavigate();
+
+const [showPasswordForm, setShowPasswordForm] = useState(false);
+const [currentPassword, setCurrentPassword] = useState('');
+const [newPassword, setNewPassword] = useState('');
+const [confirmPassword, setConfirmPassword] = useState('');
+const [isChangingPassword, setIsChangingPassword] = useState(false);
+const [passwordError, setPasswordError] = useState('');
+
+const [passwordInputType, setPasswordInputType] = useState('password');
+const [isChecked, setIsChecked] = useState(false);
+
+function togglePasswordVisibility(event) {
+  const checked = event.target.checked;
+
+  setIsChecked(checked);
+
+  if (checked) {
+    setPasswordInputType('text');
+  } else {
+    setPasswordInputType('password');
+  }
+}
+
+const [passwordSuccess, setPasswordSuccess] = useState('');
+
+function clearPasswordFields() {
+  setCurrentPassword('');
+  setNewPassword('');
+  setConfirmPassword('');
+
+  setIsChecked(false);
+  setPasswordInputType('password');
+}
+
+
+
+function openPasswordForm() {
+  clearPasswordFields();
+  setPasswordError('');
+  setPasswordSuccess('');
+  setShowPasswordForm(true);
+}
+
+function cancelPasswordChange() {
+  if (isChangingPassword) {
+    return;
+  }
+
+  clearPasswordFields();
+  setPasswordError('');
+  setShowPasswordForm(false);
+}
+
+function handleCurrentPasswordChange(event) {
+  setCurrentPassword(event.target.value);
+  setPasswordError('');
+}
+
+function handleNewPasswordChange(event) {
+  setNewPassword(event.target.value);
+  setPasswordError('');
+}
+
+function handleConfirmPasswordChange(event) {
+  setConfirmPassword(event.target.value);
+  setPasswordError('');
+}
+
+async function handlePasswordSubmit(event) {
+  event.preventDefault();
+
+  if (isChangingPassword) {
+    return;
+  }
+
+  setPasswordError('');
+  setPasswordSuccess('');
+
+  if (newPassword !== confirmPassword) {
+    setPasswordError('The new passwords do not match.');
+    return;
+  }
+
+  setIsChangingPassword(true);
+
+  try {
+    const result = await changeShopperPassword({
+      current_password: currentPassword,
+      password: newPassword,
+      password_confirmation: confirmPassword,
+    });
+
+    clearPasswordFields();
+    setShowPasswordForm(false);
+    setPasswordSuccess(result.message);
+  } catch (error) {
+    if (error.status === 401) {
+      clearPasswordFields();
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    if (error.status === 422) {
+      setPasswordError(error.message);
+    } else if (error.status === 419) {
+      setPasswordError(
+        'Your security session expired. Refresh the page and try again.'
+      );
+    } else if (error.status === 403) {
+      setPasswordError(
+        'You cannot change this password right now. Refresh the page to check your account.'
+      );
+    } else if (error.status === 429) {
+      setPasswordError(
+        'Too many attempts. Please wait one minute before trying again.'
+      );
+    } else {
+      setPasswordError(
+        'Could not confirm the change. Check your connection. If you submitted a change, try signing in with the new password before repeating it.'
+      );
+    }
+  } finally {
+    setIsChangingPassword(false);
+  }
+}
 
   return (
     <div className="flex-1 bg-white min-h-screen p-6 font-sans">
@@ -87,19 +216,114 @@ export default function ShopperSettings({ user }) {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Lock className="w-4 h-4 text-gray-500" />
-                  <span>Change Password</span>
+              <div className='pb-3 border-b border-gray-200'>
+                <div className='flex items-center justify-between gap-3'>
+                  <div className='flex items-center gap-2 text-gray-700'>
+                    <Lock className='w-4 hh-4 text-gray-500'/>
+                    <span>Change Password</span>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  disabled
-                  className="text-[11px] font-semibold text-gray-400 cursor-not-allowed"
-                >
-                  Not available yet
+
+                <button type='button' onClick={openPasswordForm} disabled={showPasswordForm}
+                  className='text-[11px] font-semibold text-[#006e00] disabled:opacity-50'>
+                    Change 
                 </button>
               </div>
+
+              {passwordError && (
+                <p role='alert' className='mt-3 text-red-700'>
+                  {passwordError}
+                </p>
+              )}
+
+              {passwordSuccess && (
+                <p role="status" className="mt-3 text-green-700">
+                  {passwordSuccess}
+                </p>
+              )}
+
+              {showPasswordForm && (
+                <form onSubmit={handlePasswordSubmit} className='mt-4'>
+                  <fieldset disabled={isChangingPassword} className='space-y-3'>
+                    <legend className='sr-only'>Change your password</legend>
+
+                    <div>
+                      <label htmlFor='current-password' className='block mb-1'>Current password</label>
+                      <input id='current-password'
+                        name='current_password'
+                        type={passwordInputType}
+                        autoComplete='current-password'
+                        value={currentPassword}
+                        onChange={handleCurrentPasswordChange}
+                        required
+                        className='w-full rounded-lg border border-gray-300 px-3 py-2'
+                        />
+                    </div>
+
+                    <div>
+                      <label htmlFor="new-password" className="block mb-1">
+                        New password
+                      </label>
+                      <input id="new-password"
+                        name="password"
+                        type={passwordInputType}
+                        autoComplete="new-password"
+                        value={newPassword}
+                        onChange={handleNewPasswordChange}
+                        required
+                        minLength={8}
+                        maxLength={72}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="confirm-password" className="block mb-1">
+                        Confirm new password
+                      </label>
+                      <input id="confirm-password"
+                        name="password_confirmation"
+                        type={passwordInputType}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={handleConfirmPasswordChange}
+                        required
+                        minLength={8}
+                        maxLength={72}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 text-xs font-semibold text-[#006e00]">
+                         <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={togglePasswordVisibility} 
+                          className=''
+                        />
+                      {passwordInputType === 'password' && (
+                        <span>Show all passwords</span>
+                      )}
+
+                      {passwordInputType === 'text' && (
+                        <span>Hide all passwords</span>
+                      )}
+                    </label>
+                   
+                    <p className="text-gray-500"> Use at least 8 characters.</p>
+
+                    <div className="flex justify-end gap-3">
+                      <button type="button" onClick={cancelPasswordChange} className="rounded-lg border border-gray-300 px-3 py-2">
+                        Cancel
+                      </button>
+
+                      <button type="submit" className="rounded-lg bg-[#006e00] px-3 py-2 text-white">
+                        {isChangingPassword && <span>Saving...</span>}
+                        {!isChangingPassword && <span>Save password</span>}
+                      </button>
+                    </div>
+                  </fieldset>
+                </form>
+              )}
 
               <div className="flex items-center justify-between gap-3 pt-0.5">
                 <div className="flex items-center gap-2 text-gray-700">

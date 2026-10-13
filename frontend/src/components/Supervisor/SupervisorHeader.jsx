@@ -5,7 +5,9 @@ import { useSupervisor } from './SupervisorContext'
 
 export function SupervisorHeader({ onToggleSidebar, cartCount = 1, unreadCount = 0 }) {
   const navigate = useNavigate()
-  const { supervisorPath } = useSupervisor()
+  const { profile, supervisorPath } = useSupervisor()
+
+  const fullName = profile.firstName + ' ' + profile.lastName
 
   return (
     <header className="flex items-center gap-4 border-b border-slate-200 bg-white px-6 py-3">
@@ -44,7 +46,8 @@ export function SupervisorHeader({ onToggleSidebar, cartCount = 1, unreadCount =
         onClick={() => navigate(supervisorPath('profile'))}
         className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-slate-700"
       >
-        <UserRound size={16} /> Supervisor
+        <UserRound size={16} />
+        <span>{fullName}</span>
       </button>
     </header>
   )

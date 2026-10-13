@@ -7,13 +7,17 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
-    ->middleware('auth')
-    ->name('verification.notice');
-
-Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+Route::get('/email/verify', [EmailVerificationController::class,'notice',])
     ->middleware([
         'auth',
+        'role:shopper',
+    ])
+    ->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', [ EmailVerificationController::class,'verify',])
+    ->middleware([
+        'auth',
+        'role:shopper',
         'signed',
         'throttle:6,1,email-verify:',
     ])

@@ -123,7 +123,6 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
     ['Email address', user.email],
     ['Phone number', profile.phone_number || 'Not provided'],
     ['Address', profile.address || 'Not provided'],
-    ['Account role', user.role?.name || 'Shopper'],
     [
       'Email verification',
       user.email_verified_at ? 'Verified' : 'Not verified',
@@ -267,8 +266,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
         </section>
 
         <p className="text-xs text-gray-500">
-          Password changes and account activation/deactivation will be added in
-          their dedicated batches.
+          You can update your first name, last name, and address here.
         </p>
       </div>
     </div>

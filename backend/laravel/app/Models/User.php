@@ -58,4 +58,36 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(Profile::class, 'user_id', 'id');
     }
+
+    public function accountData(): array
+    {
+        $this->loadMissing(['role', 'profile']);
+
+        if ($this->role && $this->role->slug === 'supervisor') {
+            $profileData = null;
+        
+            if ($this->profile) {
+                $profileData = [
+                    'first_name' => $this->profile->first_name,
+                    'last_name' => $this->profile->last_name,
+                    'phone_number' => $this->profile->phone_number,
+                ];
+            }
+
+            return [
+                'id' => $this->id,
+                'email' => $this->email,
+                'role' => ['name' => $this->role->name, 'slug' => $this->role->slug,],
+                'profile' => $profileData,
+            ];
+
+        }
+
+        $data = $this->toArray();
+        if ($this->role && $this->role->slug === 'inventory_worker') {
+            unset($data['email_verified_at']);
+        }
+
+        return $data;
+    }
 }
