@@ -11,6 +11,7 @@ const navigationItems = [
   { label: "Submit Stock Update", href: "/inventory/stock-update", icon: "upload" },
   { label: "Supervisor Notification", href: "/inventory/notifications", icon: "user" },
   { label: "Activity Log", href: "/inventory/activity", icon: "activity" },
+  { label: "Profile", href: "/inventory/profile", icon: "user" },
 ];
 
 function NavIcon({ name }) {

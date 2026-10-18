@@ -9,6 +9,7 @@ import Register from '../pages/shopper/Register';
 import ShopperDashboard from '../pages/shopper/ShopperDashboard';
 
 import InventoryDashboard from '../pages/inventory/InventoryDashboard';
+import InventoryProfile from '../pages/inventory/InventoryProfile';
 import ProductManagement from '../pages/inventory/ProductManagement';
 import StockManagement from '../pages/inventory/StockManagement';
 import StockVerificationRequests from '../pages/inventory/StockVerificationRequests';
@@ -41,6 +42,7 @@ function AppRoutes() {
 
       <Route element={<ProtectedRoute allowedRoles={['inventory_worker']}/>}>
         <Route path="/inventory/dashboard" element={<InventoryDashboard />} />
+        <Route path="/inventory/profile" element={<InventoryProfile />} />
         <Route path="/inventory/products" element={<ProductManagement />} />
         <Route path="/inventory/stock" element={<StockManagement />} />
         <Route path="/inventory/verifications" element={<StockVerificationRequests />} />

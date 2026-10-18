@@ -1,19 +1,19 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  KeyRound, 
-  Package, 
-  CircleDollarSign, 
-  Ban, 
-  FileBarChart2, 
-  Settings as SettingsIcon, 
-  LogOut, 
-  Search, 
-  Bell, 
-  Menu,
-  ChevronDown
-} from 'lucide-react';
+import {
+  NavLink,
+  useNavigate,
+  useOutletContext
+} from 'react-router-dom';
 
+import {
+  LayoutDashboard,
+  KeyRound,
+  Package,
+  CircleDollarSign,
+  Ban,
+  FileBarChart2,
+  LogOut,
+  UserRound
+} from 'lucide-react';
 import { logout } from '../../services/api';
 
 const navItems = [
@@ -27,6 +27,20 @@ const navItems = [
 
 export default function AdminLayout({ children }) {
   const navigate = useNavigate();
+    const { user } = useOutletContext();
+
+  let fullName = 'Admin';
+
+  if (user.profile) {
+    const firstName = user.profile.first_name || '';
+    const lastName = user.profile.last_name || '';
+
+    const accountName = (firstName + ' ' + lastName).trim();
+
+    if (accountName !== '') {
+      fullName = accountName;
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -84,20 +98,16 @@ export default function AdminLayout({ children }) {
         <div className="p-4 border-t border-slate-100 space-y-1">
           <NavLink
             to="/admin/settings"
-            className={({ isActive }) =>
-              `w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-[#0E5C2F] text-white shadow-sm font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`
-            }
+            className={function (linkState) {
+              if (linkState.isActive) {
+                return "flex w-full items-center gap-3.5 rounded-xl bg-[#0E5C2F] px-4 py-2.5 text-sm font-semibold text-white";
+              }
+
+              return "flex w-full items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50";
+            }}
           >
-            {({ isActive }) => (
-              <>
-                <SettingsIcon size={18} className={isActive ? 'text-white' : 'text-slate-500'} />
-                Settings
-              </>
-            )}
+            <UserRound size={18} />
+            <span>Profile</span>
           </NavLink>
           <button
             onClick={handleLogout}
@@ -111,41 +121,24 @@ export default function AdminLayout({ children }) {
 
       <div className="pl-64 flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-4 flex-1 max-w-xl">
-            <button className="text-slate-500 hover:text-slate-700">
-              <Menu size={20} />
-            </button>
-            <div className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-              <input
-                type="text"
-                placeholder="Search for users, products, orders, reports..."
-                className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-5">
-            <button className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
-                6
-              </span>
-            </button>
-
-            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                alt="Admin"
-                className="w-9 h-9 rounded-full object-cover border border-slate-200"
-              />
-              <div className="text-left hidden sm:block">
-                <p className="text-xs font-bold text-slate-800 leading-tight">Admin</p>
-                <p className="text-[11px] text-slate-400">Administrator</p>
+                      <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
+              <div
+                aria-hidden="true"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-400"
+              >
+                <UserRound size={20} />
               </div>
-              <ChevronDown size={14} className="text-slate-400 ml-1" />
+
+              <div className="hidden text-left sm:block">
+                <p className="max-w-40 truncate text-xs font-bold leading-tight text-slate-800">
+                  {fullName}
+                </p>
+
+                <p className="text-[11px] text-slate-400">
+                  {user.role.name}
+                </p>
+              </div>
             </div>
-          </div>
         </header>
 
         <main className="flex-1 p-8">

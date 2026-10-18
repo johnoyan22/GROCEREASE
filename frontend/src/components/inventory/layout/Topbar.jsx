@@ -1,5 +1,20 @@
+import { Link } from "react-router-dom";
+import { UserRound } from "lucide-react";
+
 // Shared top navigation for Inventory Worker pages.
-function Topbar({ onMenuClick }) {
+function Topbar({ onMenuClick, user }) {
+  let fullName = "Inventory Worker";
+
+  if (user.profile) {
+    const firstName = user.profile.first_name || "";
+    const lastName = user.profile.last_name || "";
+
+    const accountName = (firstName + " " + lastName).trim();
+
+    if (accountName !== "") {
+      fullName = accountName;
+    }
+  }
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-3 sm:px-6">
       {/* Left: Hamburger Toggle & Search Bar */}
@@ -46,18 +61,25 @@ function Topbar({ onMenuClick }) {
         </button>
 
         {/* Profile Card */}
-        <div className="flex items-center gap-2 border-l border-gray-200 pl-3 sm:gap-3 sm:pl-4">
-          <div className="w-8 h-8 rounded-full bg-amber-200 overflow-hidden flex items-center justify-center text-xs font-bold text-amber-800">
-            JD
-          </div>
-          <div className="hidden text-left md:block">
-            <p className="text-xs font-bold text-gray-800 leading-none">Juan Dela Cruz</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Inventory Worker</p>
-          </div>
-          <svg className="hidden h-4 w-4 cursor-pointer text-gray-400 sm:block" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+          <Link
+            to="/inventory/profile"
+            aria-label="Open your account"
+            title={fullName}
+            className="flex items-center gap-2 border-l border-gray-200 pl-3 sm:gap-3 sm:pl-4"
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-800">
+              <UserRound size={18} />
+            </div>
+
+            <div className="hidden text-left md:block">
+              <p className="max-w-40 truncate text-xs font-bold leading-none text-gray-800">
+                {fullName}
+              </p>
+              <p className="mt-0.5 text-[10px] text-gray-400">
+                Inventory Worker
+              </p>
+            </div>
+          </Link>
       </div>
     </header>
   );

@@ -50,3 +50,19 @@ Route::put('/supervisor/password', [ShopperProfileController::class, 'updatePass
         'throttle:6,1,supervisor-password:',
     ])
     ->name('supervisor.password.update');
+
+Route::put('/inventory/password', [ShopperProfileController::class, 'updatePassword'])
+    ->middleware([
+        'auth:sanctum',
+        'role:inventory_worker',
+        'throttle:6,1,inventory-password:',
+    ])
+    ->name('inventory.password.update');
+
+Route::put('/admin/password', [ShopperProfileController::class, 'updatePassword'])
+    ->middleware([
+        'auth:sanctum',
+        'role:admin',
+        'throttle:6,1,admin-password:',
+    ])
+    ->name('admin.password.update');

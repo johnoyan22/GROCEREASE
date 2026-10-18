@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import Topbar from "./Topbar";
 import Sidebar from "./Sidebar";
 
 function InventoryLayout({ children, activePage = "Dashboard" }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user } = useOutletContext();
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-800">
@@ -23,7 +25,7 @@ function InventoryLayout({ children, activePage = "Dashboard" }) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenuClick={() => setIsSidebarOpen(true)} />
+        <Topbar user={user} onMenuClick={() => setIsSidebarOpen(true)}/>
 
         <main className="min-w-0 flex-1 p-4 sm:p-5 lg:p-6">
           {children}

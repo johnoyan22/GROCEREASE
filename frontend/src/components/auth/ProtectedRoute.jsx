@@ -81,7 +81,7 @@ function ProtectedRoute({ allowedRoles, requireVerifiedEmail = false }) {
     return <Navigate to="/verify-email" replace />;
   }
 
-  return <Outlet />;
+  return <Outlet context={{ user: user}} />;
 }
 
 export default ProtectedRoute;

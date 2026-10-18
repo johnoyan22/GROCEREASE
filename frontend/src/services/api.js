@@ -143,3 +143,35 @@ export async function changeSupervisorPassword(details) {
     }),
   });
 }
+
+export async function changeInventoryPassword(details) {
+  const xsrfToken = await getXsrfToken();
+
+  return sendRequest('/inventory/password', {
+    method: 'PUT',
+    headers: {
+      'X-XSRF-TOKEN': xsrfToken,
+    },
+    body: JSON.stringify({
+      current_password: details.current_password,
+      password: details.password,
+      password_confirmation: details.password_confirmation,
+    }),
+  });
+}
+
+export async function changeAdminPassword(details) {
+  const xsrfToken = await getXsrfToken();
+
+  return sendRequest('/admin/password', {
+    method: 'PUT',
+    headers: {
+      'X-XSRF-TOKEN': xsrfToken,
+    },
+    body: JSON.stringify({
+      current_password: details.current_password,
+      password: details.password,
+      password_confirmation: details.password_confirmation,
+    }),
+  });
+}
