@@ -66,3 +66,5 @@ Route::put('/admin/password', [ShopperProfileController::class, 'updatePassword'
         'throttle:6,1,admin-password:',
     ])
     ->name('admin.password.update');
+
+require __DIR__.'/habel.php';
