@@ -12,6 +12,7 @@ import InventoryDashboard from '../pages/inventory/InventoryDashboard';
 import InventoryProfile from '../pages/inventory/InventoryProfile';
 import ProductManagement from '../pages/inventory/ProductManagement';
 import StockManagement from '../pages/inventory/StockManagement';
+import StoreOrders from '../pages/inventory/StoreOrders';
 import StockVerificationRequests from '../pages/inventory/StockVerificationRequests';
 import LowStockMonitoring from '../pages/inventory/LowStockMonitoring';
 import SubmitStockUpdate from '../pages/inventory/SubmitStockUpdate';
@@ -26,6 +27,7 @@ import StaffManagement from '../pages/admin/StaffManagement';
 import StoreManagement from '../pages/admin/StoreManagement';
 import FinancialSetup from '../pages/admin/FinancialSetup';
 import CopManagement from '../pages/admin/CopManagement';
+import TransactionRecords from '../components/orders/TransactionRecords';
 import ReportModule from '../pages/admin/ReportModule';
 import Settings from '../pages/admin/Settings';
 
@@ -46,6 +48,7 @@ function AppRoutes() {
         <Route path="/inventory/profile" element={<InventoryProfile />} />
         <Route path="/inventory/products" element={<ProductManagement />} />
         <Route path="/inventory/stock" element={<StockManagement />} />
+        <Route path="/inventory/orders" element={<StoreOrders />} />
         <Route path="/inventory/verifications" element={<StockVerificationRequests />} />
         <Route path="/inventory/low-stock" element={<LowStockMonitoring />} />
         <Route path="/inventory/stock-update" element={<SubmitStockUpdate />} />
@@ -65,6 +68,7 @@ function AppRoutes() {
         <Route path="/admin/roles" element={<AdminLayout><RoleManagement /></AdminLayout>} />
         <Route path="/admin/financial" element={<AdminLayout><FinancialSetup /></AdminLayout>} />
         <Route path="/admin/cop" element={<AdminLayout><CopManagement /></AdminLayout>} />
+        <Route path="/admin/transactions" element={<AdminLayout><TransactionRecords role="admin" /></AdminLayout>} />
         <Route path="/admin/reports" element={<AdminLayout><ReportModule /></AdminLayout>} />
         <Route path="/admin/settings" element={<AdminLayout><Settings /></AdminLayout>} />
       </Route>

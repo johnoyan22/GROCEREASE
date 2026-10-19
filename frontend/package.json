@@ -11,11 +11,18 @@
     "test:staff": "node --test tests/admin-staff-api.test.mjs",
     "test:stores": "node --test tests/admin-stores-api.test.mjs",
     "test:supervisor-staff": "node --test tests/supervisor-staff-api.test.mjs",
+    "test:stock": "node --test tests/stock-api.test.mjs",
+    "test:shopper": "node --test tests/shopper-cart.test.mjs",
+    "test:checkout": "node --test tests/checkout-orders.test.mjs",
+    "test:workers": "node --test tests/store-workers.test.mjs",
+    "test:pickup": "node --test tests/pickup-api.test.mjs",
+    "test:transactions": "node --test tests/transaction-workflow-api.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "lucide-react": "^1.48.0",
+    "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",

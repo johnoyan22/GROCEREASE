@@ -1,150 +1,37 @@
-import { 
-  ShoppingBag, 
-  AlertTriangle, 
-  ShieldAlert, 
-  DollarSign, 
-  Filter, 
-  Lock, 
-  Ban 
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { correctCopStrike, getCopStrikes } from '../../services/api';
+
+function Correction({ strike, onSaved }) {
+  const [reason, setReason] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const busy = useRef(false);
+  async function correct(event) {
+    event.preventDefault();
+    if (busy.current || !window.confirm('Void this erroneous strike? The original record and your correction reason will remain in the audit history.')) return;
+    busy.current = true; setPending(true); setError('');
+    try { const result = await correctCopStrike(strike.id, reason.trim()); onSaved(result.message); }
+    catch (failure) { setError(Object.values(failure.errors ?? {}).flat().join(' ') || failure.message); }
+    finally { busy.current = false; setPending(false); }
+  }
+  if (strike.voided_at) return <p className="text-xs text-gray-600">Corrected by User #{strike.voided_by_user_id}: {strike.correction_reason}</p>;
+  return <form onSubmit={correct} className="space-y-2"><label className="block text-xs">Correction reason<input required maxLength="500" disabled={pending} value={reason} onChange={function (event) { setReason(event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm" /></label><button disabled={pending} className="rounded-lg border border-amber-500 px-3 py-2 text-xs text-amber-900">Correct erroneous strike</button>{error && <p role="alert" className="text-xs text-red-700">{error}</p>}</form>;
+}
 
 export default function CopManagement() {
-  const shoppers = [
-    { name: 'Maria Santos', id: 'COP-100512', amount: '₱2,450.00', date: 'May 16, 2025', count: 0, status: 'Active' },
-    { name: 'John Reyes', id: 'COP-100498', amount: '₱3,120.00', date: 'May 14, 2025', count: 1, status: 'Warning' },
-    { name: 'Liza Gomez', id: 'COP-10047', amount: '₱1,980.00', date: 'May 11, 2025', count: 2, status: 'Restricted 30 Days' },
-    { name: 'David Garcia', id: 'COP-100452', amount: '₱4,175.00', date: 'May 09, 2025', count: 2, status: 'Restricted 30 Days' },
-    { name: 'Mark Dela Cruz', id: 'COP-100401', amount: '₱5,890.00', date: 'May 05, 2025', count: 3, status: 'Permanent Restriction' },
-  ];
-
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">COP Management</h1>
-        <p className="text-xs text-slate-500">Monitor failure-to-claim records and enforce account restrictions for Cash on Pickup (COP) orders.</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <CopCard icon={ShoppingBag} label="Total COP Orders Today" value="214" sub="↑ 18.7% vs yesterday" />
-        <CopCard icon={AlertTriangle} label="Failed Claims This Week" value="23" sub="↓ 8.0% vs last week" isRed />
-        <CopCard icon={ShieldAlert} label="Restricted Accounts" value="12" sub="↑ 3 vs last week" isOrange />
-        <CopCard icon={DollarSign} label="Max COP Order Policy" value="₱15,000.00" sub="Per order limit" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-slate-800">Failure-to-Claim Monitoring</h3>
-            <button className="flex items-center gap-1.5 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
-              <Filter size={14} /> Filter
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="text-slate-400 border-b border-slate-100">
-                  <th className="pb-3 font-semibold">Shopper</th>
-                  <th className="pb-3 font-semibold">Order ID</th>
-                  <th className="pb-3 font-semibold">Amount</th>
-                  <th className="pb-3 font-semibold">Last Date</th>
-                  <th className="pb-3 font-semibold text-center">Failed</th>
-                  <th className="pb-3 font-semibold">Status</th>
-                  <th className="pb-3 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {shoppers.map((s, i) => (
-                  <tr key={i} className="hover:bg-slate-50/50">
-                    <td className="py-3 font-semibold text-slate-700">{s.name}</td>
-                    <td className="py-3 text-slate-500">{s.id}</td>
-                    <td className="py-3 font-bold">{s.amount}</td>
-                    <td className="py-3 text-slate-500">{s.date}</td>
-                    <td className="py-3 text-center font-bold">{s.count}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        s.status === 'Active' ? 'bg-emerald-50 text-emerald-700' :
-                        s.status === 'Warning' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
-                      }`}>
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50">
-                        View History
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="font-bold text-sm text-slate-800 mb-3">COP Restriction Rules</h3>
-            <div className="space-y-3 text-xs">
-              <RuleItem icon={AlertTriangle} title="Warning Stage" desc="After 1 failed claim: User receives warning." tone="amber" />
-              <RuleItem icon={Lock} title="Temporary Restriction" desc="After 2 failed claims: 30 days blocked from COP." tone="orange" />
-              <RuleItem icon={Ban} title="Permanent Restriction" desc="After 3+ failed claims: Permanently restricted." tone="red" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="font-bold text-sm text-slate-800 mb-3">Recent COP Activity</h3>
-            <div className="space-y-3 text-xs">
-              <ActivityItem text="Warning issued to Liza Gomez" time="9:21 AM" />
-              <ActivityItem text="John Reyes restricted for 30 days" time="9:16 AM" />
-              <ActivityItem text="Restriction lifted for Ana Villanueva" time="8:45 AM" />
-              <ActivityItem text="Mark Dela Cruz permanently restricted" time="8:32 AM" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CopCard({ icon: Icon, label, value, sub, isRed, isOrange }) {
-  return (
-    <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-        isRed ? 'bg-red-50 text-red-600' : isOrange ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
-      }`}>
-        <Icon size={22} />
-      </div>
-      <div>
-        <p className="text-[11px] text-slate-400 font-medium">{label}</p>
-        <p className="text-xl font-bold text-slate-800 leading-tight">{value}</p>
-        <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
-      </div>
-    </div>
-  );
-}
-
-function RuleItem({ icon: Icon, title, desc, tone }) {
-  const tones = {
-    amber: 'text-amber-600 bg-amber-50',
-    orange: 'text-orange-600 bg-orange-50',
-    red: 'text-red-600 bg-red-50',
-  };
-  return (
-    <div className="flex gap-3 p-2.5 rounded-xl border border-slate-100">
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${tones[tone]}`}><Icon size={14} /></div>
-      <div>
-        <p className="font-bold text-slate-800">{title}</p>
-        <p className="text-slate-400 text-[11px] leading-tight mt-0.5">{desc}</p>
-      </div>
-    </div>
-  );
-}
-
-function ActivityItem({ text, time }) {
-  return (
-    <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-      <span className="text-slate-700 font-medium">{text}</span>
-      <span className="text-[10px] text-slate-400">{time}</span>
-    </div>
-  );
+  const [rows, setRows] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [version, setVersion] = useState(0);
+  useEffect(function () {
+    const controller = new AbortController();
+    let active = true;
+    getCopStrikes({ signal: controller.signal }).then(function (result) { if (active) { setRows(result.strikes); setAccounts(result.accounts); setLoading(false); } })
+      .catch(function (failure) { if (active && failure.name !== 'AbortError') { setError(failure.message); setLoading(false); } });
+    return function () { active = false; controller.abort(); };
+  }, [version]);
+  function reload(message = '') { setRows([]); setAccounts([]); setLoading(true); setError(''); setNotice(message); setVersion(function (value) { return value + 1; }); }
+  return <div className="space-y-5"><h1 className="text-2xl font-bold">Cash on Pickup monitoring</h1><p className="text-sm text-gray-600">Maximum COP total: ₱1,500. First No-Show: warning. Second: 30-day COP restriction. Third: permanent COP restriction. The Shopper account remains active. Paid unclaimed orders do not receive COP strikes.</p><button type="button" onClick={function () { reload(); }} className="rounded-lg border border-green-700 px-4 py-2 text-sm text-green-800">Refresh records</button>{notice && <p role="status" className="text-sm text-green-800">{notice}</p>}{loading && <p role="status">Loading actual COP records...</p>}{error && <p role="alert" className="text-sm text-red-700">{error}</p>}{!loading && !error && accounts.length > 0 && <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-4">{accounts.map(function (account) { return <p key={account.user_id} className="text-sm">{account.email} · {account.cop.strike_count} active strikes · {account.cop.allowed ? 'COP available' : account.cop.permanently_disabled ? 'COP permanently disabled' : 'COP disabled until '+new Date(account.cop.disabled_until).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}</p>; })}</div>}{!loading && !error && <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white p-4"><table className="w-full min-w-[750px] text-left text-sm"><thead><tr className="border-b border-gray-200"><th scope="col" className="py-3">Shopper</th><th scope="col">Store / order</th><th scope="col">Strike at issue</th><th scope="col">Recorded at (UTC)</th><th scope="col" className="w-64">Audit correction</th></tr></thead><tbody>{rows.map(function (strike) { return <tr key={strike.id} className="border-b border-gray-100"><td className="py-4 pr-3">{strike.email}<p className="text-xs text-gray-500">User #{strike.shopper_user_id}</p></td><td className="pr-3">{strike.store_name}<p>Order #{strike.order_id}</p></td><td>{strike.strike_number_at_issue} · {strike.voided_at ? 'Corrected' : 'Active record'}</td><td>{strike.issued_at}</td><td className="py-4"><Correction strike={strike} onSaved={reload} /></td></tr>; })}{rows.length === 0 && <tr><td colSpan="5" className="py-8 text-center text-gray-500">No COP strikes have been recorded.</td></tr>}</tbody></table></div>}</div>;
 }

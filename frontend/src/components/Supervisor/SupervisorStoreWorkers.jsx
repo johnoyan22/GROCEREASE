@@ -5,6 +5,7 @@ import useSupervisorStaff from '../../hooks/useSupervisorStaff';
 import { assignSupervisorStaff } from '../../services/api';
 import StoreSelector from '../inventory/layout/StoreSelector';
 import StaffAssignmentDialog from './StaffAssignmentDialog';
+import StorePersonnel from './StorePersonnel';
 import { Badge, StatCard } from './SupervisorUI';
 
 function StaffIdentity({ staff }) {
@@ -93,11 +94,7 @@ export function SupervisorStoreWorkers() {
         <p className="text-xs text-slate-500">Inventory Worker accounts are created and approved by Admin. Supervisors assign available accounts to their own store here.</p>
       </>}
       {!loading && !error && store && category === 'picking' && (
-        <section aria-labelledby="pickers-packers-title" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-center gap-3"><h2 id="pickers-packers-title" className="text-lg font-semibold">Pickers &amp; Packers</h2><Badge tone="amber">Pending implementation</Badge></div>
-          <p className="mt-3 max-w-2xl text-sm text-slate-600">Picker and packer registration and management will be available here for your store. This functionality is not available yet.</p>
-          <p className="mt-2 max-w-2xl text-sm text-slate-500">Pickers and packers are store personnel without login accounts. Supervisors will manage their store records here once this feature is implemented.</p>
-        </section>
+        <StorePersonnel expectedStoreId={store.store_id} />
       )}
       {selected && store && <StaffAssignmentDialog staff={selected} store={store} onClose={() => setSelected(null)} onSave={saveAssignment} onRefresh={refresh} />}
     </div>

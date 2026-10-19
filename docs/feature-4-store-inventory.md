@@ -224,12 +224,13 @@ await checkApi('/admin/staff/9/store-assignment', 'PUT', { store_id: 2 });
 
 ## Later stock/worker integration
 
-Stock requests must reference store_inventory_id and the submitting user's store.
-Supervisor review must match the same store and apply an approved quantity change
-only once. Request actions/lifecycle and hard/soft reservation math remain
-unresolved. Workers and order delegation will use store_id and the Supervisor's
-users.id; no picker/packer credentials or authentication role will be introduced.
+Stock accounting is now confirmed: physical on-hand includes reservations, soft
+stock is reserved units, and available stock is their difference. Absolute physical
+count corrections require same-store Supervisor approval and stale checks.
+See `feature-5-stock-management.md` for implementation and acceptance instructions.
+Workers and delegation will use store_id and the Supervisor's users.id; no picker
+credentials or authentication role will be introduced.
 
-After browser verification, provide the focused code-study lesson and team
-completion report. Proceed only when the user explicitly says:
-FEATURE VERIFIED — PROCEED TO NEXT FEATURE.
+The October 19 autonomous sprint instructions supersede the earlier per-feature
+pause: continue after safe automated checks, keep browser acceptance separate,
+and ask before working-database migrations or unresolved business rules.

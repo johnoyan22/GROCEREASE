@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\InventoryAvailabilityLog;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreInventory;
@@ -13,6 +14,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -55,11 +57,12 @@ class StoreInventoryController extends Controller
                     'hard_stock_qty' => 0,
                     'soft_stock_qty' => 0,
                 ]);
+                $this->recordAvailability($item, $request->user(), null);
 
                 return response()->json([
                     'message' => 'Product added to your store.',
                     'store' => $this->storeData($store),
-                    'inventory' => $this->itemData($item->load('product')),
+                    'inventory' => $this->itemData($item->refresh()->load('product')),
                 ], 201);
             });
         } catch (UniqueConstraintViolationException) {
@@ -84,12 +87,16 @@ class StoreInventoryController extends Controller
                     $this->productRules($store, $product)
                 ));
 
+                $previousStatus = $inventory->status;
                 $product->update($this->metadata($validated));
                 $inventory->fill([
                     'selling_price' => $validated['selling_price'],
                     'status' => $validated['status'],
                 ]);
                 $inventory->touch();
+                if ($previousStatus !== $inventory->status) {
+                    $this->recordAvailability($inventory, $request->user(), $previousStatus);
+                }
 
                 return response()->json([
                     'message' => 'Your store product has been saved.',
@@ -108,6 +115,22 @@ class StoreInventoryController extends Controller
     {
         return StoreInventory::forStore($store->store_id)
             ->whereHas('product', fn ($query) => $query->forStore($store->store_id));
+    }
+
+    private function recordAvailability(StoreInventory $inventory, User $user, ?string $previousStatus): void
+    {
+        // The surrounding transaction also rolls back product edits if the audit cannot be saved.
+        if (! Schema::hasTable('inventory_availability_logs')) {
+            abort(503, 'Stock reporting is awaiting database setup. Please contact your administrator.');
+        }
+
+        InventoryAvailabilityLog::create([
+            'store_id' => $inventory->store_id,
+            'store_inventory_id' => $inventory->store_inventory_id,
+            'changed_by_user_id' => $user->id,
+            'previous_status' => $previousStatus,
+            'new_status' => $inventory->status,
+        ]);
     }
 
     private function withAssignedStore(Request $request, Closure $action, bool $allowSupervisor = false): JsonResponse
@@ -143,7 +166,7 @@ class StoreInventoryController extends Controller
         return array_fill_keys([
             'store_id', 'user_id', 'role', 'role_id', 'assigned_by_user_id',
             'store_inventory_id', 'product_id', 'hard_stock_qty', 'soft_stock_qty',
-            'stock_quantity', 'base_cost', 'base_price',
+            'stock_quantity', 'base_cost', 'base_price', 'stock_version', 'max_per_order', 'low_stock_threshold',
         ], ['prohibited']);
     }
 
@@ -203,6 +226,11 @@ class StoreInventoryController extends Controller
             'selling_price' => $item->selling_price,
             'hard_stock_qty' => $item->hard_stock_qty,
             'soft_stock_qty' => $item->soft_stock_qty,
+            'available_stock' => $item->availableStock(),
+            'max_per_order' => $item->max_per_order,
+            'low_stock_threshold' => $item->low_stock_threshold,
+            'is_low_stock' => $item->isLowStock(),
+            'stock_version' => $item->stock_version,
             'status' => $item->status,
             'updated_at' => $item->updated_at?->toIso8601String(),
         ]);

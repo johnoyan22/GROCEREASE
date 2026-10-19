@@ -25,6 +25,7 @@ const navItems = [
   { path: '/admin/roles', label: 'Role Management', icon: KeyRound },
   { path: '/admin/financial', label: 'Financial Setup', icon: CircleDollarSign },
   { path: '/admin/cop', label: 'COP Management', icon: Ban },
+  { path: '/admin/transactions', label: 'Transactions', icon: CircleDollarSign },
   { path: '/admin/reports', label: 'Report Module', icon: FileBarChart2 },
 ];
 

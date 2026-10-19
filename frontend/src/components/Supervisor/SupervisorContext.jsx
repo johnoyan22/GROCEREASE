@@ -6,11 +6,7 @@
 import { createContext, useContext, useMemo, useEffect, useState } from 'react'
 import {
   initialNotifications,
-  initialOrders,
-  initialPayments,
   initialReturns,
-  initialStockRequests,
-  initialWorkers,
   systemConfigDefault,
 } from './SupervisorData'
 
@@ -19,18 +15,7 @@ import { getCurrentUser } from '../../services/api'
 
 const SupervisorContext = createContext(null)
 
-const nextStatus = {
-  'Pending Assignment': 'Preparing',
-  Preparing: 'Ready for Pickup',
-  'Ready for Pickup': 'Completed',
-  Completed: 'Completed',
-}
-
 export function SupervisorProvider({ children, basePath = '/supervisor', loginPath = '/login' }) {
-  const [orders, setOrders] = useState(initialOrders)
-  const [workers, setWorkers] = useState(initialWorkers)
-  const [stockRequests, setStockRequests] = useState(initialStockRequests)
-  const [payments, setPayments] = useState(initialPayments)
   const [returns, setReturns] = useState(initialReturns)
   const [notifications, setNotifications] = useState(initialNotifications)
   const [config, setConfig] = useState(systemConfigDefault)
@@ -102,37 +87,6 @@ export function SupervisorProvider({ children, basePath = '/supervisor', loginPa
     setAccountLoadVersion((version) => version + 1)
   }
 
-  function updateOrderStatus(orderId) {
-    setOrders((current) =>
-      current.map((order) => (order.id === orderId ? { ...order, status: nextStatus[order.status] || order.status } : order)),
-    )
-  }
-
-  function assignWorker(orderId, workerId) {
-    setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, workerId } : order)))
-    setWorkers((current) =>
-      current.map((worker) => (worker.id === workerId ? { ...worker, availability: 'Busy', assignedOrderId: orderId } : worker)),
-    )
-  }
-
-  function approveStock(requestId) {
-    setStockRequests((current) => current.map((item) => (item.id === requestId ? { ...item, status: 'Approved' } : item)))
-  }
-
-  function reviewStock(requestId) {
-    setStockRequests((current) => current.map((item) => (item.id === requestId ? { ...item, status: 'Needs Review' } : item)))
-  }
-
-  function verifyPayment(paymentId) {
-    setPayments((current) =>
-      current.map((item) =>
-        item.id === paymentId
-          ? { ...item, status: 'Successful', verifiedBy: `${profile.firstName?.[0] ?? 'S'}${profile.lastName?.[0] ?? '.'}` }
-          : item,
-      ),
-    )
-  }
-
   function updateReturnStatus(requestId, status) {
     setReturns((current) => current.map((item) => (item.id === requestId ? { ...item, status } : item)))
   }
@@ -160,26 +114,17 @@ export function SupervisorProvider({ children, basePath = '/supervisor', loginPa
       basePath,
       loginPath,
       supervisorPath,
-      orders,
-      workers,
-      stockRequests,
-      payments,
       returns,
       notifications,
       config,
       profile,
-      updateOrderStatus,
-      assignWorker,
-      approveStock,
-      reviewStock,
-      verifyPayment,
       updateReturnStatus,
       saveConfig,
       markNotificationRead,
       markAllNotificationsRead,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [basePath, loginPath, orders, workers, stockRequests, payments, returns, notifications, config, profile],
+    [basePath, loginPath, returns, notifications, config, profile],
   )
 
   if (isAccountLoading) {

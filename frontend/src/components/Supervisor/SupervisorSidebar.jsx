@@ -21,7 +21,7 @@ const navItems = [
   { key: 'workers', label: 'Store Workers', hint: 'Inventory, Pickers & Packers', icon: Users },
   { key: 'stock-approvals', label: 'Stock Approvals', icon: ClipboardList },
   { key: 'orders', label: 'Orders', hint: 'Active & History', icon: ShoppingCart },
-  { key: 'digital-payments', label: 'Digital Payments', icon: CreditCard },
+  { key: 'digital-payments', label: 'Transactions', icon: CreditCard },
   { key: 'sales-reports', label: 'Sales Reports', icon: Gauge },
   { key: 'return-refund', label: 'Return & Refund', icon: RotateCcw },
   { key: 'system-configuration', label: 'System Configuration', icon: Settings },

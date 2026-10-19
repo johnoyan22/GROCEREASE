@@ -6,6 +6,7 @@ const navigationItems = [
   { label: "Dashboard", href: "/inventory/dashboard", icon: "dashboard" },
   { label: "Product Management", href: "/inventory/products", icon: "products" },
   { label: "Stock Management", href: "/inventory/stock", icon: "stock" },
+  { label: "Store Orders", href: "/inventory/orders", icon: "clipboard" },
   { label: "Stock Verification Requests", href: "/inventory/verifications", icon: "clipboard" },
   { label: "Low Stock Monitoring", href: "/inventory/low-stock", icon: "warning" },
   { label: "Submit Stock Update", href: "/inventory/stock-update", icon: "upload" },

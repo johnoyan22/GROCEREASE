@@ -1,214 +1,170 @@
-import { useState } from 'react';
-import { X, Plus, Minus, ArrowLeft } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { getShopperProducts, getShopperStores } from '../../services/api';
+import { cartSummary, changeCartQuantity, maximumQuantity, readSavedCart } from '../../services/cart';
+import { clearCheckoutAttempt } from '../../services/checkout';
+import ShopperCheckout from './ShopperCheckout';
 
-const categories = [
-  { id: 1, name: 'Fruits', count: '4 Products', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80' },
-  { id: 2, name: 'Vegetables', count: '0 Products', image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=400&q=80' },
-  { id: 3, name: 'Dairy & Eggs', count: '0 Products', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=400&q=80' },
-  { id: 4, name: 'Beverages', count: '0 Products', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=400&q=80' },
-  { id: 5, name: 'Meat & Poultry', count: '0 Products', image: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=400&q=80' },
-  { id: 6, name: 'Household', count: '0 Products', image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=400&q=80' },
-];
+const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-const categoryProducts = {
-  Fruits: [
-    { id: 101, name: 'Fresh Bananas', price: 60, image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=300&q=80' },
-    { id: 102, name: 'Red Apples', price: 85, image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=300&q=80' },
-    { id: 103, name: 'Fresh Oranges', price: 70, image: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?auto=format&fit=crop&w=300&q=80' },
-    { id: 104, name: 'Green Grapes', price: 120, image: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?auto=format&fit=crop&w=300&q=80' },
-  ],
-  'Dairy & Eggs': [],
-};
+export default function ShopperBrowseProducts({ userId }) {
+  const [cart, setCart] = useState(function () { return readSavedCart(sessionStorage, userId); });
+  const [storeId, setStoreId] = useState(cart.store_id);
+  const [stores, setStores] = useState([]);
+  const [storesError, setStoresError] = useState('');
+  const [storesLoading, setStoresLoading] = useState(true);
+  const [catalog, setCatalog] = useState({ store: null, products: [], loading: Boolean(cart.store_id), error: '' });
+  const [version, setVersion] = useState(0);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [sort, setSort] = useState('name');
+  const [pendingStoreId, setPendingStoreId] = useState(null);
+  const [message, setMessage] = useState('');
+  const [checkoutCart, setCheckoutCart] = useState(null);
+  const summary = cartSummary(cart, catalog.products);
+  const categories = [...new Set(catalog.products.map(function (item) { return item.category; }))].sort();
+  const products = catalog.products.filter(function (item) {
+    return [item.product_name, item.sku, item.barcode, item.size].join(' ').toLowerCase().includes(search.toLowerCase())
+      && (!category || category === item.category);
+  }).sort(function (first, second) {
+    if (sort === 'price_low') return Number(first.selling_price) - Number(second.selling_price);
+    if (sort === 'price_high') return Number(second.selling_price) - Number(first.selling_price);
+    return first.product_name.localeCompare(second.product_name);
+  });
 
-const initialCart = [];
+  useEffect(function () {
+    const controller = new AbortController();
+    let active = true;
+    async function loadStores() {
+      try {
+        const result = await getShopperStores({ signal: controller.signal });
+        if (!Array.isArray(result.stores)) throw new Error('Unexpected store response.');
+        if (active) setStores(result.stores);
+      } catch (error) {
+        if (active && error.name !== 'AbortError') setStoresError(error.message);
+      } finally {
+        if (active) setStoresLoading(false);
+      }
+    }
+    loadStores();
+    return function () { active = false; controller.abort(); };
+  }, [version]);
 
-export default function ShopperBrowseProducts({ onCartChange }) {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [cartItems, setCartItems] = useState(initialCart);
+  useEffect(function () {
+    if (!storeId) return;
+    const controller = new AbortController();
+    let active = true;
+    async function loadProducts() {
+      try {
+        const result = await getShopperProducts(storeId, { signal: controller.signal });
+        if (result.store?.store_id !== storeId || !Array.isArray(result.products)) throw new Error('Unexpected store products response.');
+        if (active) setCatalog({ store: result.store, products: result.products, loading: false, error: '' });
+      } catch (error) {
+        if (active && error.name !== 'AbortError') setCatalog({ store: null, products: [], loading: false, error: error.message });
+      }
+    }
+    loadProducts();
+    return function () { active = false; controller.abort(); };
+  }, [storeId, version]);
 
-  const serviceCharge = 15;
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const total = subtotal + (cartItems.length > 0 ? serviceCharge : 0);
+  useEffect(function () {
+    try {
+      sessionStorage.setItem('grocerease-cart-' + userId, JSON.stringify(cart));
+    } catch {
+      // The in-memory cart still works when browser storage is unavailable.
+    }
+  }, [cart, userId]);
 
-  const addToCart = (product) => {
-    setCartItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      const updated = existing 
-        ? prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item)
-        : [...prev, { ...product, qty: 1 }];
-      if (onCartChange) onCartChange(updated);
-      return updated;
-    });
-  };
+  function refresh() {
+    setStoresError('');
+    setStoresLoading(true);
+    setCatalog({ store: null, products: [], loading: Boolean(storeId), error: '' });
+    setVersion(function (current) { return current + 1; });
+  }
 
-  const updateQuantity = (id, change) => {
-    setCartItems(prev => {
-      const updated = prev.map(item => {
-        if (item.id === id) {
-          const newQty = item.qty + change;
-          return newQty > 0 ? { ...item, qty: newQty } : item;
-        }
-        return item;
-      });
-      if (onCartChange) onCartChange(updated);
-      return updated;
-    });
-  };
+  function switchStore(nextId) {
+    setCart({ store_id: nextId, items: [] });
+    setStoreId(nextId);
+    setCatalog({ store: null, products: [], loading: true, error: '' });
+    setSearch('');
+    setCategory('');
+    setPendingStoreId(null);
+    setMessage('');
+  }
 
-  const removeItem = (id) => {
-    setCartItems(prev => {
-      const updated = prev.filter(item => item.id !== id);
-      if (onCartChange) onCartChange(updated);
-      return updated;
-    });
-  };
+  function selectStore(event) {
+    const nextId = Number(event.target.value);
+    if (!nextId || nextId === storeId) return;
+    if (cart.items.length > 0 && cart.store_id !== nextId) {
+      setPendingStoreId(nextId);
+    } else {
+      switchStore(nextId);
+    }
+  }
 
-  const currentProducts = selectedCategory ? (categoryProducts[selectedCategory.name] || []) : [];
+  function changeQuantity(product, quantity) {
+    try {
+      setCart(changeCartQuantity(cart, storeId, product, quantity));
+      setMessage('');
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  function removeItem(itemId) {
+    setCart({ store_id: cart.store_id, items: cart.items.filter(function (item) { return item.store_inventory_id !== itemId; }) });
+  }
+
+  const orderPlaced = useCallback(function (order, key) {
+    const clearedCart = { store_id: order.store_id, items: [] };
+    try {
+      // Clear the persisted cart before forgetting the retry key.
+      sessionStorage.setItem('grocerease-cart-' + userId, JSON.stringify(clearedCart));
+      clearCheckoutAttempt(sessionStorage, userId, key);
+    } catch {
+      // Retain the attempt if storage fails so a refresh can recover the original order.
+    }
+    setCart(clearedCart);
+  }, [userId]);
 
   return (
-    <main className="flex-1 overflow-y-auto p-6 bg-white">
-      <div className="flex gap-6 max-w-[1400px] mx-auto">
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              {selectedCategory ? (
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setSelectedCategory(null)}
-                    className="p-1 hover:bg-gray-100 rounded-lg text-gray-600 transition"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
-                  <div>
-                    <h1 className="text-base font-bold text-gray-900">{selectedCategory.name}</h1>
-                    <p className="text-xs text-gray-500">Showing products in {selectedCategory.name}</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <h1 className="text-base font-bold text-gray-900">Browse Products</h1>
-                  <p className="text-xs text-gray-500">Shops for a wide range Categories</p>
-                </>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span>Sort by:</span>
-              <select className="border border-gray-300 rounded px-2 py-1 bg-white text-xs font-medium focus:outline-none">
-                <option>Featured</option>
-                <option>Price: Low to High</option>
-                <option>Price: High to Low</option>
-              </select>
-            </div>
+    <main className="bg-gray-50 p-6">
+      <div className="mb-5 flex flex-col justify-between gap-4 md:flex-row">
+        <div><h1 className="text-2xl font-bold">Browse Store Products</h1><p className="mt-1 text-sm text-gray-600">Choose one store for your cart. Items are reserved only when an order is successfully placed.</p></div>
+        <button type="button" onClick={refresh} className="rounded-lg border border-green-700 bg-white px-4 py-2 text-sm text-green-800">Refresh products</button>
+      </div>
+      <label className="block text-sm font-semibold">Shop at<select value={storeId ?? ''} onChange={selectStore} disabled={storesLoading} className="mt-2 w-full rounded-lg border border-gray-300 bg-white p-3"><option value="">Choose an active store</option>{stores.map(function (store) { return <option key={store.store_id} value={store.store_id}>{store.store_name} - {store.address}</option>; })}</select></label>
+      {storesLoading && <p role="status" className="mt-3 text-sm">Loading stores...</p>}
+      {storesError && <p role="alert" className="mt-3 text-sm text-red-700">{storesError}</p>}
+      {!storesLoading && !storesError && stores.length === 0 && <p className="mt-3 text-sm">No active stores are available.</p>}
+      {pendingStoreId && <div role="alert" className="my-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm"><p>Switching stores clears your current cart. Continue?</p><div className="mt-3 flex gap-3"><button type="button" onClick={function () { switchStore(pendingStoreId); }} className="rounded-lg bg-green-700 px-4 py-2 text-white">Clear cart and switch</button><button type="button" onClick={function () { setPendingStoreId(null); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2">Keep current store</button></div></div>}
+      {catalog.loading && <p role="status" className="my-5">Loading store products...</p>}
+      {catalog.error && <p role="alert" className="my-5 text-red-700">{catalog.error}</p>}
+      {message && <p role="alert" className="my-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{message}</p>}
+      <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <section>
+          {catalog.store && <h2 className="mb-3 text-lg font-semibold">{catalog.store.store_name}</h2>}
+          {catalog.store && !catalog.loading && <div className="mb-4 grid gap-3 md:grid-cols-3"><input aria-label="Search store products" type="search" value={search} onChange={function (event) { setSearch(event.target.value); }} placeholder="Search name, SKU, barcode..." className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm" /><select aria-label="Product category" value={category} onChange={function (event) { setCategory(event.target.value); }} className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"><option value="">All categories</option>{categories.map(function (value) { return <option key={value}>{value}</option>; })}</select><select aria-label="Product sort order" value={sort} onChange={function (event) { setSort(event.target.value); }} className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"><option value="name">Name</option><option value="price_low">Price: low to high</option><option value="price_high">Price: high to low</option></select></div>}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map(function (product) {
+              const item = cart.items.find(function (row) { return row.store_inventory_id === product.store_inventory_id; });
+              const quantity = item?.quantity ?? 0;
+              return <article key={product.store_inventory_id} className="rounded-xl border border-gray-200 bg-white p-4"><div aria-hidden="true" className="mb-3 flex h-20 items-center justify-center rounded-lg bg-green-50 text-2xl font-bold text-green-800">{product.product_name.slice(0, 2).toUpperCase()}</div><h3 className="font-semibold">{product.product_name}</h3><p className="mt-1 text-sm text-gray-500">{product.size}</p><p className="mt-2 font-semibold text-green-800">{money.format(product.selling_price)}</p><p className="mt-2 text-xs text-gray-600">Available: {product.available_stock} · Limit/order: {product.max_per_order ?? 'No extra limit'}</p>{product.is_low_stock && <p className="mt-1 text-xs text-amber-800">Low stock</p>}<details className="mt-3 text-xs text-gray-600"><summary className="cursor-pointer font-medium">Product details</summary><p className="mt-2">Category: {product.category}</p><p>SKU: {product.sku}</p><p>Barcode: {product.barcode ?? 'Not provided'}</p></details><button type="button" disabled={catalog.loading || quantity >= maximumQuantity(product)} onClick={function () { changeQuantity(product, quantity + 1); }} className="mt-4 w-full rounded-lg bg-green-700 px-3 py-2 text-sm text-white disabled:opacity-40">Add to cart</button></article>;
+            })}
           </div>
-
-          {!selectedCategory ? (
-            <div className="grid grid-cols-3 gap-4">
-              {categories.map((cat) => (
-                <div key={cat.id} className="bg-gray-100 rounded-xl p-3 border border-gray-200 flex flex-col justify-between hover:shadow-md transition">
-                  <div>
-                    <h3 className="text-xs font-bold text-gray-900">{cat.name}</h3>
-                    <p className="text-[10px] text-[#006e00] font-semibold mt-0.5">{cat.count}</p>
-                  </div>
-                  <div className="my-3 flex justify-center items-center h-28">
-                    <img src={cat.image} alt={cat.name} className="h-full object-contain rounded-lg" />
-                  </div>
-                  <button 
-                    onClick={() => setSelectedCategory(cat)}
-                    className="text-[10px] text-gray-700 font-bold hover:text-[#006e00] flex items-center gap-1"
-                  >
-                    View Products <span className="text-[#006e00]">→</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4">
-              {currentProducts.length > 0 ? (
-                currentProducts.map((prod) => (
-                  <div key={prod.id} className="bg-white rounded-xl p-3 border border-gray-200 flex flex-col justify-between hover:shadow-md transition">
-                    <div className="h-32 flex justify-center items-center mb-2">
-                      <img src={prod.image} alt={prod.name} className="h-full object-contain rounded-lg" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-900">{prod.name}</h4>
-                      <p className="text-xs font-semibold text-[#006e00] mt-1">₱ {prod.price.toFixed(2)}</p>
-                    </div>
-                    <button 
-                      onClick={() => addToCart(prod)}
-                      className="mt-3 w-full bg-[#006e00] text-white text-[11px] font-bold py-1.5 rounded-lg hover:bg-[#005400] transition"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-3 text-center py-10 text-xs text-gray-400">
-                  No products available in this category yet.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <aside className="w-72 bg-white border border-gray-300 rounded-xl p-4 flex flex-col justify-between shrink-0 shadow-sm h-fit">
-          <div className="space-y-3">
-            {cartItems.map((item) => (
-              <div key={item.id} className="border border-gray-200 rounded-lg p-2.5 relative flex items-center gap-3">
-                <button 
-                  onClick={() => removeItem(item.id)}
-                  className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-                <div className="flex-1 pr-4">
-                  <h4 className="text-xs font-bold text-gray-900">{item.name}</h4>
-                  <p className="text-[11px] font-semibold text-[#006e00] mt-0.5">₱ {item.price.toFixed(2)}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center border border-gray-300 rounded px-1.5 py-0.5 bg-gray-50">
-                      <button onClick={() => updateQuantity(item.id, -1)} className="text-xs text-gray-600 hover:text-black">
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="text-xs font-bold mx-2">{item.qty}</span>
-                      <button onClick={() => updateQuantity(item.id, 1)} className="text-xs text-gray-600 hover:text-black">
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <span className="text-xs font-bold text-gray-900">
-                      ₱ {(item.price * item.qty).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {cartItems.length === 0 && (
-              <p className="text-center text-xs text-gray-400 py-6">Your cart is empty</p>
-            )}
-          </div>
-
-          <div className="mt-6 pt-3 border-t border-gray-200 space-y-1.5">
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>Subtotal</span>
-              <span className="font-semibold">₱ {subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>Service Charge</span>
-              <span className="font-semibold">₱ {cartItems.length > 0 ? serviceCharge.toFixed(2) : '0.00'}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm font-bold text-gray-900 pt-2">
-              <span>Total</span>
-              <span className="text-base">₱ {total.toFixed(2)}</span>
-            </div>
-            <button 
-              disabled={cartItems.length === 0}
-              className="w-full bg-[#006e00] hover:bg-[#005400] text-white text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 mt-4 transition disabled:opacity-50"
-            >
-              Checkout <span>→</span>
-            </button>
-          </div>
+          {catalog.store && !catalog.loading && products.length === 0 && <p className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">No matching active products in this store.</p>}
+        </section>
+        <aside aria-label="Shopping cart" className="h-fit rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="text-lg font-semibold">Your cart</h2>
+          {cart.items.length === 0 && <p className="mt-3 text-sm text-gray-500">Your cart is empty.</p>}
+          {!catalog.loading && summary.rows.map(function (row) {
+            return <div key={row.store_inventory_id} className="mt-4 border-t border-gray-100 pt-4"><h3 className="text-sm font-semibold">{row.product?.product_name ?? 'Unavailable product #' + row.store_inventory_id}</h3>{row.error && <p className="mt-2 text-xs text-red-700">{row.error}</p>}<div className="mt-3 flex items-center justify-between gap-3">{row.product && <label className="text-xs">Quantity<input aria-label={'Cart quantity for ' + row.product.product_name} type="number" min="1" max={maximumQuantity(row.product)} step="1" value={row.quantity} onChange={function (event) { changeQuantity(row.product, Number(event.target.value)); }} className="ml-2 w-20 rounded border border-gray-300 p-1" /></label>}<button type="button" onClick={function () { removeItem(row.store_inventory_id); }} className="text-xs font-semibold text-red-700">Remove</button></div><p className="mt-2 text-sm">{money.format(row.lineCentavos / 100)}</p></div>;
+          })}
+          <p className="mt-5 border-t border-gray-200 pt-4 font-semibold">Estimated subtotal: {money.format(summary.subtotalCentavos / 100)}</p>
+          <p className="mt-2 text-xs text-gray-500">Prices, stock, fees, and limits must be validated again at Checkout.</p>
+          <button type="button" disabled={!summary.valid || catalog.loading || Boolean(catalog.error)} onClick={function () { setCheckoutCart({ store_id: cart.store_id, items: cart.items.map(function (item) { return { ...item }; }) }); }} className="mt-4 w-full rounded-lg bg-green-700 p-3 text-sm text-white disabled:opacity-40">Review Cash on Pickup</button>
         </aside>
       </div>
+      {checkoutCart && <ShopperCheckout cart={checkoutCart} userId={userId} onPlaced={orderPlaced} onClose={function () { setCheckoutCart(null); refresh(); }} />}
     </main>
   );
 }

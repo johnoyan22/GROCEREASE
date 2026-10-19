@@ -38,82 +38,88 @@ requirement. The Role Management screen is still a prototype.
 
 ## Full matrix
 
-C = completed/credited; P = provisional, not credited; W = working parts remain
-incomplete, not credited; N = not verified as an integrated module; dash = not
-applicable. Prototype/local-only data does not establish completion.
+C = previously credited; P = provisional account scope; R = connected implementation with relevant automation, awaiting full module acceptance; W = partial; N = not verified; dash = not applicable. **Only C earns a point.**
 
 | Official module | Shopper | Inventory Worker | Supervisor | Admin |
 |---|---|---|---|---|
 | Account Management | C | P | P | W |
-| Product Catalog Management | N | C | C | - |
-| Stock Management | N | W | W | - |
+| Product Catalog Management | R | C | C | - |
+| Stock Management | R | R | R | - |
 | AI Recommendation Management | N | - | N | - |
-| Automated Cart Management | N | - | - | - |
-| Checkout and Cart Processing | N | - | - | - |
-| Payment and Transaction Management | N | - | N | N |
-| Cash on Pickup Management | N | - | N | N |
-| Order Tracking and Status Monitoring | N | N | N | - |
-| Order Preparation Management | - | N | N | - |
-| Order Delegation Management | - | - | N | - |
-| Pickup Verification Management | N | - | N | - |
-| Receipt and Invoice Management | N | - | N | N |
+| Automated Cart Management | R | - | - | - |
+| Checkout and Cart Processing | R | - | - | - |
+| Payment and Transaction Management | W | - | W | W |
+| Cash on Pickup Management | R | - | R | R |
+| Order Tracking and Status Monitoring | R | R | R | - |
+| Order Preparation Management | - | R | R | - |
+| Order Delegation Management | - | - | R | - |
+| Pickup Verification Management | R | - | R | - |
+| Receipt and Invoice Management | W | - | W | W |
 | Worker Tip Incentive Management | - | - | N | N |
 | Financial Setup Management | - | - | - | N |
 | Reports and Analytics Management | - | - | N | N |
-| Notification Management | N | N | N | N |
+| Notification Management | W | N | N | N |
 
-## Working foundations that are not separate points
+R is a review status, not a claim that every panel requirement has been accepted.
+Checkout currently offers the approved COP path. Shared pickup guards also cover trusted paid-order fixtures;
+a real digital-provider/browser acceptance remains an integration dependency.
+COP review includes the newly confirmed closing, strikes, suspension, reschedule and disposition rules.
+Receipt viewing/printing is connected; the full invoice requirement is not claimed complete.
+Order notifications are real, but do not complete the entire multi-role Notification module.
 
-- Store creation, editing, activation/deactivation and store-owned data.
-- Admin staff account creation/approval and store placement/transfers.
-- Supervisor assignment of approved unassigned Inventory Workers to their own store.
-- Store Workers navigation, with real Inventory Worker functionality and a clearly
-  pending picker/packer category.
-- Product identity, inventory schema, store-local SKU constraints and isolation.
+## Connected work awaiting acceptance
 
-These are substantial dependencies that enable later modules. They must not be
-counted as additional named module-role points in this PDF. Non-login picker/packer
-registration, worker assignments and order delegation are not implemented yet.
-The latest Store Workers UI browser verification is still pending.
+- Stock: approved absolute physical corrections; stale/version and reservation-floor protection; low-stock reports/thresholds; availability/policy audit; limits enforced again at actual Checkout.
+- Shopper catalog/cart: own selected store, real prices/availability/limits, search/filter/details, one-store cart, quantity changes/removal and account-specific drafts.
+- Checkout: required actual-hours pickup selection; authoritative centavo quote; explicit price-change review; atomic unpaid COP creation/reservation; retry-key recovery; ₱1,500 cap.
+- Tracking/preparation: real own-Shopper/current-store orders, schedules/history, digital item checklist, Supervisor preparation review and validated stage transitions.
+- Delegation: store-owned non-login personnel, one active order per worker, Busy/Available state, reassignment reason/history and task completion.
+- Pickup: locally rendered QR plus PIN, per-order expiry, claimant check without representative registration/images, separate cashier evidence/verification/handover, once-only paid completion and stock deduction.
+- COP: backend-enforced strikes/restrictions, scheduler/manual deadline command, exceptions preventing unjustified strikes, Admin correction/monitoring, physical resale disposition and paid unclaimed refund-review state.
+- Transactions: actual payment/handover records for Supervisor/Admin and stable completed receipt viewing/printing.
 
-## Next recommended feature
+Working schema application is complete; browser acceptance remains separate from automation.
+Approved migrations 000009–000013 were applied with 11 existing business tables preserved and all 17 new tables empty. The application record is in pending-transaction-migrations.md.
+Previously approved stock migrations 000007/000008 were applied without altering existing business records.
 
-Implement the connected Stock Management workflow:
+**New credited points: 0. Verified count remains 3/40 (7.5%); gap to 26/40 remains 23 points.**
+No aggregate implementation score is substituted for completed module-role points.
+The two provisional Account Management combinations remain excluded.
 
-1. Inventory Worker views real store stock, submits a stock-update request and can
-   report low stock.
-2. Same-store Supervisor reviews pending requests, approves/rejects them, and uses
-   the approved product quantity-limit controls.
-3. Approval applies the allowed inventory change transactionally once. Rejection
-   does not change stock. Both roles see persistent request/decision history.
-4. Cross-store review, stale decisions, duplicate approval and inactive-store access
-   are rejected. Replace the relevant mock stock submission/approval screens.
+## Exact 26-combination stretch target
 
-The existing stock-level display and active/inactive item switches cover only part
-of Stock Management. The PDF also requires low-stock reporting for Inventory
-Workers and review/approval plus product quantity limits for Supervisors. Both
-roles' complete requirements must pass acceptance before adding their points.
+This is a planning list, not an achievement claim. Every entry must satisfy its full approved module scope.
 
-Before coding stock changes, confirm the hard/soft stock meanings, whether requests
-set an absolute physical count or add/subtract a quantity, and what Product Quantity
-Limits means. These policy decisions remain unresolved; neither the existing
-schema nor mock UI should be treated as approval of an inventory calculation.
+| Target IDs | Official module | Exact applicable roles | Running total |
+|---|---|---|---|
+| 1–4 | Account Management | Shopper, Inventory Worker, Supervisor, Admin | 4 |
+| 5–7 | Product Catalog Management | Shopper, Inventory Worker, Supervisor | 7 |
+| 8–10 | Stock Management | Shopper, Inventory Worker, Supervisor | 10 |
+| 11 | Automated Cart Management | Shopper | 11 |
+| 12 | Checkout and Cart Processing | Shopper | 12 |
+| 13–15 | Payment and Transaction Management | Shopper, Supervisor, Admin | 15 |
+| 16–18 | Cash on Pickup Management | Shopper, Supervisor, Admin | 18 |
+| 19–21 | Order Tracking and Status Monitoring | Shopper, Inventory Worker, Supervisor | 21 |
+| 22–23 | Order Preparation Management | Inventory Worker, Supervisor | 23 |
+| 24 | Order Delegation Management | Supervisor | 24 |
+| 25–26 | Pickup Verification Management | Shopper, Supervisor | 26 |
 
-## Evidence and limits of this review
+The 65% target is not verified tonight. Actual payment-provider integration and Admin account-status
+work remain among its substantive gaps; browser/manual full-module acceptance is also pending.
+No fake digital payment, refund, worker credit or automatic release is used to manufacture progress.
 
-- Actual API routes/controllers support auth/profile, Admin stores/staff, staff
-  placement and store-owned inventory. No stock-request/review, order, payment,
-  incentive or financial/reporting API was present in the inspected route file.
-- ProductManagement, SupervisorInventory and StoreInventoryController provide the
-  real catalog operations described above. ProductTable exposes product metadata,
-  barcode/SKU, size/category, price and status.
-- Staff profile screens display real identity data and have password forms;
-  ShopperProfileController exposes only the Shopper profile-edit route.
-- Existing Stock Update and Supervisor Stock Approvals screens still use mock or
-  in-memory request data. Other prototype screens have not been credited.
-- Latest recorded full Laravel run: 180 passed, 2,476 assertions. Latest full Node
-  API run: 35 passed; latest Store Workers UI check: lint/build and nine Supervisor
-  API tests passed. These were not rerun solely for this read-only point review.
-- User-reported browser completion supports the completed catalog/store/Admin
-  integration work, but individual acceptance case evidence was not recorded in
-  detail. This is a conservative engineering audit, not a panel/grading decision.
+## Evidence and boundaries
+
+- Latest full Laravel: 288 passed / 4,471 assertions. Client API/cart: 80 passed.
+- All 45 changed frontend JS/JSX/MJS files linted. Production build passed with a chunk-size warning.
+- A temporary MariaDB database accepted all migrations and passed actual concurrent reservation,
+  worker assignment and handover checks. It and its runtime file were removed afterward.
+- Store A/B, own-Shopper access, current staff approval/placement, inactive stores, invalid transitions,
+  protected fields, stale decisions, rollback, deadlines, strike correction and duplicate effects are tested.
+- User browser acceptance for these transaction changes has not been claimed.
+- Normal transaction schema application completed following explicit user approval; actual store hours and browser acceptance remain pending.
+- AI/Habel, owner functionality, deferred profile enhancements, external payment/refund transfers,
+  incentive allocation/payout and broad financial/reporting modules remain untouched or incomplete.
+
+See feature-5-stock-management.md, feature-6-shopper-catalog-cart.md and
+feature-7-to-10-transactions.md for role-specific manual checklists.

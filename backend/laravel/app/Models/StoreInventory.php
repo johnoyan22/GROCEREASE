@@ -35,7 +35,20 @@ class StoreInventory extends Model
             'selling_price' => 'decimal:2',
             'hard_stock_qty' => 'integer',
             'soft_stock_qty' => 'integer',
+            'stock_version' => 'integer',
+            'max_per_order' => 'integer',
+            'low_stock_threshold' => 'integer',
         ];
+    }
+
+    public function availableStock(): int
+    {
+        return $this->hard_stock_qty - $this->soft_stock_qty;
+    }
+
+    public function isLowStock(): bool
+    {
+        return $this->low_stock_threshold !== null && $this->availableStock() <= $this->low_stock_threshold;
     }
 
     public function store(): BelongsTo

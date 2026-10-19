@@ -90,7 +90,7 @@ export default function ShopperDashboard() {
             </div>) : user ? (
               <>
                 {activeTab === 'Dashboard' && (<ShopperMainContent setActiveTab={setActiveTab}/>)}
-                {activeTab === 'Browse' && <ShopperBrowseProducts />}
+                <div hidden={activeTab !== 'Browse'}><ShopperBrowseProducts userId={user.id} /></div>
                 {activeTab === 'AI' && <ShopperAIRecommendations />}
                 {activeTab === 'Orders' && <ShopperMyOrders />}
                 {(activeTab === 'Pickup' || activeTab === 'Pick up Information') && <ShopperPickupInformation />}

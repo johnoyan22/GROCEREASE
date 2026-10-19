@@ -297,3 +297,212 @@ export async function assignSupervisorStaff(id) {
     body: JSON.stringify({}),
   });
 }
+
+export function getStockAdjustments({ signal } = {}) {
+  return sendRequest('/inventory/stock-adjustments', { signal });
+}
+
+export function getLowStockReports({ signal } = {}) {
+  return sendRequest('/inventory/low-stock-reports', { signal });
+}
+
+export function getAvailabilityHistory({ signal } = {}) {
+  return sendRequest('/inventory/availability-history', { signal });
+}
+
+export async function submitStockAdjustment(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/inventory/items/${encodeURIComponent(id)}/stock-adjustments`, {
+    method: 'POST',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({
+      requested_hard_stock_qty: details.requested_hard_stock_qty,
+      expected_stock_version: details.expected_stock_version,
+      reason: details.reason,
+    }),
+  });
+}
+
+export async function submitLowStockReport(id, note) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/inventory/items/${encodeURIComponent(id)}/low-stock-reports`, {
+    method: 'POST',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ note }),
+  });
+}
+
+export async function decideStockAdjustment(id, decision, note) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/stock-adjustments/${encodeURIComponent(id)}/decision`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ decision, decision_note: note }),
+  });
+}
+
+export async function updateInventoryPolicy(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/inventory/items/${encodeURIComponent(id)}/policy`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ max_per_order: details.max_per_order, low_stock_threshold: details.low_stock_threshold }),
+  });
+}
+
+export function getShopperStores({ signal } = {}) {
+  return sendRequest('/shopper/stores', { signal });
+}
+
+export function getShopperProducts(storeId, { signal } = {}) {
+  return sendRequest(`/shopper/stores/${encodeURIComponent(storeId)}/products`, { signal });
+}
+
+export async function getCheckoutQuote(cart, { signal } = {}) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest('/shopper/checkout/quote', {
+    method: 'POST', signal,
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ store_id: cart.store_id, items: checkoutItems(cart.items), pickup_date: cart.pickup_date, pickup_start: cart.pickup_start, pickup_end: cart.pickup_end }),
+  });
+}
+
+export async function createCopOrder(cart, quoteToken, key) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest('/shopper/orders', {
+    method: 'POST',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ store_id: cart.store_id, items: checkoutItems(cart.items), pickup_date: cart.pickup_date, pickup_start: cart.pickup_start, pickup_end: cart.pickup_end, quote_token: quoteToken, idempotency_key: key }),
+  });
+}
+
+function checkoutItems(items) {
+  return items.map(function (item) {
+    return { store_inventory_id: item.store_inventory_id, quantity: item.quantity };
+  });
+}
+
+export function findCheckoutAttempt(key, { signal } = {}) {
+  return sendRequest(`/shopper/checkout-attempts/${encodeURIComponent(key)}`, { signal });
+}
+
+export function getShopperOrders({ signal } = {}) {
+  return sendRequest('/shopper/orders', { signal });
+}
+
+export function getStaffOrders({ signal } = {}) {
+  return sendRequest('/staff/orders', { signal });
+}
+
+export async function cancelShopperOrder(id, reason) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/shopper/orders/${encodeURIComponent(id)}/cancellation`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify({ reason }),
+  });
+}
+
+export async function updateOrderStatus(id, status) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/orders/${encodeURIComponent(id)}/status`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify({ status }),
+  });
+}
+
+export function getStoreWorkers({ signal } = {}) {
+  return sendRequest('/supervisor/workers', { signal });
+}
+
+export async function createStoreWorker(details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest('/supervisor/workers', {
+    method: 'POST', headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ full_name: details.full_name, work_type: details.work_type }),
+  });
+}
+
+export async function updateStoreWorker(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/workers/${encodeURIComponent(id)}`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ full_name: details.full_name, work_type: details.work_type, status: details.status }),
+  });
+}
+
+export function getOrderPickup(id, { signal } = {}) {
+  return sendRequest(`/shopper/orders/${encodeURIComponent(id)}/pickup`, { signal, cache: 'no-store' });
+}
+
+export async function confirmOrderCash(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/orders/${encodeURIComponent(id)}/cash-payment`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ cashier_name: details.cashier_name, evidence_reference: details.evidence_reference, cash_collected: details.cash_collected }),
+  });
+}
+
+export async function verifyOrderPickup(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/orders/${encodeURIComponent(id)}/pickup-verification`, {
+    method: 'POST', headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ method: details.method, credential: details.credential, claimant_name: details.claimant_name,
+      identity_checked: details.identity_checked, claimant_check_note: details.claimant_check_note }),
+  });
+}
+
+export async function recordOrderHandover(id) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/orders/${encodeURIComponent(id)}/handover`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify({ physically_handed_over: true }),
+  });
+}
+
+async function writeAction(path, method, body) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(path, { method, headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify(body) });
+}
+
+export function getStorePickupSettings(id, { signal } = {}) {
+  return sendRequest(`/admin/stores/${encodeURIComponent(id)}/pickup-settings`, { signal });
+}
+export function saveStorePickupSettings(id, hours, holdingHours) {
+  return writeAction(`/admin/stores/${encodeURIComponent(id)}/pickup-settings`, 'PUT', { operating_hours: hours, paid_order_holding_hours: holdingHours });
+}
+export function closeStorePickupDate(id, date, reason) {
+  return writeAction(`/admin/stores/${encodeURIComponent(id)}/pickup-closures`, 'POST', { date, reason });
+}
+export function getPickupHours(id, date, { signal } = {}) {
+  return sendRequest(`/shopper/stores/${encodeURIComponent(id)}/pickup-hours?date=${encodeURIComponent(date)}`, { signal });
+}
+export function assignOrderWorker(id, workerId, reason) {
+  return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/worker`, 'PUT', { worker_id: workerId, reason });
+}
+export function saveOrderPreparation(id, items) {
+  return writeAction(`/staff/orders/${encodeURIComponent(id)}/preparation`, 'PUT', { items: items.map(function (item) { return { order_item_id: item.order_item_id, prepared_qty: item.prepared_qty }; }) });
+}
+export function completeOrderPreparation(id, note) {
+  return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/preparation-completion`, 'PUT', { completion_note: note });
+}
+export function rescheduleOrder(id, selection, reason) {
+  return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/pickup-schedule`, 'PUT', { pickup_date: selection.pickup_date, pickup_start: selection.pickup_start, pickup_end: selection.pickup_end, reason });
+}
+export function confirmOrderResale(id, reason) {
+  return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/resale-disposition`, 'PUT', { all_items_suitable_for_resale: true, reason });
+}
+export function requestOrderRefundReview(id, reason) {
+  return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/refund-review`, 'PUT', { reason });
+}
+export function getCopStatus({ signal } = {}) { return sendRequest('/shopper/cop-status', { signal }); }
+export function getOrderNotifications({ signal } = {}) { return sendRequest('/shopper/order-notifications', { signal }); }
+export function readOrderNotification(id) { return writeAction(`/shopper/order-notifications/${encodeURIComponent(id)}/read`, 'PUT', {}); }
+export function getCopStrikes({ signal } = {}) { return sendRequest('/admin/cop-strikes', { signal }); }
+export function correctCopStrike(id, reason) { return writeAction(`/admin/cop-strikes/${encodeURIComponent(id)}/correction`, 'PUT', { reason }); }
+export function getTransactionRecords(role, { signal } = {}) {
+  const prefix = role === 'admin' ? 'admin' : 'supervisor';
+  return sendRequest(`/${prefix}/transactions`, { signal });
+}
+export function getOrderReceipt(id, role, { signal } = {}) {
+  let prefix = 'shopper';
+  if (role === 'admin') prefix = 'admin';
+  if (role === 'supervisor') prefix = 'supervisor';
+  return sendRequest(`/${prefix}/orders/${encodeURIComponent(id)}/receipt`, { signal, cache: 'no-store' });
+}
