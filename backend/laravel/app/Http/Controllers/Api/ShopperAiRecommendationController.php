@@ -4,16 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiRecommendationSetting;
-use App\Services\AiRecommendation\QueryParser;
+use App\Services\AiRecommendation\QueryUnderstanding;
 use App\Services\AiRecommendation\RecommendationEngine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class ShopperAiRecommendationController extends Controller
 {
     public function __construct(
         private readonly RecommendationEngine $engine,
-        private readonly QueryParser $parser,
+        private readonly QueryUnderstanding $understanding,
     ) {
     }
 
@@ -47,13 +48,23 @@ class ShopperAiRecommendationController extends Controller
         ]);
 
         $settings = AiRecommendationSetting::current();
-        $parsed = $this->parser->parse($input['query']);
 
-        if ($parsed['keywords'] === []) {
+        // Gemini (when configured) chooses from the real in-stock catalogue;
+        // otherwise the keyword parser is used. Either way the engine builds the basket.
+        $parsed = $this->understanding->understand(
+            $input['query'],
+            $this->engine->catalog($settings),
+        );
+
+        if ($parsed['keywords'] === [] && $parsed['product_ids'] === []) {
             return response()->json([
                 'message' => 'Tell me what you are looking for, for example "pasta for 4 under ₱500".',
-                'data' => ['items' => [], 'total' => 0, 'parsed' => $parsed],
-                'meta' => ['enabled' => $settings->enabled, 'source' => 'no_keywords'],
+                'data' => ['items' => [], 'total' => 0, 'parsed' => Arr::only($parsed, ['budget', 'headcount'])],
+                'meta' => [
+                    'enabled' => $settings->enabled,
+                    'source' => 'no_keywords',
+                    'understanding' => $parsed['source'],
+                ],
             ]);
         }
 
@@ -63,9 +74,13 @@ class ShopperAiRecommendationController extends Controller
             'data' => [
                 'items' => $result['items'],
                 'total' => $result['total'],
-                'parsed' => $parsed,
+                'parsed' => Arr::only($parsed, ['budget', 'headcount', 'keywords']),
             ],
-            'meta' => ['enabled' => $settings->enabled, 'source' => $result['source']],
+            'meta' => [
+                'enabled' => $settings->enabled,
+                'source' => $result['source'],
+                'understanding' => $parsed['source'],
+            ],
         ]);
     }
 

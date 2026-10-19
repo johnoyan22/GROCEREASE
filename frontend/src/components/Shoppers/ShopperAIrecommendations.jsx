@@ -283,6 +283,11 @@ export default function ShopperAIRecommendations({ cartProductIds = [], onAddToC
                   Budget {formatPrice(parsed.budget)}
                 </span>
               )}
+              {askResult.meta?.understanding === 'gemini' && (
+                <span className="text-[10px] bg-white border border-blue-300 text-blue-900 rounded-full px-2 py-0.5">
+                  Understood by AI
+                </span>
+              )}
             </div>
 
             {askItems.length === 0 ? (

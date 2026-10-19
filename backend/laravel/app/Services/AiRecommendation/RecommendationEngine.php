@@ -59,9 +59,15 @@ class RecommendationEngine
             return ['items' => [], 'total' => 0.0, 'source' => 'disabled'];
         }
 
-        $keywords = $parsed['keywords'];
+        $keywords = $parsed['keywords'] ?? [];
+        $aiIds = $parsed['product_ids'] ?? [];
 
-        $matches = $this->availableProducts($settings)->filter(function ($p) use ($keywords) {
+        $matches = $this->availableProducts($settings)->filter(function ($p) use ($keywords, $aiIds) {
+            // Ids picked by the AI were already checked against this same catalogue.
+            if ($aiIds !== []) {
+                return in_array((int) $p->product_id, $aiIds, true);
+            }
+
             $haystack = mb_strtolower($p->name . ' ' . $p->category);
             foreach ($keywords as $keyword) {
                 if (str_contains($haystack, $keyword)) {
@@ -73,6 +79,12 @@ class RecommendationEngine
         });
 
         $ranked = $this->rank($matches, $this->signals($userId, []), $settings->ranking_basis);
+
+        if ($aiIds !== []) {
+            // Keep the order the AI chose (most relevant first).
+            $order = array_flip($aiIds);
+            $ranked = $ranked->sortBy(fn ($item) => $order[$item['product_id']] ?? PHP_INT_MAX)->values();
+        }
 
         $perItem = $parsed['headcount'] !== null
             ? max(1, (int) ceil($parsed['headcount'] / self::PEOPLE_PER_UNIT))
@@ -108,6 +120,14 @@ class RecommendationEngine
             'total' => round($total, 2),
             'source' => $matches->isEmpty() ? 'no_match' : 'matched',
         ];
+    }
+
+    /**
+     * The in-stock, allowed products the AI may choose from.
+     */
+    public function catalog(AiRecommendationSetting $settings): Collection
+    {
+        return $settings->enabled ? $this->availableProducts($settings) : collect();
     }
 
     /**
