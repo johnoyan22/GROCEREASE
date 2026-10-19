@@ -12,14 +12,17 @@ import {
   Ban,
   FileBarChart2,
   LogOut,
-  UserRound
+  UserRound,
+  UsersRound,
+  Store
 } from 'lucide-react';
 import { logout } from '../../services/api';
 
 const navItems = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/admin/stores', label: 'Store Management', icon: Store },
+  { path: '/admin/staff', label: 'Staff Management', icon: UsersRound },
   { path: '/admin/roles', label: 'Role Management', icon: KeyRound },
-  { path: '/admin/stock', label: 'Stock Management', icon: Package },
   { path: '/admin/financial', label: 'Financial Setup', icon: CircleDollarSign },
   { path: '/admin/cop', label: 'COP Management', icon: Ban },
   { path: '/admin/reports', label: 'Report Module', icon: FileBarChart2 },

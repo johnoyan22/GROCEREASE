@@ -16,9 +16,10 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { SupervisorProvider } from './SupervisorContext'
 import { SupervisorLayout } from './SupervisorLayout'
 import { SupervisorDashboard } from './SupervisorDashboard'
+import { SupervisorInventory } from './SupervisorInventory'
+import { SupervisorStoreWorkers } from './SupervisorStoreWorkers'
 import { SupervisorStockApprovals } from './SupervisorStockApprovals'
 import { SupervisorOrders } from './SupervisorOrders'
-import { SupervisorWorkers } from './SupervisorWorkers'
 import { SupervisorDigitalPayments } from './SupervisorDigitalPayments'
 import { SupervisorSalesReports } from './SupervisorSalesReports'
 import { SupervisorReturnRefund } from './SupervisorReturnRefund'
@@ -34,9 +35,11 @@ export default function SupervisorApp({ basePath = '/supervisor', loginPath = '/
         <Route element={<SupervisorLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<SupervisorDashboard />} />
+          <Route path="inventory" element={<SupervisorInventory />} />
+          <Route path="staff" element={<Navigate to={`${basePath}/workers`} replace />} />
           <Route path="stock-approvals" element={<SupervisorStockApprovals />} />
           <Route path="orders" element={<SupervisorOrders />} />
-          <Route path="workers" element={<SupervisorWorkers />} />
+          <Route path="workers" element={<SupervisorStoreWorkers />} />
           <Route path="digital-payments" element={<SupervisorDigitalPayments />} />
           <Route path="sales-reports" element={<SupervisorSalesReports />} />
           <Route path="return-refund" element={<SupervisorReturnRefund />} />

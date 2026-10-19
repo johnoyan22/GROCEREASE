@@ -17,9 +17,10 @@ import { useSupervisor } from './SupervisorContext'
 
 const navItems = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+  { key: 'inventory', label: 'Store Products', icon: ClipboardList },
+  { key: 'workers', label: 'Store Workers', hint: 'Inventory, Pickers & Packers', icon: Users },
   { key: 'stock-approvals', label: 'Stock Approvals', icon: ClipboardList },
   { key: 'orders', label: 'Orders', hint: 'Active & History', icon: ShoppingCart },
-  { key: 'workers', label: 'Pickers & Packers', hint: 'Assignment & Performance', icon: Users },
   { key: 'digital-payments', label: 'Digital Payments', icon: CreditCard },
   { key: 'sales-reports', label: 'Sales Reports', icon: Gauge },
   { key: 'return-refund', label: 'Return & Refund', icon: RotateCcw },

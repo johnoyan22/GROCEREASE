@@ -13,6 +13,8 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
+    public const STAFF_ROLES = ['inventory_worker', 'supervisor'];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -34,6 +36,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'staff_approved_at',
+        'staff_approved_by_user_id',
     ];
 
     /**
@@ -45,6 +49,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'staff_approved_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -57,6 +62,18 @@ class User extends Authenticatable implements MustVerifyEmail
     public function profile(): HasOne
     {
         return $this->hasOne(Profile::class, 'user_id', 'id');
+    }
+
+        public function staffApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'staff_approved_by_user_id', 'id');
+    }
+
+    public function isApprovedStaff(): bool
+    {
+        return in_array($this->role?->slug, self::STAFF_ROLES, true)
+            && $this->staff_approved_at !== null
+            && $this->staff_approved_by_user_id !== null;
     }
 
     public function accountData(): array
@@ -89,5 +106,23 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $data;
+    }
+
+        public function staffStoreAssignment(): HasOne
+    {
+        return $this->hasOne(StaffStoreAssignment::class, 'user_id', 'id');
+    }
+
+    public function assignedStore(): ?Store
+    {
+        if (! $this->isApprovedStaff()) {
+            return null;
+        }
+
+        // Resolve current placement even if an older relation was already loaded.
+        return $this->staffStoreAssignment()
+            ->with('store')
+            ->whereHas('store', fn ($query) => $query->active())
+            ->first()?->store;
     }
 }

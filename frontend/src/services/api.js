@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api';
 const BACKEND_URL = API_URL.replace('/api', '');
 
 async function getXsrfToken() {
@@ -173,5 +173,127 @@ export async function changeAdminPassword(details) {
       password: details.password,
       password_confirmation: details.password_confirmation,
     }),
+  });
+}
+
+export function getAssignedStore({ signal } = {}) {
+  return sendRequest('/staff/store', { signal });
+}
+
+export function getInventoryItems({ signal } = {}) {
+  return sendRequest('/inventory/items', { signal });
+}
+
+function productDetails(details) {
+  return {
+    product_name: details.product_name,
+    sku: details.sku,
+    barcode: details.barcode,
+    size: details.size,
+    category: details.category,
+    selling_price: details.selling_price,
+    status: details.status,
+  };
+}
+
+export async function createStoreProduct(details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest('/inventory/items', {
+    method: 'POST',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify(productDetails(details)),
+  });
+}
+
+export async function updateStoreProduct(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/inventory/items/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify(productDetails(details)),
+  });
+}
+
+export function getAdminStaffAssignments({ signal } = {}) {
+  return sendRequest('/admin/staff-store-assignments', { signal });
+}
+
+export async function createAdminStaff(details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest('/admin/staff', {
+    method: 'POST',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({
+      first_name: details.first_name,
+      last_name: details.last_name,
+      email: details.email,
+      phone_number: details.phone_number,
+      address: details.address,
+      role: details.role,
+      password: details.password,
+      password_confirmation: details.password_confirmation,
+    }),
+  });
+}
+
+export async function approveAdminStaff(id) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/admin/staff/${encodeURIComponent(id)}/approval`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({}),
+  });
+}
+
+export async function assignAdminStaffStore(id, storeId) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/admin/staff/${encodeURIComponent(id)}/store-assignment`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ store_id: storeId }),
+  });
+}
+
+export function getAdminStores({ signal } = {}) {
+  return sendRequest('/admin/stores', { signal });
+}
+
+export async function createAdminStore(details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest('/admin/stores', {
+    method: 'POST',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ store_name: details.store_name, address: details.address }),
+  });
+}
+
+export async function updateAdminStore(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/admin/stores/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ store_name: details.store_name, address: details.address }),
+  });
+}
+
+export async function updateAdminStoreStatus(id, status) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/admin/stores/${encodeURIComponent(id)}/status`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function getSupervisorStaff({ signal } = {}) {
+  return sendRequest('/supervisor/staff', { signal });
+}
+
+export async function assignSupervisorStaff(id) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/staff/${encodeURIComponent(id)}/store-assignment`, {
+    method: 'PUT',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({}),
   });
 }

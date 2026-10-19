@@ -1,113 +1,84 @@
-import { X } from "lucide-react";
-import { useState } from "react";
+import { X } from 'lucide-react';
+import { useState } from 'react';
 
-const emptyProduct = {
-  product_name: "",
-  sku: "",
-  barcode: "",
-  size: "",
-  category: "Staples",
-  selling_price: "",
-  stock_quantity: "",
-  status: "Active",
-};
-
-function ProductFormModal({ product, onClose, onSave }) {
-  const [formData, setFormData] = useState(() => product
-    ? { ...product, stock_quantity: product.hard_stock_qty }
-    : emptyProduct);
+function ProductFormModal({ product, storeName, onClose, onSave }) {
   const isEditing = Boolean(product);
+  const [form, setForm] = useState({
+    product_name: product?.product_name ?? '',
+    sku: product?.sku ?? '',
+    barcode: product?.barcode ?? '',
+    size: product?.size ?? '',
+    category: product?.category ?? '',
+    selling_price: product?.selling_price ?? '',
+    status: product?.status ?? 'inactive',
+  });
+  const [saving, setSaving] = useState(false);
+  const [failure, setFailure] = useState('');
+  const [errors, setErrors] = useState({});
 
-  function handleChange(event) {
+  function change(event) {
     const { name, value } = event.target;
-
-    setFormData((currentData) => ({
-      ...currentData,
-      [name]: value,
-    }));
+    setForm((current) => ({ ...current, [name]: value }));
   }
 
-  function handleSubmit(event) {
+  async function submit(event) {
     event.preventDefault();
-    const { stock_quantity: stockQuantity, ...productFields } = formData;
-
-    onSave({
-      ...productFields,
-      selling_price: Number(formData.selling_price),
-      hard_stock_qty: Number(stockQuantity),
-      soft_stock_qty: product?.soft_stock_qty ?? 0,
-    });
+    if (saving) return;
+    setSaving(true);
+    setFailure('');
+    setErrors({});
+    try {
+      await onSave({ ...form, barcode: form.barcode.trim() || null, size: form.size.trim() || null });
+    } catch (error) {
+      setErrors(error.errors || {});
+      setFailure(error.status === 404
+        ? 'This product is no longer in your assigned store. Close this form and refresh.'
+        : error.status && error.status < 500
+          ? error.message
+          : 'Could not save this product. Check your connection and try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const inputClass = "mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100";
+  const inputClass = 'mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-100 disabled:bg-gray-100';
+  const fields = [
+    ['product_name', 'Product name', 255, true, 'Example: Jasmine Rice'],
+    ['sku', 'SKU', 64, true, 'Your store product code'],
+    ['barcode', 'Barcode (optional)', 64, false, 'Keep leading zeros'],
+    ['size', 'Size (optional)', 100, false, 'Example: 1 kg'],
+    ['category', 'Category', 100, true, 'Example: Staples'],
+  ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onKeyDown={(event) => { if (event.key === 'Escape' && !saving) onClose(); }}>
       <section role="dialog" aria-modal="true" aria-labelledby="product-form-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div>
-            <h2 id="product-form-title" className="text-lg font-bold text-gray-900">
-              {isEditing ? "Edit Product" : "Add New Product"}
-            </h2>
-            <p className="mt-1 text-xs text-gray-500">Enter the product and store stock details below.</p>
-          </div>
-          <button type="button" aria-label="Close product form" onClick={onClose} className="rounded-md p-2 text-gray-500 hover:bg-gray-100"><X size={18} aria-hidden="true" /></button>
+        <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4">
+          <div><h2 id="product-form-title" className="text-lg font-bold text-gray-900">{isEditing ? 'Edit Product' : 'Add New Product'}</h2><p className="mt-1 text-xs text-gray-500">{storeName}</p></div>
+          <button type="button" aria-label="Close product form" disabled={saving} onClick={onClose} className="rounded-md p-2 text-gray-500 disabled:opacity-50"><X size={18} /></button>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-5">
+        <form onSubmit={submit} className="p-5">
+          {failure && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{failure}</p>}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium text-gray-700">
-              Product name
-              <input required name="product_name" value={formData.product_name} onChange={handleChange} className={inputClass} />
+            {fields.map(([name, label, maxLength, required, placeholder]) => (
+              <label key={name} className="block text-sm font-medium text-gray-700">{label}
+                <input autoFocus={name === 'product_name'} name={name} value={form[name]} onChange={change} maxLength={maxLength} required={required} placeholder={placeholder} disabled={saving} className={inputClass} />
+                {errors[name] && <span className="mt-1 block text-xs text-red-700">{errors[name][0]}</span>}
+              </label>
+            ))}
+            <label className="block text-sm font-medium text-gray-700">Selling price (PHP)
+              <input name="selling_price" required type="number" min="0" max="99999999.99" step="0.01" value={form.selling_price} onChange={change} disabled={saving} className={inputClass} />
+              {errors.selling_price && <span className="mt-1 block text-xs text-red-700">{errors.selling_price[0]}</span>}
             </label>
-            <label className="text-sm font-medium text-gray-700">
-              Size
-              <input required name="size" value={formData.size} onChange={handleChange} placeholder="Example: 1 kg" className={inputClass} />
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              SKU
-              <input required name="sku" value={formData.sku} onChange={handleChange} className={inputClass} />
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              Barcode
-              <input required name="barcode" value={formData.barcode} onChange={handleChange} className={inputClass} />
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              Category
-              <select name="category" value={formData.category} onChange={handleChange} className={inputClass}>
-                <option>Staples</option>
-                <option>Canned Goods</option>
-                <option>Beverages</option>
-                <option>Noodles</option>
-                <option>Dairy</option>
-                <option>Personal Care</option>
-                <option>Household</option>
-              </select>
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              Price
-              <input required min="0" step="0.01" type="number" name="selling_price" value={formData.selling_price} onChange={handleChange} className={inputClass} />
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              Stock quantity
-              <input required min="0" type="number" name="stock_quantity" value={formData.stock_quantity} onChange={handleChange} className={inputClass} />
-            </label>
-            <label className="text-sm font-medium text-gray-700">
-              Status
-              <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
+            <label className="block text-sm font-medium text-gray-700">Product status
+              <select name="status" value={form.status} onChange={change} disabled={saving} className={inputClass}><option value="inactive">Inactive</option><option value="active">Active</option></select>
+              {errors.status && <span className="mt-1 block text-xs text-red-700">{errors.status[0]}</span>}
             </label>
           </div>
-
-          <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
-            <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-              Cancel
-            </button>
-            <button type="submit" className="rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-800">
-              {isEditing ? "Save Changes" : "Add Product"}
-            </button>
+          <p className="mt-4 text-xs text-gray-500">Product details and prices belong only to your assigned store. Stock quantities require Supervisor approval.</p>
+          <div className="mt-5 flex justify-end gap-3 border-t border-gray-100 pt-4">
+            <button type="button" onClick={onClose} disabled={saving} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm disabled:opacity-50">Cancel</button>
+            <button type="submit" disabled={saving} className="rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50">{saving ? 'Saving...' : isEditing ? 'Save Product' : 'Add Product'}</button>
           </div>
         </form>
       </section>

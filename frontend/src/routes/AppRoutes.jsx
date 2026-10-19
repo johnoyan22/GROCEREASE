@@ -22,7 +22,8 @@ import SupervisorApp from '../components/Supervisor/SupervisorApp';
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import RoleManagement from '../pages/admin/RoleManagement';
-import AdminStockManagement from '../pages/admin/StockManagement';
+import StaffManagement from '../pages/admin/StaffManagement';
+import StoreManagement from '../pages/admin/StoreManagement';
 import FinancialSetup from '../pages/admin/FinancialSetup';
 import CopManagement from '../pages/admin/CopManagement';
 import ReportModule from '../pages/admin/ReportModule';
@@ -59,8 +60,9 @@ function AppRoutes() {
       <Route element={<ProtectedRoute allowedRoles={['admin']}/>}>
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+        <Route path="/admin/staff" element={<AdminLayout><StaffManagement /></AdminLayout>} />
+        <Route path="/admin/stores" element={<AdminLayout><StoreManagement /></AdminLayout>} />
         <Route path="/admin/roles" element={<AdminLayout><RoleManagement /></AdminLayout>} />
-        <Route path="/admin/stock" element={<AdminLayout><AdminStockManagement /></AdminLayout>} />
         <Route path="/admin/financial" element={<AdminLayout><FinancialSetup /></AdminLayout>} />
         <Route path="/admin/cop" element={<AdminLayout><CopManagement /></AdminLayout>} />
         <Route path="/admin/reports" element={<AdminLayout><ReportModule /></AdminLayout>} />

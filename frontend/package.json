@@ -7,6 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test:inventory": "node --test tests/inventory-api.test.mjs",
+    "test:staff": "node --test tests/admin-staff-api.test.mjs",
+    "test:stores": "node --test tests/admin-stores-api.test.mjs",
+    "test:supervisor-staff": "node --test tests/supervisor-staff-api.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

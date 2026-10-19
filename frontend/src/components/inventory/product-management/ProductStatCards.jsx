@@ -7,8 +7,8 @@ import {
 } from "../shared/InventoryIcons";
 
 function ProductStatCards({ products }) {
-  const activeProducts = products.filter((product) => product.status === "Active").length;
-  const inactiveProducts = products.filter((product) => product.status === "Inactive").length;
+  const activeProducts = products.filter((product) => product.status === "active").length;
+  const inactiveProducts = products.filter((product) => product.status === "inactive").length;
   const categoryCount = new Set(products.map((product) => product.category)).size;
   const latestUpdatedAt = products
     .map((product) => product.updated_at)
@@ -28,7 +28,7 @@ function ProductStatCards({ products }) {
 
   const productStats = [
     {
-      title: "Total Products",
+      title: "Store Products",
       value: products.length,
       description: "Assigned to this store",
       icon: <ProductBoxIcon />,
@@ -37,14 +37,14 @@ function ProductStatCards({ products }) {
     {
       title: "Active Products",
       value: activeProducts,
-      description: "Currently available for sale",
+      description: "Enabled at this store",
       icon: <VerificationIcon className="h-5 w-5" />,
       color: "bg-blue-50 text-blue-700",
     },
     {
       title: "Inactive Products",
       value: inactiveProducts,
-      description: "Temporarily unavailable",
+      description: "Disabled at this store",
       icon: <PauseCircleIcon />,
       color: "bg-orange-50 text-orange-700",
     },
