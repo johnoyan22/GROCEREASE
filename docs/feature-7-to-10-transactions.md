@@ -1,12 +1,12 @@
 # Features 7–10: scheduled checkout, preparation and pickup
 
 Implementation: October 19, 2026, `feature/multi-store-foundation` after `0bcc621`.
-Code and automated checks are ready. Approved MariaDB migrations 000009–000013 are applied; actual store pickup hours and user browser acceptance remain pending.
+Code and automated checks are ready. Approved MariaDB migrations 000009–000013 are applied. Supervisor settings migration 000014 is also applied with explicit approval; original-column hashes/counts matched across 28 business tables. User browser acceptance of this revision remains pending.
 See `pending-transaction-migrations.md` for the application record: 11 existing business tables preserved and 17 empty new tables confirmed.
 
 ## Connected workflow
 
-1. Admin configures each store's actual weekly opening/closing hours. No universal closing time is supplied.
+1. The assigned Supervisor configures actual weekly store and pickup-service hours in System Configuration. Admin retains read-only store/audit oversight. No universal closing time is supplied.
 2. Verified Shopper chooses a store, adds its products, and selects a future pickup date/start/end within that store's hours.
 3. Laravel quotes current prices, stock, limits, schedule and the ₱1,500 COP ceiling. A review token expires after ten minutes; this is not a pickup deadline.
 4. Explicit Checkout creates one unpaid COP order, price snapshots, status history and reserved units atomically. Cart and quote reads never reserve stock.
@@ -28,26 +28,28 @@ No sales share, worker credit, payroll transfer or platform wage obligation is c
 - `orders:process-deadlines` classifies eligible unpaid COP No-Shows once per order. It skips unprepared/canceled/released orders, preparation after the selected window, missing/changed closing configuration, inactive stores, a recorded pickup suspension, and orders with an in-person claimant check or payment evidence. Those exceptional orders need store review.
 - First valid COP strike: warning. Second: COP unavailable for 30 days from that strike. Third: permanent COP restriction. Checkout checks the current restriction in Laravel. The Shopper account stays usable; corrected records remain in history and eligibility is recalculated.
 - The deadline command does **not** automatically return prepared goods to sale. Supervisor must physically confirm that **all** reserved goods are suitable for resale. That disposition releases reserved units once and leaves physical stock unchanged. Mixed damage/spoilage cases remain held for an authorized physical reconciliation; this initial workflow does not invent a new stock-loss operation.
-- Paid orders never receive COP strikes. For a verified prepaid order, Admin must explicitly select 24 or 48 holding hours for its store. The deadline starts from the later of pickup-window end and actual Ready time. No default is selected.
+- Paid orders never receive COP strikes. For a verified prepaid order, the assigned Supervisor explicitly selects the store-approved 24 or 48 holding hours. The deadline starts from the later of pickup-window end and actual Ready time. No default is selected. Already-issued deadlines stay unchanged when this setting changes.
 - Expired paid orders become `unclaimed_pending_resolution`; payment and reservations remain. Supervisor can request an audited refund review. No endpoint executes a refund, declares one successful, silently keeps funds as earned, or authorizes prepaid goods for resale.
 - Digital payment is a future provider integration. The shared lifecycle requires trusted provider evidence and a provider reference for such records. No public API or frontend button can declare a digital payment successful. Automated provider fixtures test the shared guards; they are not a working gateway.
 
 The five approved main statuses remain `waiting`, `preparing`, `ready_for_pickup`, `completed`, `canceled`.
 Separate `claim_status` records No-Show / unclaimed resolution without mislabeling payment or physical handover.
 Business dates are stored as UTC `DATETIME` values and API ISO timestamps; displays explicitly use `Asia/Manila`.
-The current hours editor supports one same-day opening interval per weekday, plus suspended dates. Split/overnight intervals are not implemented.
+The current hours editor supports one same-day store interval and one pickup-service interval per weekday, plus suspended dates. Pickup service must be within store hours. Split/overnight intervals are not implemented. Late COP claiming must occur during permitted pickup service; the No-Show cutoff remains the saved store closing time.
+
+Changing hours flags active orders on affected weekdays for review without rewriting their approved window, deadline, payment or inventory. Suspension dates flag that date's active orders. Review uses the existing reasoned Supervisor reschedule flow. Flagged COP orders cannot receive an automatic strike; expired/struck/verified orders cannot be silently revived. See supervisor-pickup-settings.md for the current detailed checklist.
 
 ## Exact browser acceptance
 
 Use separate browser profiles for Shopper, Inventory Worker A, Supervisor A and Supervisor B. All checks below remain **pending user acceptance**.
 
-### Admin setup and store isolation
+### Supervisor setup and Admin oversight
 
-1. Open **Store Management → Pickup hours** for Store A. Enter its actual open weekdays/times. Leave paid holding unconfigured unless that store has approved 24 or 48 hours. Save, close, reopen and refresh: settings must persist.
+1. With migration 000014 applied, Supervisor A opens **System Configuration → Store Operating Hours & Pickup Scheduling**. Enter actual store and pickup-service hours. Leave paid holding unconfigured unless that store has approved 24 or 48 hours. Save, reopen and refresh: settings must persist.
 2. Attempt a closing time before opening, a missing time on an open day, or 36 holding hours: validation must fail. No setting should partially save.
-3. Configure Store B independently. Existing products, staff placements and quantities must remain unchanged.
+3. Supervisor B configures Store B independently. Admin → Store Management → View pickup settings shows each store's settings and change audit without editing controls. Existing products, staff placements and quantities must remain unchanged.
 4. Supervisor/Shopper requests to `/api/admin/stores/{store}/pickup-settings` must fail with 403.
-5. To record a genuine closure/pickup suspension, enter its date and reason in Admin's settings dialog. The date must block new windows/claims and suppress automatic COP strikes. Correct a previously erroneous strike separately in **COP Management**.
+5. To record a genuine pickup suspension, Supervisor enters its date and required reason in System Configuration. The date blocks new windows/claims and suppresses automatic COP strikes. Existing affected orders need review; erroneous strikes already issued still require Admin correction in **COP Management**.
 
 ### Shopper Checkout and recovery
 
@@ -111,9 +113,9 @@ php artisan schedule:work
 
 ## Automated evidence
 
-- Full Laravel: **288 passed / 4,471 assertions**; no failures.
-- Client API/cart: **80 passed**; no failures.
-- All 45 changed frontend JS/JSX/MJS files linted; production build passed.
+- Full Laravel after the Supervisor settings revision: **305 passed / 4,813 assertions**; no failures.
+- Client API/cart: **86 passed**; no failures.
+- All 13 frontend JS/JSX/MJS files changed in that revision linted; production build passed.
 - Isolated MariaDB: all migrations applied; concurrent last-unit Checkout, one-worker assignment and repeated handover each produced one successful effect. Temporary test database/runtime file were removed.
 - Backend classes: `CheckoutOrderTest`, `StoreWorkerTest`, `OrderDelegationTest`, `PickupLifecycleTest`, `PickupSchedulingCopTest`, `OrderResolutionRecordsTest`, alongside existing stock/catalog/auth regressions.
 

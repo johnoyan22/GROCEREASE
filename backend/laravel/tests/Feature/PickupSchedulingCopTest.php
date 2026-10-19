@@ -24,19 +24,19 @@ class PickupSchedulingCopTest extends TransactionTestCase
             ->assertJsonPath('order.pickup_window_end_at', '2026-10-20T03:00:00+00:00');
     }
 
-    public function test_admin_configures_actual_hours_and_explicit_24_or_48_hour_policy(): void
+    public function test_supervisor_configures_actual_hours_and_explicit_24_or_48_hour_policy(): void
     {
         $hours = array_fill(1, 7, ['opens_at' => '09:00', 'closes_at' => '21:00']);
-        $path = '/api/admin/stores/'.$this->store->store_id.'/pickup-settings';
-        $this->signIn($this->supervisor)->putJson($path, ['operating_hours' => $hours, 'paid_order_holding_hours' => 24])->assertForbidden();
-        $this->signIn($this->admin)->putJson($path, ['operating_hours' => $hours, 'paid_order_holding_hours' => 36])->assertUnprocessable();
-        $this->putJson($path, ['operating_hours' => $hours, 'paid_order_holding_hours' => 48])->assertOk();
+        $path = '/api/supervisor/pickup-settings';
+        $this->signIn($this->admin)->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 24])->assertForbidden();
+        $this->signIn($this->supervisor)->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 36])->assertUnprocessable();
+        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 48])->assertOk();
         $this->getJson($path)->assertOk()->assertJsonPath('paid_order_holding_hours', 48)->assertJsonPath('operating_hours.1.closes_at', '21:00');
         $this->assertDatabaseCount('store_schedule_logs', 1);
-        $this->putJson($path, ['operating_hours' => $hours, 'paid_order_holding_hours' => 48])->assertOk();
+        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 48])->assertOk();
         $this->assertDatabaseCount('store_schedule_logs', 1);
         $hours[2] = null;
-        $this->putJson($path, ['operating_hours' => $hours, 'paid_order_holding_hours' => null])->assertOk();
+        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => null])->assertOk();
         $this->signIn($this->shopper)->postJson('/api/shopper/checkout/quote', $this->cart())->assertUnprocessable();
     }
 
@@ -102,7 +102,7 @@ class PickupSchedulingCopTest extends TransactionTestCase
         $this->ready();
         $order = Order::findOrFail($this->orderId);
         $date = $order->pickup_window_start_at->format('Y-m-d');
-        $this->signIn($this->admin)->postJson('/api/admin/stores/'.$this->store->store_id.'/pickup-closures', ['date' => $date, 'reason' => 'Unexpected power outage'])->assertOk();
+        $this->signIn($this->supervisor)->postJson('/api/supervisor/pickup-closures', ['date' => $date, 'reason' => 'Unexpected power outage'])->assertOk();
         $this->travelTo($order->claim_expires_at->addSecond());
         $this->artisan('orders:process-deadlines')->assertExitCode(0);
         $this->assertDatabaseCount('cop_strikes', 0);

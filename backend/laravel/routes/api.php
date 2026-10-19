@@ -89,8 +89,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/admin/cop-strikes', [CopMonitoringController::class, 'adminIndex']);
     Route::put('/admin/cop-strikes/{strike}/correction', [CopMonitoringController::class, 'correct'])->whereNumber('strike')->middleware('throttle:20,1,cop-correction:');
     Route::get('/admin/stores/{store}/pickup-settings', [StorePickupSettingsController::class, 'show'])->whereNumber('store');
-    Route::put('/admin/stores/{store}/pickup-settings', [StorePickupSettingsController::class, 'update'])->whereNumber('store');
-    Route::post('/admin/stores/{store}/pickup-closures', [StorePickupSettingsController::class, 'closeDate'])->whereNumber('store');
     Route::get('/admin/stores', [AdminStoreController::class, 'index'])
         ->name('admin.stores.index');
     Route::post('/admin/stores', [AdminStoreController::class, 'store'])
@@ -132,6 +130,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
+    Route::get('/supervisor/pickup-settings', [StorePickupSettingsController::class, 'supervisorShow']);
+    Route::get('/supervisor/pickup-hours', [StorePickupSettingsController::class, 'supervisorAvailable']);
+    Route::put('/supervisor/pickup-settings', [StorePickupSettingsController::class, 'supervisorUpdate'])->middleware('throttle:20,1,pickup-settings:');
+    Route::post('/supervisor/pickup-closures', [StorePickupSettingsController::class, 'supervisorCloseDate'])->middleware('throttle:20,1,pickup-suspension:');
     Route::get('/supervisor/staff', [
         StaffStoreAssignmentController::class, 'supervisorIndex',
     ])->name('supervisor.staff.index');

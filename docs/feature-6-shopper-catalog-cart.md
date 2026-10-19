@@ -22,7 +22,7 @@ new stock/limits are marked for review. Cart totals use integer centavos with un
 Storage failure leaves the in-memory cart usable. Browser storage remains an untrusted convenience;
 Laravel must revalidate everything during checkout.
 
-Scheduled COP Checkout is now connected through ShopperCheckout.jsx and the real Order API. The approved transaction migrations are applied; Admin must configure actual store hours before Checkout can operate. Laravel revalidates prices, limits, available units and pickup schedule; service fees remain zero pending partner approval. See feature-7-to-10-transactions.md. Adding/removing a cart item never changes stock.
+Scheduled COP Checkout is now connected through ShopperCheckout.jsx and the real Order API. The approved transaction migrations are applied; The assigned Supervisor configures actual store and pickup-service hours in System Configuration. The latest ownership change additionally requires approved migration 000014; see supervisor-pickup-settings.md. Laravel revalidates prices, limits, available units and pickup schedule; service fees remain zero pending partner approval. See feature-7-to-10-transactions.md. Adding/removing a cart item never changes stock.
 
 ## Evidence
 

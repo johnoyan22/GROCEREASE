@@ -24,7 +24,7 @@ class PickupController extends Controller
         $policy->requireSchema();
         $record = Order::where('shopper_user_id', $request->user()->id)->whereKey($order)->firstOrFail();
         $credential = null;
-        if ($record->status === 'ready_for_pickup') {
+        if ($record->status === 'ready_for_pickup' && !$record->pickup_schedule_review_required) {
             $stored = PickupCredential::where('order_id', $record->order_id)->whereNull('revoked_at')->latest('id')->first();
             if ($stored && !$stored->consumed_at && $stored->expires_at->isFuture()) {
                 $credential = $stored->secret_payload;

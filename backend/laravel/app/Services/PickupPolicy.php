@@ -24,6 +24,7 @@ class PickupPolicy
     {
         $this->requireSchema();
         $store = Store::whereKey($order->store_id)->lockForUpdate()->firstOrFail();
+        abort_if($order->pickup_schedule_review_required, 409, 'Store hours changed. Review and approve this order through the existing pickup-rescheduling workflow first.');
         abort_unless($order->pickup_window_end_at && $order->scheduled_store_closes_at, 409, 'An approved pickup schedule is required.');
         app(PickupScheduling::class)->hours($store, $order->pickup_window_start_at->copy()->setTimezone(PickupScheduling::TIMEZONE)->format('Y-m-d'));
         $readyAt = $order->ready_at ?? now();
@@ -55,6 +56,7 @@ class PickupPolicy
     {
         abort_unless($order->status === 'ready_for_pickup' && $order->claim_status === 'claimable'
             && $order->reservation_status === 'active' && $order->claim_expires_at?->isFuture(), 409, 'This order is not currently claimable.');
+        abort_if($order->pickup_schedule_review_required, 409, 'Store hours changed. This pickup schedule requires authorized review.');
         app(PickupScheduling::class)->requireOpen($store);
     }
 }

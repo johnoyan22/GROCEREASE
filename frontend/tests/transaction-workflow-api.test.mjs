@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { assignOrderWorker, closeStorePickupDate, completeOrderPreparation, confirmOrderResale, correctCopStrike, getCopStatus, getCopStrikes, getOrderNotifications, getOrderReceipt, getPickupHours, getStorePickupSettings, getTransactionRecords, readOrderNotification, requestOrderRefundReview, rescheduleOrder, saveOrderPreparation, saveStorePickupSettings } from '../src/services/api.js';
+import { assignOrderWorker, suspendSupervisorPickupDate, completeOrderPreparation, confirmOrderResale, correctCopStrike, getCopStatus, getCopStrikes, getOrderNotifications, getOrderReceipt, getPickupHours, getStorePickupSettings, getTransactionRecords, readOrderNotification, requestOrderRefundReview, rescheduleOrder, saveOrderPreparation, saveSupervisorPickupSettings, getSupervisorPickupSettings, getSupervisorPickupHours } from '../src/services/api.js';
 
 let previousDocument;
 beforeEach(function () {
@@ -28,15 +28,15 @@ test('store-specific hours reads preserve session and abort, including the chose
   const urls = [];
   const signal = new AbortController().signal;
   t.mock.method(globalThis, 'fetch', async function (url, options) { urls.push(url); assert.equal(options.signal, signal); assert.equal(options.credentials, 'include'); return json({}); });
-  await getStorePickupSettings(2, { signal }); await getPickupHours(2, '2026-10-20', { signal });
-  assert.deepEqual(urls, ['http://localhost:8000/api/admin/stores/2/pickup-settings', 'http://localhost:8000/api/shopper/stores/2/pickup-hours?date=2026-10-20']);
+  await getStorePickupSettings(2, { signal }); await getPickupHours(2, '2026-10-20', { signal }); await getSupervisorPickupSettings({ signal }); await getSupervisorPickupHours('2026-10-20', { signal });
+  assert.deepEqual(urls, ['http://localhost:8000/api/admin/stores/2/pickup-settings', 'http://localhost:8000/api/shopper/stores/2/pickup-hours?date=2026-10-20', 'http://localhost:8000/api/supervisor/pickup-settings', 'http://localhost:8000/api/supervisor/pickup-hours?date=2026-10-20']);
 });
 
 test('store settings preserve an explicit missing holding policy and closure audit reason', async function (t) {
   const writes = recordWrites(t);
-  await saveStorePickupSettings(2, { 1: null }, null); await closeStorePickupDate(2, '2026-10-20', 'Power outage');
-  assert.deepEqual(writes, [{ path: '/admin/stores/2/pickup-settings', method: 'PUT', body: { operating_hours: { 1: null }, paid_order_holding_hours: null } },
-    { path: '/admin/stores/2/pickup-closures', method: 'POST', body: { date: '2026-10-20', reason: 'Power outage' } }]);
+  await saveSupervisorPickupSettings({ 1: null }, { 1: null }, null); await suspendSupervisorPickupDate('2026-10-20', 'Power outage');
+  assert.deepEqual(writes, [{ path: '/supervisor/pickup-settings', method: 'PUT', body: { operating_hours: { 1: null }, pickup_service_hours: { 1: null }, paid_order_holding_hours: null } },
+    { path: '/supervisor/pickup-closures', method: 'POST', body: { date: '2026-10-20', reason: 'Power outage' } }]);
 });
 
 test('worker delegation, checklist and review are separate writes with server-owned actors and order state', async function (t) {
@@ -93,7 +93,7 @@ test('CSRF failures and Busy-worker conflicts cannot turn into successful workfl
     mutations++; return json({ message: 'Worker is Busy.' }, 409);
   });
   await assert.rejects(assignOrderWorker(3, 7, null), /secure session/);
-  await assert.rejects(saveStorePickupSettings(2, {}, null), /secure session/);
+  await assert.rejects(saveSupervisorPickupSettings({}, {}, null), /secure session/);
   assert.equal(mutations, 0);
   blocked = false;
   await assert.rejects(assignOrderWorker(3, 7, null), function (error) { return error.status === 409; });

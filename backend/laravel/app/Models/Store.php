@@ -25,7 +25,7 @@ class Store extends Model
 
     protected function casts(): array
     {
-        return ['operating_hours' => 'array', 'paid_order_holding_hours' => 'integer'];
+        return ['operating_hours' => 'array', 'pickup_service_hours' => 'array', 'paid_order_holding_hours' => 'integer'];
     }
 
     public function scopeActive(Builder $query): Builder

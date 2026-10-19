@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createCopOrder, findCheckoutAttempt, getCheckoutQuote, getPickupHours } from '../../services/api';
 import { clearCheckoutAttempt, readCheckoutAttempt, saveCheckoutAttempt } from '../../services/checkout';
+import { pickupWindowBounds, pickupWindowFits } from '../../services/pickup-scheduling';
 
 const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 const localTime = new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' });
@@ -20,6 +21,7 @@ export default function ShopperCheckout({ cart, userId, onPlaced, onClose }) {
   const [pending, setPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState('');
+  const bounds = pickupWindowBounds(hours, selection.pickup_start);
 
   useEffect(function () {
     const element = dialog.current;
@@ -66,7 +68,10 @@ export default function ShopperCheckout({ cart, userId, onPlaced, onClose }) {
     key.current = null;
     setReview(null); setReviewCart(null); setError('');
     if (field === 'pickup_date') { setHours(null); setHoursError(''); }
-    setSelection(function (current) { return { ...current, [field]: value }; });
+    setSelection(function (current) {
+      if (field === 'pickup_date') return { pickup_date: value, pickup_start: '', pickup_end: '' };
+      return { ...current, [field]: value };
+    });
   }
 
   async function reviewOrder(event) {
@@ -121,12 +126,12 @@ export default function ShopperCheckout({ cart, userId, onPlaced, onClose }) {
       <form onSubmit={reviewOrder} className="mt-5 space-y-3">
         <fieldset disabled={loading || pending || uncertain} className="grid gap-3 sm:grid-cols-3">
           <label className="text-sm">Pickup date<input required type="date" min={today.format(new Date())} value={selection.pickup_date} onChange={function (event) { choose('pickup_date', event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2" /></label>
-          <label className="text-sm">From (Philippine time)<input required type="time" value={selection.pickup_start} onChange={function (event) { choose('pickup_start', event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2" /></label>
-          <label className="text-sm">Until (Philippine time)<input required type="time" value={selection.pickup_end} onChange={function (event) { choose('pickup_end', event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2" /></label>
+          <label className="text-sm">From (Philippine time)<input required disabled={!bounds} type="time" min={bounds?.startMin} max={bounds?.startMax} value={selection.pickup_start} onChange={function (event) { choose('pickup_start', event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2" /></label>
+          <label className="text-sm">Until (Philippine time)<input required disabled={!bounds} type="time" min={bounds?.endMin} max={bounds?.endMax} value={selection.pickup_end} onChange={function (event) { choose('pickup_end', event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2" /></label>
         </fieldset>
-        {hours && <p className="text-sm text-gray-600">Available store hours on {hours.date}: {hours.opens_at}–{hours.closes_at} (Asia/Manila). Choose a future window within these hours.</p>}
+        {hours && <p className="text-sm text-gray-600">Pickup service on {hours.date}: {hours.opens_at}–{hours.closes_at}. Earliest available start: {hours.earliest_start_at}. Store hours: {hours.store_opens_at}–{hours.store_closes_at} (Asia/Manila). Choose a future window within pickup-service hours.</p>}
         {hoursError && <p role="alert" className="text-sm text-red-700">{hoursError}</p>}
-        <button disabled={loading || pending || (!hours && !uncertain)} className="rounded-lg border border-green-700 px-4 py-2 text-sm text-green-800">{uncertain ? 'Check original order and refresh review' : 'Review current prices and pickup schedule'}</button>
+        <button disabled={loading || pending || (!uncertain && !pickupWindowFits(hours, selection.pickup_start, selection.pickup_end))} className="rounded-lg border border-green-700 px-4 py-2 text-sm text-green-800">{uncertain ? 'Check original order and refresh review' : 'Review current prices and pickup schedule'}</button>
       </form>
       {review && <div className="mt-5 border-t border-gray-200 pt-4"><h3 className="font-semibold">{review.quote.store.store_name}</h3><p className="text-sm text-gray-600">{review.quote.store.address}</p><p className="mt-3 text-sm font-semibold">Pickup: {localTime.format(new Date(review.quote.pickup_window_start_at))}–{localTime.format(new Date(review.quote.pickup_window_end_at))}</p><p className="mt-1 text-xs text-gray-600">COP claiming deadline: {localTime.format(new Date(review.quote.cop_claim_deadline_at))}. Late claiming requires a Ready order and the store to be open.</p><ul className="mt-3 divide-y divide-gray-100">{review.quote.items.map(function (item) { return <li key={item.store_inventory_id} className="py-3 text-sm"><p className="font-semibold">{item.product_name} {item.size}</p><p>{item.quantity} × {money.format(item.unit_price_centavos / 100)} = {money.format(item.line_total_centavos / 100)}</p></li>; })}</ul><p className="mt-3 text-sm">Groceries: {money.format(review.quote.subtotal_centavos / 100)}</p><p className="mt-2 text-sm">Service fee: {money.format(review.quote.service_fee_centavos / 100)}. A service-fee policy remains pending supermarket approval.</p><p className="mt-3 text-lg font-bold">Total: {money.format(review.quote.total_centavos / 100)}</p><p className="mt-2 text-sm">Cash on Pickup · Maximum ₱1,500 · Payment remains unpaid at Checkout.</p></div>}
       <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={pending || loading || !review || uncertain} onClick={placeOrder} className="rounded-lg bg-green-700 px-4 py-2.5 text-sm text-white disabled:opacity-50">{pending ? 'Checking...' : 'Place unpaid COP order'}</button><button type="button" disabled={pending || loading || uncertain} onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm disabled:opacity-50">Back to cart</button></div>

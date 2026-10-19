@@ -1,5 +1,7 @@
 # Transaction sprint: quick reverse-engineering guide
 
+Latest ownership revision: Supervisor → System Configuration now manages pickup settings; Admin has read-only oversight. Separate pickup-service hours and existing-order review are documented in supervisor-pickup-settings.md. Earlier sprint excerpts below describe their original milestone.
+
 Follow React form → `services/api.js` → API route → controller → model → database,
 then follow the response back to the loading hook and screen.
 

@@ -25,6 +25,7 @@ class Order extends Model
             'canceled_at' => 'datetime', 'completed_at' => 'datetime',
             'pickup_window_start_at' => 'datetime', 'pickup_window_end_at' => 'datetime', 'scheduled_store_closes_at' => 'datetime',
             'ready_at' => 'datetime', 'claim_expires_at' => 'datetime', 'unclaimed_at' => 'datetime',
+            'pickup_schedule_review_required' => 'boolean',
         ];
     }
 

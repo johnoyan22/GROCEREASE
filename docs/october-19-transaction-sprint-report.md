@@ -1,5 +1,7 @@
 # October 19 transaction integration sprint report
 
+Later local revision: supervisor-pickup-settings.md supersedes Admin pickup editing with Supervisor operational settings and read-only Admin oversight. It records the approved migration application, preservation checks and latest test results. This report retains the original transaction sprint evidence.
+
 Branch: feature/multi-store-foundation. Starting commit: 0bcc621.
 This report records the sprint implementation and verification. Consult the branch's Git history for its publication commit. Applied historical migrations 000001–000008 were not edited.
 

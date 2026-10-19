@@ -53,7 +53,7 @@ export default function OrderPickup({ order, role, onSaved, onFailure }) {
   }
 
   if (!pickup || !['shopper', 'supervisor'].includes(role)) return null;
-  const claimable = order.status === 'ready_for_pickup' && order.claim_status === 'claimable';
+  const claimable = order.status === 'ready_for_pickup' && order.claim_status === 'claimable' && !order.pickup_schedule_review_required;
   return <div className="mt-4 space-y-4 border-t border-gray-200 pt-4">
     <p className="text-sm">Claim state: <strong>{order.claim_status?.replaceAll('_', ' ')}</strong> · Claimant: <strong>{pickup.verified_at ? pickup.claimant_name : 'Not yet checked'}</strong> · Handover: <strong>{pickup.handed_over_at ? 'Recorded' : 'Pending'}</strong></p>
     {order.claim_expires_at && <p className="text-xs text-gray-600">Claim deadline: {localTime.format(new Date(order.claim_expires_at))} (Philippine time). Store pickup hours also apply.</p>}

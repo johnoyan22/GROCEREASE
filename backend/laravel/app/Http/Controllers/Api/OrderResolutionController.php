@@ -28,14 +28,19 @@ class OrderResolutionController extends Controller
             $record = Order::where('store_id', $context['store']->store_id)->whereKey($order)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($record->status, ['waiting', 'preparing', 'ready_for_pickup'], true)
                 && in_array($record->claim_status, ['awaiting_preparation', 'claimable'], true) && $record->reservation_status === 'active', 409, 'This order requires reconciliation rather than a normal reschedule.');
+            $oldDeadline = $record->claim_expires_at;
+            if (!$oldDeadline && $record->payment_method === 'cash_on_pickup') $oldDeadline = $record->scheduled_store_closes_at;
+            abort_if($oldDeadline && !$oldDeadline->isFuture(), 409, 'The original claim deadline passed. This order needs reconciliation, not a normal reschedule.');
+            abort_if(DB::table('cop_strikes')->where('order_id', $record->order_id)->lockForUpdate()->first(), 409, 'A COP strike requires an audited Admin review; rescheduling cannot bypass it.');
             abort_if(DB::table('pickup_verifications')->where('order_id', $record->order_id)->lockForUpdate()->first(), 409, 'A verified claimant requires pickup reconciliation before changing the schedule.');
-            $previous = $record->only(['pickup_window_start_at', 'pickup_window_end_at', 'scheduled_store_closes_at']);
+            $previous = $record->only(['pickup_window_start_at', 'pickup_window_end_at', 'scheduled_store_closes_at', 'pickup_schedule_review_required']);
             $record->fill($scheduling->resolve($context['store'], $validated));
+            $record->pickup_schedule_review_required = false;
             if (!$record->isDirty()) return response()->json(['message' => 'Pickup schedule is unchanged.', 'order' => $data->present($record, true)]);
             if ($record->status === 'ready_for_pickup') app(PickupPolicy::class)->issue($record);
             $record->save();
-            $this->log($record, $context['user']->id, 'rescheduled', trim($validated['reason']), ['previous' => $previous, 'current' => $record->only(array_keys($previous))]);
-            app(OrderNotifications::class)->notify($record, 'rescheduled_'.$record->updated_at->timestamp, 'The store approved a new pickup schedule. Review My Orders and use the latest pickup code.');
+            $logId = $this->log($record, $context['user']->id, 'rescheduled', trim($validated['reason']), ['previous' => $previous, 'current' => $record->only(array_keys($previous))]);
+            app(OrderNotifications::class)->notify($record, 'rescheduled_'.$logId, 'The store approved a new pickup schedule. Review My Orders and use the latest pickup code.');
             return response()->json(['message' => 'Pickup rescheduled. Any previous pickup code was revoked.', 'order' => $data->present($record, true)]);
         }, 3);
     }
@@ -85,9 +90,9 @@ class OrderResolutionController extends Controller
         }, 3);
     }
 
-    private function log(Order $order, int $actorId, string $action, string $reason, ?array $details = null): void
+    private function log(Order $order, int $actorId, string $action, string $reason, ?array $details = null): int
     {
-        DB::table('order_resolution_logs')->insert(['order_id' => $order->order_id, 'recorded_by_user_id' => $actorId,
+        return DB::table('order_resolution_logs')->insertGetId(['order_id' => $order->order_id, 'recorded_by_user_id' => $actorId,
             'action' => $action, 'reason' => $reason, 'details' => $details ? json_encode($details) : null, 'created_at' => now(), 'updated_at' => now()]);
     }
 }

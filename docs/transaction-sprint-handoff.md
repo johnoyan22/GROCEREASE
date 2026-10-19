@@ -9,7 +9,7 @@ item preparation checklist/review; QR/PIN verification, cashier evidence and onc
 closing/holding deadlines, COP strikes and corrections, resale disposition and pending refund review;
 real payment records and completed receipt printing.
 
-Evidence: 288 Laravel cases / 4,471 assertions, 80 Node client/cart cases, all 45 changed frontend files linted,
+Latest pickup-settings revision: 305 Laravel cases / 4,813 assertions, 86 Node client/cart cases, all 13 changed frontend files linted,
 production build passed. A temporary MariaDB database also passed all migrations and actual concurrent
 reservation, worker assignment and handover scenarios. User browser acceptance is still pending.
 
@@ -18,7 +18,9 @@ reservation, worker assignment and handover scenarios. User browser acceptance i
 - 000007/000008 stock migrations were applied locally with explicit approval; existing business records were preserved.
 - 000009–000013 transaction migrations were applied to local grocerease MariaDB on October 19, 2026, with explicit approval. Before/after original-column hashes and counts matched for all 11 existing business tables; all 17 new tables were empty. Store settings remain null and no seeds ran.
 - Follow pending-transaction-migrations.md; do not modify already-applied historical migrations.
-- Admin configures actual per-store weekly hours before Checkout can operate. Paid holding has no silent default; select an approved 24 or 48 hours.
+- Supervisor → System Configuration now owns operational store/pickup hours, suspension dates and approved 24/48-hour holding. Admin Store Management is read-only oversight with audit history.
+- Migration 000014 adds nullable pickup-service hours and an order review flag. It was applied to local MariaDB on October 19 with explicit approval. Before/after hashes and counts matched across all 28 existing business tables; no data was seeded. See supervisor-pickup-settings.md.
+- Existing orders keep their saved windows/deadlines. Affected weekdays/suspended dates flag active orders for review through the existing reasoned reschedule workflow; expired/struck/verified cases require reconciliation.
 - Business schedule/deadline dates are explicit UTC DATETIME values; frontend displays Asia/Manila.
 - The deadline job is registered every minute in routes/console.php. Run a backend scheduler in deployment.
   The consultation command is php artisan orders:process-deadlines --dry-run; the command without --dry-run classifies eligible records.

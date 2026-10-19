@@ -26,6 +26,16 @@ Before/after verification matched record counts and deterministic SHA-256 hashes
 `php artisan migrate:status` confirmed all five as Ran in batch 15. The read-only consultation preview, `php artisan orders:process-deadlines --dry-run`, returned `{"classified":0,"reminders":0,"dry_run":true}`. The real deadline command was not run against working records. The temporary verification script and hash/count snapshot were removed after successful comparison.
 Do not run `migrate:fresh` or roll back working data.
 
-Then Admin configures each store's **actual** pickup hours through Store Management. Real Checkout remains unavailable for an unconfigured store. Paid holding remains unset until the store explicitly selects its approved 24/48-hour setting.
+The later operational-ownership revision moves configuration to the assigned Supervisor's System Configuration screen. Admin Store Management provides read-only oversight. Real Checkout remains unavailable for an unconfigured store. Paid holding remains unset until the store explicitly selects its approved 24/48-hour setting.
+
+## Later migration 000014: approved and applied
+
+The new migration `2026_10_19_000014_add_pickup_service_hours_and_schedule_review.php` was **applied to local grocerease MariaDB on October 19, 2026, following explicit user approval**. It adds nullable `stores.pickup_service_hours` and a false-by-default `orders.pickup_schedule_review_required` flag. It does not seed records or rewrite approved windows, deadlines, prices, stock or assignments. Existing stores initially retain their configured store hours as effective pickup hours until a Supervisor saves separate hours.
+
+The approved application ran only this path from backend/laravel:
+
+    php artisan migrate --path=database/migrations/2026_10_19_000014_add_pickup_service_hours_and_schedule_review.php
+
+See supervisor-pickup-settings.md for the full ownership, protection, tests and browser checklist. Before/after original-column hashes and record counts matched for all 28 existing business tables, including both stores; the existing order count remained zero. New pickup-service-hour values are null and the review flag has its false default. Exactly one migration record was added and all previous migration records were preserved. No seeds or business-record edits ran. The working schema is ready for browser acceptance.
 
 Read `feature-7-to-10-transactions.md` for the complete role/browser checklist and safe scheduler commands.

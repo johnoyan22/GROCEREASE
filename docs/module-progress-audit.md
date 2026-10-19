@@ -78,7 +78,7 @@ Order notifications are real, but do not complete the entire multi-role Notifica
 - COP: backend-enforced strikes/restrictions, scheduler/manual deadline command, exceptions preventing unjustified strikes, Admin correction/monitoring, physical resale disposition and paid unclaimed refund-review state.
 - Transactions: actual payment/handover records for Supervisor/Admin and stable completed receipt viewing/printing.
 
-Working schema application is complete; browser acceptance remains separate from automation.
+Transaction migrations 000009–000013 are applied. The later Supervisor pickup-settings migration 000014 is also applied with explicit approval; all 28 business tables passed original-column hash/count preservation checks. Browser acceptance remains separate from automation.
 Approved migrations 000009–000013 were applied with 11 existing business tables preserved and all 17 new tables empty. The application record is in pending-transaction-migrations.md.
 Previously approved stock migrations 000007/000008 were applied without altering existing business records.
 
@@ -110,14 +110,14 @@ No fake digital payment, refund, worker credit or automatic release is used to m
 
 ## Evidence and boundaries
 
-- Latest full Laravel: 288 passed / 4,471 assertions. Client API/cart: 80 passed.
-- All 45 changed frontend JS/JSX/MJS files linted. Production build passed with a chunk-size warning.
+- Latest full Laravel after the Supervisor settings revision: 305 passed / 4,813 assertions. Client API/cart: 86 passed.
+- All 13 frontend files changed by the Supervisor settings revision linted. Production build passed with the existing chunk-size warning.
 - A temporary MariaDB database accepted all migrations and passed actual concurrent reservation,
   worker assignment and handover checks. It and its runtime file were removed afterward.
 - Store A/B, own-Shopper access, current staff approval/placement, inactive stores, invalid transitions,
   protected fields, stale decisions, rollback, deadlines, strike correction and duplicate effects are tested.
 - User browser acceptance for these transaction changes has not been claimed.
-- Normal transaction schema application completed following explicit user approval; actual store hours and browser acceptance remain pending.
+- Normal transaction migrations 000009–000013 completed with approval. Migration 000014 is also applied with explicit approval and preservation checks; Supervisor settings editing and Admin read-only oversight await browser acceptance.
 - AI/Habel, owner functionality, deferred profile enhancements, external payment/refund transfers,
   incentive allocation/payout and broad financial/reporting modules remain untouched or incomplete.
 

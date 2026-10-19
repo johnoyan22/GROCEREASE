@@ -55,6 +55,7 @@ class OrderData
             'pickup_window_end_at' => $order->pickup_window_end_at?->toIso8601String(),
             'claim_expires_at' => $order->claim_expires_at?->toIso8601String(),
             'claim_status' => $order->claim_status, 'refund_status' => $order->refund_status,
+            'pickup_schedule_review_required' => (bool) $order->pickup_schedule_review_required,
             'unclaimed_reason' => $order->unclaimed_reason, 'ready_at' => $order->ready_at?->toIso8601String(),
             'items' => $items, 'history' => $history,
             'pickup' => $this->pickupSummary($order),

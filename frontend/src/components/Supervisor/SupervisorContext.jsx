@@ -7,7 +7,6 @@ import { createContext, useContext, useMemo, useEffect, useState } from 'react'
 import {
   initialNotifications,
   initialReturns,
-  systemConfigDefault,
 } from './SupervisorData'
 
 import { useNavigate } from 'react-router-dom'
@@ -18,7 +17,6 @@ const SupervisorContext = createContext(null)
 export function SupervisorProvider({ children, basePath = '/supervisor', loginPath = '/login' }) {
   const [returns, setReturns] = useState(initialReturns)
   const [notifications, setNotifications] = useState(initialNotifications)
-  const [config, setConfig] = useState(systemConfigDefault)
 
   const [profile, setProfile] = useState(null)
   const [isAccountLoading, setIsAccountLoading] = useState(true)
@@ -91,10 +89,6 @@ export function SupervisorProvider({ children, basePath = '/supervisor', loginPa
     setReturns((current) => current.map((item) => (item.id === requestId ? { ...item, status } : item)))
   }
 
-  function saveConfig(nextConfig) {
-    setConfig(nextConfig)
-  }
-
   function markNotificationRead(id) {
     setNotifications((current) => current.map((item) => (item.id === id ? { ...item, unread: false } : item)))
   }
@@ -116,15 +110,13 @@ export function SupervisorProvider({ children, basePath = '/supervisor', loginPa
       supervisorPath,
       returns,
       notifications,
-      config,
       profile,
       updateReturnStatus,
-      saveConfig,
       markNotificationRead,
       markAllNotificationsRead,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [basePath, loginPath, returns, notifications, config, profile],
+    [basePath, loginPath, returns, notifications, profile],
   )
 
   if (isAccountLoading) {

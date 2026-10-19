@@ -30,6 +30,7 @@ class OrderDeadlines
                             return;
                         }
                         if ($order->payment_method === 'cash_on_pickup' && $order->payment_status === 'unpaid') {
+                            if ($order->pickup_schedule_review_required) return;
                             $date = $order->pickup_window_start_at?->setTimezone(PickupScheduling::TIMEZONE)->format('Y-m-d');
                             if (!$date || !$store->operating_hours || $store->status !== 'active' || !$order->scheduled_store_closes_at) return;
                             $day = $order->pickup_window_start_at->copy()->setTimezone(PickupScheduling::TIMEZONE)->isoWeekday();

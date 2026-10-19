@@ -16,22 +16,6 @@ export const profileDefault = {
   photoUrl: '',
 }
 
-export const systemConfigDefault = {
-  storeName: 'Colonnade Supermarket',
-  lowStockThreshold: 10,
-  maxOrdersPerWorker: 4,
-  morningShift: '8:00 AM - 12:00 PM',
-  afternoonShift: '12:00 PM - 5:00 PM',
-  eveningShift: '5:00 PM - 9:00 PM',
-  pickupEnabled: true,
-  copEnabled: true,
-  prepaidEnabled: true,
-  autoAssignWorkers: true,
-  notifyOnNewOrder: true,
-  notifyOnLowStock: true,
-  notifyOnPaymentFail: true,
-}
-
 export const initialOrders = [
   { id: 'ORD-0001234', customer: 'Juan Dela Cruz', items: 3, paymentMethod: 'Prepaid', status: 'Preparing', workerId: 'W1', pickupTime: '3:00 PM' },
   { id: 'ORD-0001235', customer: 'Ana Reyes', items: 5, paymentMethod: 'COP', status: 'Pending Assignment', workerId: null, pickupTime: '4:00 PM' },
