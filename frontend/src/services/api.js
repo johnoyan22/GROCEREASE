@@ -40,8 +40,18 @@ async function sendRequest(path, options = {}) {
     error.errors = data.errors || {};
     throw error;
   }
+  if (options.method && options.method !== 'GET' && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('grocerease-data-changed'));
+  }
   return data;
 }
+
+export function getDashboardSummary({ signal } = {}) {
+  return sendRequest('/dashboard/summary', { signal, cache: 'no-store' });
+}
+
+export function getAdminAccounts({ signal } = {}) { return sendRequest('/admin/accounts', { signal, cache: 'no-store' }); }
+export function updateAccountStatus(id, status, reason) { return writeAction(`/admin/accounts/${encodeURIComponent(id)}/status`, 'PUT', { account_status: status, reason }); }
 
 export async function login(credentials) {
   const xsrfToken = await getXsrfToken();
@@ -363,7 +373,7 @@ export async function getCheckoutQuote(cart, { signal } = {}) {
   return sendRequest('/shopper/checkout/quote', {
     method: 'POST', signal,
     headers: { 'X-XSRF-TOKEN': xsrfToken },
-    body: JSON.stringify({ store_id: cart.store_id, items: checkoutItems(cart.items), pickup_date: cart.pickup_date, pickup_start: cart.pickup_start, pickup_end: cart.pickup_end }),
+    body: JSON.stringify({ store_id: cart.store_id, items: checkoutItems(cart.items), pickup_date: cart.pickup_date, pickup_start: cart.pickup_start, pickup_end: cart.pickup_end, ...checkoutPayment(cart) }),
   });
 }
 
@@ -372,7 +382,7 @@ export async function createCopOrder(cart, quoteToken, key) {
   return sendRequest('/shopper/orders', {
     method: 'POST',
     headers: { 'X-XSRF-TOKEN': xsrfToken },
-    body: JSON.stringify({ store_id: cart.store_id, items: checkoutItems(cart.items), pickup_date: cart.pickup_date, pickup_start: cart.pickup_start, pickup_end: cart.pickup_end, quote_token: quoteToken, idempotency_key: key }),
+    body: JSON.stringify({ store_id: cart.store_id, items: checkoutItems(cart.items), pickup_date: cart.pickup_date, pickup_start: cart.pickup_start, pickup_end: cart.pickup_end, ...checkoutPayment(cart), quote_token: quoteToken, idempotency_key: key }),
   });
 }
 
@@ -381,6 +391,17 @@ function checkoutItems(items) {
     return { store_inventory_id: item.store_inventory_id, quantity: item.quantity };
   });
 }
+
+function checkoutPayment(cart) {
+  return cart.payment_method ? { payment_method: cart.payment_method, ...(cart.payment_method === 'digital' ? { payment_channel: cart.payment_channel } : {}) } : {};
+}
+
+export const createCheckoutOrder = createCopOrder;
+export function getPaymentOptions(storeId, { signal } = {}) {
+  return sendRequest(`/shopper/stores/${encodeURIComponent(storeId)}/payment-options`, { signal, cache: 'no-store' });
+}
+export function startPaymentSession(orderId) { return writeAction(`/shopper/orders/${encodeURIComponent(orderId)}/payment-session`, 'POST', {}); }
+export function getPaymentSession(orderId, { signal } = {}) { return sendRequest(`/shopper/orders/${encodeURIComponent(orderId)}/payment-session`, { signal, cache: 'no-store' }); }
 
 export function findCheckoutAttempt(key, { signal } = {}) {
   return sendRequest(`/shopper/checkout-attempts/${encodeURIComponent(key)}`, { signal });

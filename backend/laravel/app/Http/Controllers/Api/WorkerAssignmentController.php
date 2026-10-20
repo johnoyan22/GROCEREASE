@@ -23,6 +23,7 @@ class WorkerAssignmentController extends Controller
             $context = $access->resolve($request->user(), ['supervisor']);
             $delegation->requireSchema();
             $record = Order::where('store_id', $context['store']->store_id)->whereKey($order)->lockForUpdate()->firstOrFail();
+            abort_if($record->payment_method === 'digital' && $record->payment_status !== 'paid', 409, 'Digital orders require trusted payment confirmation before delegation.');
             abort_unless(in_array($record->status, ['waiting', 'preparing'], true), 409, 'Only an active preparation order can receive a worker.');
             $worker = Worker::where('store_id', $record->store_id)->whereKey($validated['worker_id'])->lockForUpdate()->firstOrFail();
             abort_unless($worker->status === 'active', 409, 'This worker is inactive.');

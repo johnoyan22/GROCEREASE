@@ -6,12 +6,10 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { SupervisorSidebar } from './SupervisorSidebar'
 import { SupervisorHeader } from './SupervisorHeader'
-import { useSupervisor } from './SupervisorContext'
 
 export function SupervisorLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { notifications } = useSupervisor()
-  const unreadCount = notifications.filter((item) => item.unread).length
+  const unreadCount = 0 // Staff unread-message tracking is not configured.
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800">

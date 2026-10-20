@@ -22,6 +22,7 @@ import SupervisorApp from '../components/Supervisor/SupervisorApp';
 
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import AccountManagement from '../pages/admin/AccountManagement';
 import RoleManagement from '../pages/admin/RoleManagement';
 import StaffManagement from '../pages/admin/StaffManagement';
 import StoreManagement from '../pages/admin/StoreManagement';
@@ -63,6 +64,7 @@ function AppRoutes() {
       <Route element={<ProtectedRoute allowedRoles={['admin']}/>}>
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+        <Route path="/admin/accounts" element={<AdminLayout><AccountManagement /></AdminLayout>} />
         <Route path="/admin/staff" element={<AdminLayout><StaffManagement /></AdminLayout>} />
         <Route path="/admin/stores" element={<AdminLayout><StoreManagement /></AdminLayout>} />
         <Route path="/admin/roles" element={<AdminLayout><RoleManagement /></AdminLayout>} />

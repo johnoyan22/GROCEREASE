@@ -17,7 +17,7 @@ class TransactionRecordsController extends Controller
     public function adminIndex(PickupPolicy $pickup): JsonResponse
     {
         $pickup->requireSchema();
-        return response()->json(['transactions' => $this->records()->get()]);
+        return response()->json(['transactions' => $this->verifiedRecords($this->records()->get())]);
     }
 
     public function supervisorIndex(Request $request, StoreStaffAccess $access, PickupPolicy $pickup): JsonResponse
@@ -26,7 +26,7 @@ class TransactionRecordsController extends Controller
             $context = $access->resolve($request->user(), ['supervisor']);
             $pickup->requireSchema();
             return response()->json(['store' => $context['store']->only(['store_id', 'store_name', 'address']),
-                'transactions' => $this->records()->where('orders.store_id', $context['store']->store_id)->lockForUpdate()->get()]);
+                'transactions' => $this->verifiedRecords($this->records()->where('orders.store_id', $context['store']->store_id)->lockForUpdate()->get())]);
         }, 3);
     }
 
@@ -60,5 +60,13 @@ class TransactionRecordsController extends Controller
                 'orders.status', 'orders.payment_status', 'orders.payment_method', 'orders.refund_status', 'orders.claim_status',
                 'orders.subtotal_centavos', 'orders.service_fee_centavos', 'orders.total_centavos', 'order_payments.amount_centavos',
                 'order_payments.confirmed_at', 'order_handovers.handed_over_at']);
+    }
+
+    private function verifiedRecords($records)
+    {
+        $orders = Order::whereIn('order_id', $records->pluck('order_id'))->get()->keyBy('order_id');
+        $payments = DB::table('order_payments')->whereIn('order_id', $records->pluck('order_id'))->get()->keyBy('order_id');
+        return $records->filter(fn ($row) => $orders->has($row->order_id)
+            && app(PaymentEvidence::class)->valid($orders[$row->order_id], $payments->get($row->order_id)))->values();
     }
 }

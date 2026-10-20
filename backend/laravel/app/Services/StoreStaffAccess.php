@@ -13,7 +13,7 @@ class StoreStaffAccess
     {
         $user = User::query()->with('role')->lockForUpdate()->findOrFail($signedInUser->id);
 
-        if (! in_array($user->role?->slug, $allowedRoles, true) || ! $user->isApprovedStaff()) {
+        if (($user->account_status ?? 'active') !== 'active' || ! in_array($user->role?->slug, $allowedRoles, true) || ! $user->isApprovedStaff()) {
             abort(403, 'An Admin-approved staff account with permission for this operation is required.');
         }
 

@@ -6,6 +6,7 @@ import OrderPickup from './OrderPickup';
 import OrderPreparation from './OrderPreparation';
 import OrderResolution from './OrderResolution';
 import OrderReceipt from './OrderReceipt';
+import OrderPayment from './OrderPayment';
 
 const labels = { waiting: 'Waiting', preparing: 'Preparing', ready_for_pickup: 'Ready for pickup', completed: 'Completed', canceled: 'Canceled' };
 const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -61,6 +62,7 @@ function OrderCard({ order, role, workers, onSaved, onFailure }) {
       {order.pickup_window_start_at && <p className="mt-3 text-sm font-semibold">Scheduled pickup: {localTime.format(new Date(order.pickup_window_start_at))}–{localTime.format(new Date(order.pickup_window_end_at))} (Philippine time)</p>}
       {order.pickup_schedule_review_required && <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Store operating or pickup hours changed. The saved order schedule and deadline are unchanged, but the Supervisor must review this pickup before release. Contact the store if you need assistance.</p>}
       <p className="mt-3 text-sm">{order.payment_method === 'cash_on_pickup' ? 'Cash on Pickup' : order.payment_method} · Payment: <strong>{order.payment_status}</strong> · Reservation: {order.reservation_status}</p>
+      {role === 'shopper' && <OrderPayment order={order} onSaved={onSaved} />}
       <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[420px] text-left text-sm"><thead><tr className="border-b border-gray-200"><th scope="col" className="py-2">Item</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Line total</th></tr></thead><tbody>{order.items.map(function (item) {
         return <tr key={item.order_item_id} className="border-b border-gray-100"><td className="py-3">{item.product_name} {item.size}<span className="block text-xs text-gray-500">{item.sku}</span></td><td>{item.quantity}</td><td>{money.format(item.unit_price_centavos / 100)}</td><td>{money.format(item.line_total_centavos / 100)}</td></tr>;
       })}</tbody></table></div>
@@ -79,14 +81,14 @@ function OrderCard({ order, role, workers, onSaved, onFailure }) {
   );
 }
 
-export default function OrderWorkspace({ role, title = 'Orders' }) {
+export default function OrderWorkspace({ role, title = 'Orders', finalOnly = false }) {
   const orders = useOrders(role);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [notice, setNotice] = useState('');
   const [upcoming, setUpcoming] = useState(false);
   const filtered = orders.orders.filter(function (order) {
-    return (!status || order.status === status) && (!upcoming || (['waiting', 'preparing', 'ready_for_pickup'].includes(order.status) && new Date(order.pickup_window_end_at).getTime() >= orders.asOf))
+    return (!finalOnly || ['completed', 'canceled'].includes(order.status)) && (!status || order.status === status) && (!upcoming || (['waiting', 'preparing', 'ready_for_pickup'].includes(order.status) && new Date(order.pickup_window_end_at).getTime() >= orders.asOf))
       && [order.order_id, order.store_name, order.shopper_name].join(' ').toLowerCase().includes(search.toLowerCase());
   });
 

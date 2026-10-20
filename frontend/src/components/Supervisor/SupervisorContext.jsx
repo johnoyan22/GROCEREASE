@@ -1,13 +1,7 @@
 // SupervisorContext.jsx
-// Holds all the in-memory (no backend) Supervisor data and the actions that
-// change it. Wrap your routes in <SupervisorProvider> and any page can pull
-// what it needs with useSupervisor() instead of prop-drilling.
+// Authenticated Supervisor account and navigation context. Operational data comes from scoped APIs.
 
 import { createContext, useContext, useMemo, useEffect, useState } from 'react'
-import {
-  initialNotifications,
-  initialReturns,
-} from './SupervisorData'
 
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser } from '../../services/api'
@@ -15,8 +9,6 @@ import { getCurrentUser } from '../../services/api'
 const SupervisorContext = createContext(null)
 
 export function SupervisorProvider({ children, basePath = '/supervisor', loginPath = '/login' }) {
-  const [returns, setReturns] = useState(initialReturns)
-  const [notifications, setNotifications] = useState(initialNotifications)
 
   const [profile, setProfile] = useState(null)
   const [isAccountLoading, setIsAccountLoading] = useState(true)
@@ -85,18 +77,6 @@ export function SupervisorProvider({ children, basePath = '/supervisor', loginPa
     setAccountLoadVersion((version) => version + 1)
   }
 
-  function updateReturnStatus(requestId, status) {
-    setReturns((current) => current.map((item) => (item.id === requestId ? { ...item, status } : item)))
-  }
-
-  function markNotificationRead(id) {
-    setNotifications((current) => current.map((item) => (item.id === id ? { ...item, unread: false } : item)))
-  }
-
-  function markAllNotificationsRead() {
-    setNotifications((current) => current.map((item) => ({ ...item, unread: false })))
-  }
-
   // Build an absolute path under whatever base path this is mounted at,
   // e.g. supervisorPath('orders') -> '/supervisor/orders'
   function supervisorPath(key) {
@@ -108,15 +88,10 @@ export function SupervisorProvider({ children, basePath = '/supervisor', loginPa
       basePath,
       loginPath,
       supervisorPath,
-      returns,
-      notifications,
       profile,
-      updateReturnStatus,
-      markNotificationRead,
-      markAllNotificationsRead,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [basePath, loginPath, returns, notifications, profile],
+    [basePath, loginPath, profile],
   )
 
   if (isAccountLoading) {

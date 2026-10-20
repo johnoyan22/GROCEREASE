@@ -39,7 +39,7 @@ class CheckoutController extends Controller
             $user = $this->shopper($request);
             $data->requireSchema();
             app(PickupScheduling::class)->requireSchema();
-            app(CopRestrictions::class)->requireAllowed($user->id);
+            if ($cart['payment_method'] === 'cash_on_pickup') app(CopRestrictions::class)->requireAllowed($user->id);
             $resolved = $pricing->resolve($cart);
             $expiresAt = now()->addSeconds((int) config('checkout.quote_lifetime_seconds'));
             $token = Crypt::encryptString(json_encode([
@@ -81,7 +81,7 @@ class CheckoutController extends Controller
                 abort(409, 'Your checkout review expired. Review the current prices again.');
             }
             $resolved = $pricing->resolve($cart);
-            app(CopRestrictions::class)->requireAllowed($user->id);
+            if ($cart['payment_method'] === 'cash_on_pickup') app(CopRestrictions::class)->requireAllowed($user->id);
             if (($quote['price_hash'] ?? '') !== $pricing->priceHash($resolved)) {
                 abort(409, 'Store details or prices changed. Review the updated checkout before placing your order.');
             }
@@ -94,7 +94,7 @@ class CheckoutController extends Controller
                 'store_id' => $store->store_id, 'shopper_user_id' => $user->id,
                 'store_name' => $store->store_name, 'store_address' => $store->address,
                 'shopper_name' => mb_substr($name, 0, 255),
-                'status' => 'waiting', 'payment_method' => 'cash_on_pickup', 'payment_status' => 'unpaid',
+                'status' => 'waiting', 'payment_method' => $cart['payment_method'], 'payment_status' => 'unpaid',
                 'reservation_status' => 'active', 'currency' => 'PHP',
                 'subtotal_centavos' => $resolved['subtotal_centavos'], 'service_fee_centavos' => $resolved['service_fee_centavos'],
                 'total_centavos' => $resolved['total_centavos'], 'service_fee_policy' => $resolved['service_fee_policy'],
@@ -113,12 +113,13 @@ class CheckoutController extends Controller
                 $inventory->stock_version = $inventory->stock_version + 1;
                 $inventory->save();
             }
+            if ($cart['payment_method'] === 'digital') app(\App\Services\PaymentCheckout::class)->createAttempt($order, $cart['payment_channel']);
             OrderStatusHistory::create([
                 'order_id' => $order->order_id, 'changed_by_user_id' => $user->id,
-                'previous_status' => null, 'new_status' => 'waiting', 'note' => 'Cash on Pickup order placed; payment remains unpaid.',
+                'previous_status' => null, 'new_status' => 'waiting', 'note' => $cart['payment_method'] === 'digital' ? 'Sandbox digital order reserved; payment pending trusted provider confirmation.' : 'Cash on Pickup order placed; payment remains unpaid.',
             ]);
             return response()->json([
-                'message' => 'Order placed. Pay the store cashier before final pickup release.',
+                'message' => $cart['payment_method'] === 'digital' ? 'Order reserved. Complete the sandbox hosted payment before preparation.' : 'Order placed. Pay the store cashier before final pickup release.',
                 'order' => $data->present($order->refresh()),
             ], 201);
         }, 3);
@@ -127,7 +128,7 @@ class CheckoutController extends Controller
     private function shopper(Request $request): User
     {
         $user = User::with(['role', 'profile'])->lockForUpdate()->findOrFail($request->user()->id);
-        if ($user->role?->slug !== 'shopper' || ! $user->hasVerifiedEmail()) {
+        if (($user->account_status ?? 'active') !== 'active' || $user->role?->slug !== 'shopper' || ! $user->hasVerifiedEmail()) {
             abort(403, 'A verified Shopper account is required.');
         }
         return $user;

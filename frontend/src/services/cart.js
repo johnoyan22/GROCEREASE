@@ -3,6 +3,12 @@ export function emptyCart() {
   return { store_id: null, items: [] };
 }
 
+export function cartFingerprint(cart) {
+  return JSON.stringify({ store_id: cart.store_id, items: cart.items.map(item => ({
+    store_inventory_id: item.store_inventory_id, quantity: item.quantity,
+  })).sort((a, b) => a.store_inventory_id - b.store_inventory_id) });
+}
+
 export function readSavedCart(storage, userId) {
   try {
     const cart = JSON.parse(storage.getItem('grocerease-cart-' + userId));
@@ -51,6 +57,7 @@ export function cartSummary(cart, products) {
   for (const item of cart.items) {
     const product = products.find(function (row) { return row.store_inventory_id === item.store_inventory_id && row.store_id === cart.store_id; });
     let error = '';
+    let priceError = false;
     let lineCentavos = 0;
     if (!product) {
       error = 'This product is unavailable. Remove it from your cart.';
@@ -58,17 +65,18 @@ export function cartSummary(cart, products) {
       error = 'Reduce the quantity to match current stock and the per-order limit.';
     }
     if (product) {
-      const priceParts = product.selling_price.split('.');
+      const priceParts = String(product.selling_price).split('.');
       const unitCentavos = Number(priceParts[0]) * 100 + Number(priceParts[1]);
       lineCentavos = unitCentavos * item.quantity;
       if (!Number.isSafeInteger(lineCentavos) || !Number.isSafeInteger(subtotalCentavos + lineCentavos)) {
         error = 'This cart amount is too large. Reduce the quantity.';
+        priceError = true;
         lineCentavos = 0;
       }
       subtotalCentavos = subtotalCentavos + lineCentavos;
     }
     if (error) valid = false;
-    rows.push({ ...item, product, lineCentavos, error });
+    rows.push({ ...item, product, lineCentavos, error, priceError });
   }
   return { rows, subtotalCentavos, valid };
 }

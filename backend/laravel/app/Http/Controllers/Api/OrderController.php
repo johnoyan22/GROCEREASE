@@ -55,6 +55,7 @@ class OrderController extends Controller
             $context = $access->resolve($request->user(), ['supervisor']);
             $data->requireSchema();
             $record = Order::where('store_id', $context['store']->store_id)->whereKey($order)->lockForUpdate()->firstOrFail();
+            abort_if($record->payment_method === 'digital' && $record->payment_status !== 'paid', 409, 'Digital orders require trusted payment confirmation before preparation.');
             $validated = $request->validate([
                 'status' => ['required', Rule::in(['preparing', 'ready_for_pickup'])],
                 'store_id' => ['prohibited'], 'changed_by_user_id' => ['prohibited'],
@@ -101,6 +102,10 @@ class OrderController extends Controller
             $record = Order::where('shopper_user_id', $user->id)->whereKey($order)->lockForUpdate()->firstOrFail();
             if ($record->status !== 'waiting' || $record->payment_status !== 'unpaid' || $record->reservation_status !== 'active') {
                 abort(409, 'Only an unpaid Waiting order can be canceled.');
+            }
+            if ($record->payment_method === 'digital') {
+                app(\App\Services\PaymentCheckout::class)->cancelLocked($record, $user->id, $request->input('reason'));
+                return response()->json(['message' => 'Digital order canceled after provider expiry; reserved stock released.', 'order' => $data->present($record)]);
             }
             foreach ($record->items()->orderBy('store_inventory_id')->get() as $item) {
                 $inventory = StoreInventory::forStore($record->store_id)->whereKey($item->store_inventory_id)->lockForUpdate()->firstOrFail();

@@ -1,35 +1,20 @@
 import { InventoryTip } from "../shared/InventoryIcons";
 
-const inventoryStatuses = [
-  {
-    label: "In Stock",
-    count: 892,
-    percentage: 71.5,
-    color: "bg-green-600",
-  },
-  {
-    label: "Low Stock",
-    count: 185,
-    percentage: 14.8,
-    color: "bg-orange-500",
-  },
-  {
-    label: "Out of Stock",
-    count: 91,
-    percentage: 7.3,
-    color: "bg-red-500",
-  },
-  {
-    label: "For Verification",
-    count: 80,
-    percentage: 6.4,
-    color: "bg-gray-400",
-  },
-];
-
-const totalItems = inventoryStatuses.reduce((total, status) => total + status.count, 0);
-
-function InventorySummary() {
+function InventorySummary({ data }) {
+    const counts = data.stock_statuses;
+    const totalItems = data.inventory_records;
+    const inventoryStatuses = [
+      { label: 'In Stock', count: counts.in_stock, color: 'bg-green-600', hex: '#16a34a' },
+      { label: 'Low Stock', count: counts.low_stock, color: 'bg-orange-500', hex: '#f97316' },
+      { label: 'Out of Stock', count: counts.out_of_stock, color: 'bg-red-500', hex: '#ef4444' },
+      { label: 'Inactive', count: counts.inactive, color: 'bg-gray-400', hex: '#9ca3af' },
+    ];
+    let offset = 0;
+    const stops = inventoryStatuses.map(status => {
+      status.percentage = totalItems ? Math.round(status.count / totalItems * 1000) / 10 : 0;
+      const start = offset; offset += totalItems ? status.count / totalItems * 100 : 0;
+      return status.hex + ' ' + start + '% ' + offset + '%';
+    });
     return(
         <section className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="mb-4 flex items-center justify-between">
@@ -38,12 +23,12 @@ function InventorySummary() {
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full"
                     style={{
-                            background: "conic-gradient(#16a34a 0% 71.5%, #f97316 71.5% 86.3%, #ef4444 86.3% 93.6%, #9ca3af 93.6% 100%)",
+                            background: totalItems ? 'conic-gradient(' + stops.join(', ') + ')' : '#e5e7eb',
                             }}>
                     <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white">
                         <div className="text-center">
                             <p className="text-xl font-bold text-gray-800">{totalItems.toLocaleString()}</p>
-                            <p className="text-xs text-gray-500">Total Items</p>
+                            <p className="text-xs text-gray-500">Product records</p>
                         </div>
                     </div>
                 </div>
@@ -66,6 +51,7 @@ function InventorySummary() {
 
             </div>
 
+            <p className="mt-4 text-xs text-gray-600">Physical: {data.physical_units} - Reserved: {data.reserved_units} - Available: {data.available_units}. Low stock uses each product's configured threshold.</p>
             <div className="mt-5 flex items-start gap-3 rounded-lg bg-green-50 p-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
                     <InventoryTip />

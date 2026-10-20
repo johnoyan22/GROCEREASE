@@ -20,6 +20,7 @@ import { logout } from '../../services/api';
 
 const navItems = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/admin/accounts', label: 'User Accounts', icon: UsersRound },
   { path: '/admin/stores', label: 'Store Management', icon: Store },
   { path: '/admin/staff', label: 'Staff Management', icon: UsersRound },
   { path: '/admin/roles', label: 'Role Management', icon: KeyRound },

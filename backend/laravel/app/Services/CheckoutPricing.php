@@ -7,6 +7,7 @@ use App\Models\StoreInventory;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class CheckoutPricing
 {
@@ -23,7 +24,9 @@ class CheckoutPricing
             'subtotal' => ['prohibited'], 'total' => ['prohibited'], 'price' => ['prohibited'],
             'subtotal_centavos' => ['prohibited'], 'total_centavos' => ['prohibited'],
             'service_fee_centavos' => ['prohibited'], 'service_fee_policy' => ['prohibited'],
-            'payment_status' => ['prohibited'], 'payment_method' => ['prohibited'],
+            'payment_status' => ['prohibited'], 'payment_method' => ['sometimes', Rule::in(['cash_on_pickup', 'digital'])],
+            'payment_channel' => ['sometimes', Rule::in(['wallet', 'card'])],
+            'provider_reference' => ['prohibited'], 'provider' => ['prohibited'], 'amount' => ['prohibited'],
             'status' => ['prohibited'], 'reservation_status' => ['prohibited'],
         ]);
         $items = [];
@@ -34,6 +37,8 @@ class CheckoutPricing
             return $first['store_inventory_id'] <=> $second['store_inventory_id'];
         });
         return ['store_id' => (int) $validated['store_id'], 'items' => $items,
+            'payment_method' => $validated['payment_method'] ?? 'cash_on_pickup',
+            'payment_channel' => ($validated['payment_method'] ?? 'cash_on_pickup') === 'digital' ? ($validated['payment_channel'] ?? 'wallet') : null,
             'pickup_date' => $validated['pickup_date'], 'pickup_start' => $validated['pickup_start'], 'pickup_end' => $validated['pickup_end']];
     }
 
@@ -47,10 +52,18 @@ class CheckoutPricing
     {
         $store = Store::query()->where('status', Store::STATUS_ACTIVE)->lockForUpdate()->findOrFail($cart['store_id']);
         $schedule = app(PickupScheduling::class)->resolve($store, $cart);
+        $digital = ($cart['payment_method'] ?? 'cash_on_pickup') === 'digital';
+        if ($digital) {
+            app(PayMongoGateway::class)->requireSchema();
+            $merchant = app(PayMongoGateway::class)->merchant($store->store_id);
+            $channels = $cart['payment_channel'] === 'card' ? array_intersect($merchant['methods'], ['card']) : array_diff($merchant['methods'], ['card']);
+            abort_unless($channels, 422, 'The selected payment channel is unavailable for this supermarket.');
+            abort_unless(in_array($store->paid_order_holding_hours, [24, 48], true), 422, 'The Supervisor must configure the approved 24- or 48-hour prepaid holding policy first.');
+        }
         if (config('checkout.service_fee.enabled') !== false) {
             abort(503, 'Service-fee approval and implementation are pending. No charge has been activated.');
         }
-        $maximum = (int) config('checkout.cop_max_centavos');
+        $maximum = $digital ? 4294967295 : (int) config('checkout.cop_max_centavos'); // Existing unsigned centavo columns.
         $subtotal = 0;
         $lines = [];
         foreach ($cart['items'] as $index => $requested) {
@@ -75,12 +88,12 @@ class CheckoutPricing
             $unitPrice = ((int) $parts[0] * 100) + (int) $parts[1];
             // Check the COP ceiling before multiplication, including extremely large quantities.
             if ($unitPrice > 0 && $quantity > intdiv($maximum, $unitPrice)) {
-                $this->invalid($index, 'Cash on Pickup orders cannot exceed PHP 1,500.00.');
+                $this->invalid($index, $digital ? 'This order exceeds the supported centavo range.' : 'Cash on Pickup orders cannot exceed PHP 1,500.00.');
             }
             $lineTotal = $unitPrice * $quantity;
             $subtotal = $subtotal + $lineTotal;
             if ($subtotal > $maximum) {
-                $this->invalid($index, 'Cash on Pickup orders cannot exceed PHP 1,500.00.');
+                $this->invalid($index, $digital ? 'This order exceeds the supported centavo range.' : 'Cash on Pickup orders cannot exceed PHP 1,500.00.');
             }
             $lines[] = [
                 'inventory' => $inventory, 'quantity' => $quantity,
@@ -94,6 +107,7 @@ class CheckoutPricing
             'service_fee_centavos' => 0, 'total_centavos' => $subtotal,
             'service_fee_policy' => 'pending_partner_approval_no_charge',
             'schedule' => $schedule,
+            'payment_method' => $cart['payment_method'] ?? 'cash_on_pickup', 'payment_channel' => $cart['payment_channel'] ?? null,
         ];
     }
 
@@ -113,6 +127,7 @@ class CheckoutPricing
             'subtotal_centavos' => $pricing['subtotal_centavos'], 'service_fee_centavos' => $pricing['service_fee_centavos'],
             'total_centavos' => $pricing['total_centavos'], 'currency' => 'PHP',
             'service_fee_policy' => $pricing['service_fee_policy'],
+            'payment_method' => $pricing['payment_method'], 'payment_channel' => $pricing['payment_channel'],
             'pickup_window_start_at' => $pricing['schedule']['pickup_window_start_at']->toIso8601String(),
             'pickup_window_end_at' => $pricing['schedule']['pickup_window_end_at']->toIso8601String(),
             'cop_claim_deadline_at' => $pricing['schedule']['scheduled_store_closes_at']->toIso8601String(),

@@ -1,8 +1,9 @@
 // src/components/inventory/StatCards.jsx
+function StatCards({ data }) {
 const stats = [
   {
     title: "Products Managed",
-    value: "352",
+    value: data.products_managed,
     subtext: "Active Products",
     bgColor: "bg-green-50",
     textColor: "text-green-600",
@@ -13,9 +14,9 @@ const stats = [
     ),
   },
   {
-    title: "Total Stock Items",
-    value: "1,248",
-    subtext: "Across all categories",
+    title: "Physical Stock Units",
+    value: data.physical_units,
+    subtext: "Includes reserved units",
     bgColor: "bg-blue-50",
     textColor: "text-blue-600",
     icon: (
@@ -26,7 +27,7 @@ const stats = [
   },
   {
     title: "Low Stock Alerts",
-    value: "18",
+    value: data.low_stock_products,
     subtext: "Requires Attention",
     bgColor: "bg-amber-50",
     textColor: "text-amber-600",
@@ -39,9 +40,9 @@ const stats = [
     ),
   },
   {
-    title: "Verification Requests",
-    value: "7",
-    subtext: "Pending your action",
+    title: "Pending Stock Approvals",
+    value: data.pending_stock_approvals,
+    subtext: "Awaiting Supervisor review",
     bgColor: "bg-purple-50",
     textColor: "text-purple-600",
     icon: (
@@ -52,8 +53,8 @@ const stats = [
   },
   {
     title: "Stock Updates Today",
-    value: "23",
-    subtext: "Stock changes daily",
+    value: data.stock_updates_today,
+    subtext: "Approved corrections today (PH)",
     bgColor: "bg-teal-50",
     textColor: "text-teal-600",
     icon: (
@@ -65,7 +66,7 @@ const stats = [
   },
 ];
 
-function StatCards() {
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {stats.map((item, index) => (

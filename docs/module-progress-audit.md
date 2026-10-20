@@ -1,6 +1,6 @@
 # GrocerEase module-role point audit
 
-Date: October 19, 2026. Scope: the current feature/multi-store-foundation branch
+Date: October 20, 2026. Scope: the current feature/multi-store-foundation branch
 and results recorded in this development session, not unreviewed teammate branches.
 
 Source: Latest_list_of_modules_CHANGES_MAY_HAPPEN.pdf, Table 6, document pages
@@ -32,7 +32,7 @@ are verified, these two points can be added, bringing the count to 5/40 (12.5%).
 
 The Admin Account Management point remains partial: login, own-account viewing/
 password controls, staff creation/approval and staff role/store placement exist,
-but authentication-account activation/deactivation is missing. Store activation
+but authentication-account activation/deactivation now awaits migration 000016 and browser acceptance. Store activation
 and staff approval are separate operations and do not satisfy that account-status
 requirement. The Role Management screen is still a prototype.
 
@@ -57,7 +57,7 @@ C = previously credited; P = provisional account scope; R = connected implementa
 | Receipt and Invoice Management | W | - | W | W |
 | Worker Tip Incentive Management | - | - | N | N |
 | Financial Setup Management | - | - | - | N |
-| Reports and Analytics Management | - | - | N | N |
+| Reports and Analytics Management | - | - | W | W |
 | Notification Management | W | N | N | N |
 
 R is a review status, not a claim that every panel requirement has been accepted.
@@ -123,3 +123,36 @@ No fake digital payment, refund, worker credit or automatic release is used to m
 
 See feature-5-stock-management.md, feature-6-shopper-catalog-cart.md and
 feature-7-to-10-transactions.md for role-specific manual checklists.
+
+## October 20 sprint evidence (no additional points)
+
+- One account-scoped shared cart now connects Browse, My Cart, Checkout, Header
+  and Dashboard, including storage recovery, header search and real cart totals.
+- Dashboard cards use an authenticated role/store-scoped summary, actual active
+  orders/stock/personnel/approvals/COP restrictions and verified Manila-day payments.
+  Missing/unapproved financial data is labeled unavailable or not configured.
+- Shopper order notifications, History and Pickup Information use real records;
+  staff updates show actual store stock records without fake unread messages.
+- A PayMongo test-only Hosted Checkout adapter, signed-webhook verification,
+  separate attempts, replay protection and guarded reservation expiration are
+  automated with provider HTTP fakes. **It remains disabled; authorized merchant
+  credentials, webhook setup, migration 000015 and actual provider/browser
+  acceptance are outstanding.** No real payment integration point is awarded.
+- Admin account-status code and audit/session guards await approval/application
+  of migration 000016. Account/store/COP state remains separate. Staff own-profile
+  viewing/password regression tests pass, but the complete approved Manage Own
+  Account scope remains provisional.
+- Supervisor/Admin payment reports use verified records and date/store filters;
+  invoice issuance, broad report exports, staff/Admin notification delivery and
+  approved incentive/financial formulas remain incomplete.
+- Current automation: **337 Laravel tests / 5,436 assertions; 102 frontend tests**;
+  ESLint/build pass, npm audit has no reported vulnerabilities. New migrations were
+  tested only in isolated SQLite, preserving existing columns/records; neither was
+  applied to working MariaDB. Browser acceptance remains separate and pending.
+
+Full phased file/endpoint inventory, definitions, migration review and manual setup:
+[October 20 sprint report](october-20-implementation-sprint-report.md).
+
+**Credited count remains 3/40 (7.5%); new credited points: 0.** AI and Owner scope
+remain untouched. Product substitutions and invoices await approved full acceptance
+requirements; no service charge, markup, tip or payout formula was invented.

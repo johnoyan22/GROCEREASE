@@ -20,7 +20,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($credentials)) {
+        if (!Auth::guard('web')->attempt($credentials)) {
             return response()->json([
                 'message' => 'The email or password is incorrect'
             ], 401);
@@ -28,7 +28,13 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        $user = $request->user()->load(['role', 'profile']);
+        $user = Auth::guard('web')->user()->load(['role', 'profile']);
+        if (($user->account_status ?? 'active') !== 'active') {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return response()->json(['message' => 'This account is inactive. Contact an administrator.'], 403);
+        }
 
         return response()->json([
             'user' => $user->accountData(),

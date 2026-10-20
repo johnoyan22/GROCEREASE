@@ -1,6 +1,6 @@
 import { 
   LayoutDashboard, ShoppingBag, Sparkles, Package, Store, Bell, 
-  User, CreditCard, History, Settings, LogOut 
+  User, CreditCard, History, Settings, LogOut, ShoppingCart
 } from 'lucide-react';
 import Logo from '../../assets/images/Logo.png';
 import { logout } from '../../services/api';
@@ -53,6 +53,10 @@ function ShopperSidebar({ activeTab, setActiveTab }) {
             Browse Products
           </button>
 
+          <button type="button" onClick={() => setActiveTab('Cart')} className={getButtonClass('Cart')}>
+            <ShoppingCart className="w-4 h-4" />My Cart
+          </button>
+
           <button
             onClick={() => setActiveTab('AI')}
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border ${
@@ -92,7 +96,6 @@ function ShopperSidebar({ activeTab, setActiveTab }) {
               <Store className="w-4 h-4" />
               Pick up Information
             </div>
-            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
 
           <button

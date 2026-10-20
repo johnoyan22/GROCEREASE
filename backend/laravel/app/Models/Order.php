@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['waiting', 'preparing', 'ready_for_pickup'])
+            ->where('reservation_status', 'active')->whereIn('claim_status', ['awaiting_preparation', 'claimable']);
+    }
+
     protected $primaryKey = 'order_id';
 
     protected $fillable = [

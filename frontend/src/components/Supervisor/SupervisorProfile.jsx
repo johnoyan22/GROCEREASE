@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UserRound } from 'lucide-react'
 import { PageHeader } from './SupervisorUI'
-import { storeInfo } from './SupervisorData'
 import { useSupervisor } from './SupervisorContext'
 import { changeSupervisorPassword } from '../../services/api'
 
@@ -127,8 +126,6 @@ export function SupervisorProfile() {
       <PageHeader
         title="Profile"
         subtitle="View your account information."
-        storeName={storeInfo.name}
-        storeAddress={storeInfo.address}
       />
 
       <section className="rounded-2xl border border-green-200 bg-white p-6 shadow-sm">

@@ -5,6 +5,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronDown, Home, Search } from 'lucide-react'
+import StoreSelector from '../inventory/layout/StoreSelector'
 
 // ---------- layout bits ----------
 
@@ -26,7 +27,7 @@ export function StorePicker({ storeName, storeAddress }) {
   )
 }
 
-export function PageHeader({ title, subtitle, storeName, storeAddress }) {
+export function PageHeader({ title, subtitle }) {
   return (
     <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
       <div>
@@ -34,7 +35,7 @@ export function PageHeader({ title, subtitle, storeName, storeAddress }) {
         <h1 className="font-serif text-3xl text-slate-900">{title}</h1>
         {subtitle ? <p className="mt-1 max-w-2xl text-sm text-slate-500">{subtitle}</p> : null}
       </div>
-      <StorePicker storeName={storeName} storeAddress={storeAddress} />
+      <StoreSelector />
     </div>
   )
 }

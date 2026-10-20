@@ -2,6 +2,14 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\PaymentCheckoutController;
+use App\Http\Controllers\Api\AdminAccountController;
+
+Route::get('/dashboard/summary', [DashboardController::class, 'summary'])
+    ->middleware(['auth:sanctum', 'role:shopper,inventory_worker,supervisor,admin']);
+
+Route::post('/payments/paymongo/test/{store}/webhook', [PaymentCheckoutController::class, 'webhook'])->whereNumber('store');
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\ShopperProfileController;
@@ -84,6 +92,8 @@ Route::put('/admin/password', [ShopperProfileController::class, 'updatePassword'
     ->name('admin.password.update');
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/admin/accounts', [AdminAccountController::class, 'index']);
+    Route::put('/admin/accounts/{user}/status', [AdminAccountController::class, 'update'])->whereNumber('user')->middleware('throttle:20,1,account-status:');
     Route::get('/admin/transactions', [TransactionRecordsController::class, 'adminIndex']);
     Route::get('/admin/orders/{order}/receipt', [TransactionRecordsController::class, 'receipt'])->whereNumber('order');
     Route::get('/admin/cop-strikes', [CopMonitoringController::class, 'adminIndex']);
@@ -194,6 +204,9 @@ Route::put('/supervisor/inventory/items/{item}/policy', [StockAdjustmentControll
     ->name('supervisor.inventory.policy');
 
 Route::middleware(['auth:sanctum', 'verified', 'role:shopper'])->group(function () {
+    Route::get('/shopper/stores/{store}/payment-options', [PaymentCheckoutController::class, 'options'])->whereNumber('store');
+    Route::post('/shopper/orders/{order}/payment-session', [PaymentCheckoutController::class, 'start'])->whereNumber('order')->middleware('throttle:10,1,payment-session:');
+    Route::get('/shopper/orders/{order}/payment-session', [PaymentCheckoutController::class, 'show'])->whereNumber('order')->middleware('throttle:30,1,payment-status:');
     Route::get('/shopper/cop-status', [CopMonitoringController::class, 'shopperStatus']);
     Route::get('/shopper/order-notifications', [CopMonitoringController::class, 'notifications']);
     Route::put('/shopper/order-notifications/{notification}/read', [CopMonitoringController::class, 'readNotification'])->whereNumber('notification');

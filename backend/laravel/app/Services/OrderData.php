@@ -59,6 +59,9 @@ class OrderData
             'unclaimed_reason' => $order->unclaimed_reason, 'ready_at' => $order->ready_at?->toIso8601String(),
             'items' => $items, 'history' => $history,
             'pickup' => $this->pickupSummary($order),
+            'payment_checkout' => $order->payment_method === 'digital' && Schema::hasTable('payment_checkout_attempts')
+                && ($attempt = \App\Models\PaymentCheckoutAttempt::where('order_id', $order->order_id)->first())
+                ? app(PaymentCheckout::class)->publicAttempt($attempt) : null,
             'assignments' => $includeOperations && Schema::hasTable('worker_assignments') ? \App\Models\WorkerAssignment::where('order_id', $order->order_id)->orderBy('assignment_id')->lockForUpdate()->get([
                 'assignment_id', 'worker_id', 'worker_name', 'task_type', 'status', 'assigned_by_user_id', 'assigned_at',
                 'completed_by_user_id', 'completed_at', 'canceled_by_user_id', 'canceled_at', 'completion_note', 'cancellation_reason',
