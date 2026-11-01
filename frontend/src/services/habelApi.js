@@ -30,7 +30,9 @@ async function request(path, options = {}) {
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.body && !(options.body instanceof FormData)
+        ? { 'Content-Type': 'application/json' }
+        : {}),
       ...options.headers,
     },
   });
@@ -64,6 +66,22 @@ export async function askShopperAi(query) {
     method: 'POST',
     headers: { 'X-XSRF-TOKEN': xsrfToken },
     body: JSON.stringify({ query }),
+  });
+}
+
+export async function askShopperAiWithImage(file, note = '') {
+  const xsrfToken = await getXsrfToken();
+
+  const body = new FormData();
+  body.append('image', file);
+  if (note) {
+    body.append('note', note);
+  }
+
+  return request('/shopper/ai-recommendations/image', {
+    method: 'POST',
+    headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body,
   });
 }
 

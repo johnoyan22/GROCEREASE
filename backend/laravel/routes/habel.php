@@ -12,6 +12,8 @@ Route::middleware(['auth:sanctum', 'verified', 'role:shopper'])
     ->group(function () {
         Route::get('/', [ShopperAiRecommendationController::class, 'index']);
         Route::post('/ask', [ShopperAiRecommendationController::class, 'ask']);
+        Route::post('/image', [ShopperAiRecommendationController::class, 'image'])
+            ->middleware('throttle:10,1');
         Route::get('/alternatives/{product}', [ShopperAiRecommendationController::class, 'alternatives'])
             ->whereNumber('product');
     });

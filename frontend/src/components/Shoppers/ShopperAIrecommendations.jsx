@@ -7,16 +7,35 @@ import {
   Lightbulb,
   Package,
 } from 'lucide-react';
-import { askShopperAi, getShopperRecommendations } from '../../services/habelApi';
+import {
+  askShopperAi,
+  askShopperAiWithImage,
+  getShopperRecommendations,
+} from '../../services/habelApi';
 
 const SUGGESTIONS = ['Healthy Breakfast Idea', 'Ingredients for pasta', 'Snacks for kids'];
 const INITIAL_VISIBLE = 5;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 function formatPrice(value) {
   return `₱ ${Number(value).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+function imageErrorMessage(error) {
+  if (error.status === 422) {
+    return Object.values(error.errors ?? {}).flat()[0] || 'Please check your photo.';
+  }
+  if (error.status === 429) {
+    return 'Too many photo requests. Please wait a minute and try again.';
+  }
+  if (error.status === 503) {
+    return error.message;
+  }
+  return 'Could not read the photo. Please try again.';
 }
 
 function ProductCard({ item, onAdd }) {
@@ -61,6 +80,10 @@ export default function ShopperAIRecommendations({ cartProductIds = [], onAddToC
   const [asking, setAsking] = useState(false);
   const [askError, setAskError] = useState('');
   const [askResult, setAskResult] = useState(null);
+
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageNote, setImageNote] = useState('');
 
   const [notice, setNotice] = useState('');
   const mounted = useRef(true);
@@ -107,6 +130,13 @@ export default function ShopperAIRecommendations({ cartProductIds = [], onAddToC
     return () => clearTimeout(timer);
   }, [notice]);
 
+  // Free the preview URL when the photo changes or the page closes.
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
   function handleAdd(item, quantity = 1) {
     if (typeof onAddToCart === 'function') {
       onAddToCart(item, quantity);
@@ -130,7 +160,7 @@ export default function ShopperAIRecommendations({ cartProductIds = [], onAddToC
     try {
       const response = await askShopperAi(trimmed);
       if (!mounted.current) return;
-      setAskResult({ ...response, query: trimmed });
+      setAskResult({ ...response, query: trimmed, kind: 'text' });
     } catch (error) {
       if (!mounted.current) return;
       setAskError(
@@ -149,9 +179,57 @@ export default function ShopperAIRecommendations({ cartProductIds = [], onAddToC
     submitAsk(text);
   }
 
+  function chooseImage(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!IMAGE_TYPES.includes(file.type)) {
+      setAskError('Please choose a JPG, PNG or WebP photo.');
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      setAskError('That photo is larger than 4 MB. Please choose a smaller one.');
+      return;
+    }
+
+    setAskError('');
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview('');
+    setAskError('');
+  }
+
+  async function submitImage() {
+    if (!imageFile) {
+      setAskError('Choose a photo first.');
+      return;
+    }
+
+    setAsking(true);
+    setAskError('');
+
+    try {
+      const response = await askShopperAiWithImage(imageFile, imageNote.trim());
+      if (!mounted.current) return;
+      setAskResult({ ...response, query: 'your photo', kind: 'image' });
+    } catch (error) {
+      if (!mounted.current) return;
+      setAskError(imageErrorMessage(error));
+    } finally {
+      if (mounted.current) setAsking(false);
+    }
+  }
+
   const visibleItems = showAll ? items : items.slice(0, INITIAL_VISIBLE);
   const askItems = askResult?.data?.items ?? [];
   const parsed = askResult?.data?.parsed;
+  const detected = askResult?.data?.detected ?? [];
 
   function askEmptyMessage() {
     if (askResult?.message) return askResult.message;
@@ -247,32 +325,84 @@ export default function ShopperAIRecommendations({ cartProductIds = [], onAddToC
               </p>
             </div>
           ) : (
-            <div className="border border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <ImageIcon className="w-6 h-6 text-gray-400 mx-auto mb-2" aria-hidden="true" />
-              <p className="text-xs font-bold text-black">Image recognition is not available yet</p>
-              <p className="text-[11px] text-gray-500 mt-1">
-                Photo-based recommendations will be turned on once the AI service is configured.
-                You can still use Ask anything.
+            <div className="border border-gray-300 rounded-lg p-4">
+              {!imageFile ? (
+                <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-gray-300 p-6 text-center hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-600">
+                  <ImageIcon className="w-6 h-6 text-gray-400 mb-2" aria-hidden="true" />
+                  <span className="text-xs font-bold text-black">Choose a photo</span>
+                  <span className="text-[11px] text-gray-500 mt-1">
+                    A dish, your ingredients, a pantry shelf or a grocery list. JPG, PNG or WebP, up to 4 MB.
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={chooseImage}
+                    className="sr-only"
+                  />
+                </label>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <img
+                    src={imagePreview}
+                    alt="Your selected photo"
+                    className="h-24 w-24 rounded-lg object-cover border border-gray-200"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-black truncate">{imageFile.name}</p>
+                    <input
+                      type="text"
+                      value={imageNote}
+                      onChange={(e) => setImageNote(e.target.value)}
+                      maxLength={300}
+                      placeholder="Optional: for 4 people, under ₱500"
+                      aria-label="Optional note about your photo"
+                      className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-xs text-gray-800 placeholder-gray-500 focus:outline-none"
+                    />
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={submitImage}
+                        disabled={asking}
+                        className="rounded bg-[#006e00] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                      >
+                        Get recommendations
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearImage}
+                        disabled={asking}
+                        className="rounded border border-gray-300 px-3 py-1.5 text-[11px] font-bold text-gray-700 disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <p className="mt-3 text-[11px] text-gray-500">
+                Your photo is sent to Google&rsquo;s Gemini AI service to find matching products. It is not saved on our server.
               </p>
-              <button
-                type="button"
-                onClick={() => setActiveTab('ask')}
-                className="mt-3 text-xs font-bold text-[#006e00] hover:underline"
-              >
-                Go to Ask anything
-              </button>
             </div>
           )}
 
-          {asking && <p role="status" className="mt-3 text-xs text-gray-600">Finding products...</p>}
+          {asking && (
+            <p role="status" className="mt-3 text-xs text-gray-600">
+              {activeTab === 'upload' ? 'Reading your photo...' : 'Finding products...'}
+            </p>
+          )}
           {askError && <p role="alert" className="mt-3 text-xs text-red-600">{askError}</p>}
         </div>
 
-        {/* Ask results */}
+        {/* Ask / photo results */}
         {askResult && !asking && (
           <div className="mb-6 border border-green-300 bg-green-50/40 rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <h2 className="text-xs font-bold text-black">Results for &ldquo;{askResult.query}&rdquo;</h2>
+              <h2 className="text-xs font-bold text-black">
+                {askResult.kind === 'image'
+                  ? 'Results for your photo'
+                  : <>Results for &ldquo;{askResult.query}&rdquo;</>}
+              </h2>
               {parsed?.headcount && (
                 <span className="text-[10px] bg-white border border-green-300 text-green-900 rounded-full px-2 py-0.5">
                   For {parsed.headcount} {parsed.headcount === 1 ? 'person' : 'people'}
@@ -283,12 +413,16 @@ export default function ShopperAIRecommendations({ cartProductIds = [], onAddToC
                   Budget {formatPrice(parsed.budget)}
                 </span>
               )}
-              {askResult.meta?.understanding === 'gemini' && (
+              {askResult.meta?.understanding?.startsWith('gemini') && (
                 <span className="text-[10px] bg-white border border-blue-300 text-blue-900 rounded-full px-2 py-0.5">
                   Understood by AI
                 </span>
               )}
             </div>
+
+            {detected.length > 0 && (
+              <p className="mb-2 text-[11px] text-gray-600">I can see: {detected.join(', ')}</p>
+            )}
 
             {askItems.length === 0 ? (
               <p className="text-xs text-gray-600">{askEmptyMessage()}</p>
