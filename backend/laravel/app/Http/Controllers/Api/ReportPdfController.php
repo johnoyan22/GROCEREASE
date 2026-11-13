@@ -25,6 +25,9 @@ class ReportPdfController extends Controller
         $report = DB::transaction(function () use ($request, $kind, $access, $input) {
             $role = $request->user()->role?->slug;
             abort_unless(in_array($kind, ['orders', 'stock', 'transactions', 'sales', 'cop'], true), 404);
+            abort_if(! empty($input['category']) && $kind !== 'stock', 422, 'Category filters apply only to stock reports.');
+            abort_if(! empty($input['status']) && ! in_array($kind, ['stock', 'orders'], true), 422, 'Status filters apply only to stock or order reports.');
+            abort_if(! empty($input['upcoming']) && $kind !== 'orders', 422, 'Upcoming pickup filters apply only to order reports.');
             $store = null;
             if ($role === 'supervisor') {
                 abort_if(isset($input['store_id']), 422, 'Supervisor report scope comes from the assigned store.');
@@ -61,7 +64,7 @@ class ReportPdfController extends Controller
                 $rows = $records->map(fn ($r) => [$r->store->store_name, $r->product->product_name.' / '.$r->product->sku,
                     $r->product->category, $r->product->selling_unit ?? 'Unspecified', $r->hard_stock_qty, $r->soft_stock_qty,
                     $r->availableStock(), $r->low_stock_threshold ?? 'Not set', $r->status])->values()->all();
-                return $meta + ['report_title' => 'Current Stock Report', 'headings' => ['Store', 'Product / SKU', 'Category', 'Unit', 'Physical', 'Reserved', 'Sellable', 'Reorder level', 'Status'], 'rows' => $rows,
+                return $meta + ['report_title' => 'Current Stock Report', 'period_label' => 'Current snapshot at generation time', 'headings' => ['Store', 'Product / SKU', 'Category', 'Unit', 'Physical', 'Reserved', 'Sellable', 'Reorder level', 'Status'], 'rows' => $rows,
                     'totals' => ['Products' => count($rows), 'Physical units' => $records->sum('hard_stock_qty'), 'Reserved units' => $records->sum('soft_stock_qty'), 'Sellable units' => $records->sum(fn ($r) => $r->availableStock())],
                     'note' => 'Current snapshot. Sellable availability excludes reservations and expired/quarantined batch remainder. Legacy stock has no inferred receiving or expiry date.'];
             }

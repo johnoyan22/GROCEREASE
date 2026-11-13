@@ -1,4 +1,5 @@
 import ProductImage from '../../shared/ProductImage';
+import ProductPriceHistory from './ProductPriceHistory';
 import { Pencil } from 'lucide-react';
 
 const moneyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -10,7 +11,7 @@ function ProductTable({ products, onEdit }) {
         <table className="w-full min-w-[900px] text-left text-xs">
           <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
             <tr>
-              {['Product', 'SKU / Barcode', 'Category', 'Selling Price', 'Physical', 'Reserved', 'Available', 'Limit / order', 'Reorder level', 'Offering Status', 'Last Updated', ...(onEdit ? ['Actions'] : [])].map((title) => <th key={title} scope="col" className="px-4 py-3 font-medium">{title}</th>)}
+              {['Product', 'SKU / Barcode', 'Category', 'Selling Price', 'Physical', 'Reserved', 'Available', 'Limit / order', 'Reorder level', 'Offering Status', 'Last Updated', 'Price audit', ...(onEdit ? ['Actions'] : [])].map((title) => <th key={title} scope="col" className="px-4 py-3 font-medium">{title}</th>)}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 text-gray-700">
@@ -27,6 +28,7 @@ function ProductTable({ products, onEdit }) {
                 <td className="px-4 py-3">{product.low_stock_threshold ?? 'Not set'}</td>
                 <td className="px-4 py-3"><span className={'rounded px-2 py-1 text-xs ' + (product.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600')}>{product.status === 'active' ? 'Active' : 'Inactive'}</span></td>
                 <td className="whitespace-nowrap px-4 py-3">{product.updated_at ? new Date(product.updated_at).toLocaleString('en-PH') : '—'}</td>
+                <td className="px-4 py-3"><ProductPriceHistory product={product} /></td>
                 {onEdit && <td className="px-4 py-3"><button type="button" aria-label={'Edit ' + product.product_name + ' ' + (product.size || '')} onClick={() => onEdit(product)} className="rounded-lg border border-gray-200 p-2 hover:bg-gray-50"><Pencil size={14} aria-hidden="true" /></button></td>}
               </tr>
             ))}

@@ -18,10 +18,11 @@ class StockAlerts
             if (! $item) return;
             DB::table('stock_alert_states')->insertOrIgnore(['store_inventory_id' => $item->store_inventory_id, 'current_alert_id' => null]);
             $state = DB::table('stock_alert_states')->where('store_inventory_id', $item->store_inventory_id)->lockForUpdate()->first();
-            $low = $item->status === 'active' && $item->low_stock_threshold !== null && $item->availableStock() <= $item->low_stock_threshold;
+            $available = $item->availableStock(true);
+            $low = $item->status === 'active' && $item->low_stock_threshold !== null && $available <= $item->low_stock_threshold;
             if ($low && ! $state->current_alert_id) {
                 $id = DB::table('stock_alerts')->insertGetId(['store_id' => $item->store_id, 'store_inventory_id' => $item->store_inventory_id,
-                    'product_name' => $item->product->product_name, 'available_qty' => $item->availableStock(),
+                    'product_name' => $item->product->product_name, 'available_qty' => $available,
                     'reorder_level' => $item->low_stock_threshold, 'created_at' => now()]);
                 DB::table('stock_alert_states')->where('store_inventory_id', $item->store_inventory_id)->update(['current_alert_id' => $id]);
             } elseif (! $low && $state->current_alert_id) {

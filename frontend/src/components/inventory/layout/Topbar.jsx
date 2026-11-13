@@ -23,7 +23,7 @@ function Topbar({ onMenuClick, user }) {
           type="button"
           aria-label="Open navigation menu"
           onClick={onMenuClick}
-          className="p-1 text-gray-500 hover:text-gray-700"
+          className="p-1 text-gray-500 hover:text-gray-700 lg:hidden"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />

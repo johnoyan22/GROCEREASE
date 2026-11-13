@@ -48,11 +48,11 @@ DB::purge('mysql');
 if (DB::connection()->getDatabaseName() !== $database || !str_starts_with($database, 'grocerease_sprint_test_')) throw new RuntimeException('Unsafe database target.');
 DB::statement('SET SESSION innodb_lock_wait_timeout = 10');
 
-function invokeController(string $class, string $method, array $payload, int $userId, ?int $orderId = null): array
+function invokeController(string $class, string $method, array $payload, int $userId, ?int $orderId = null, array $extra = []): array
 {
     $request = Request::create('/isolated-test', 'POST', $payload);
     $request->setUserResolver(function () use ($userId) { return User::findOrFail($userId); });
-    $arguments = ['request' => $request];
+    $arguments = ['request' => $request, ...$extra];
     if ($orderId !== null) $arguments['order'] = $orderId;
     $response = app()->call([app($class), $method], $arguments);
     return ['status' => $response->getStatusCode(), 'data' => $response->getData(true)];
@@ -68,6 +68,16 @@ try {
         $store = Store::create(['store_name' => 'Isolated concurrency test', 'address' => 'Test only']);
         $store->forceFill(['operating_hours' => array_fill(1, 7, ['opens_at' => '00:00', 'closes_at' => '23:59'])])->save();
         StaffStoreAssignment::create(['store_id' => $store->store_id, 'user_id' => $supervisor->id, 'assigned_by_user_id' => $admin->id]);
+        $inventoryWorker = User::factory()->create(['role_id' => Role::where('slug', 'inventory_worker')->firstOrFail()->role_id,
+            'staff_approved_at' => now(), 'staff_approved_by_user_id' => $admin->id]);
+        StaffStoreAssignment::create(['store_id' => $store->store_id, 'user_id' => $inventoryWorker->id, 'assigned_by_user_id' => $admin->id]);
+        $category = \App\Models\StoreCategory::create(['store_id' => $store->store_id, 'name' => 'Test', 'name_key' => 'test', 'active' => true]);
+        $receiptProduct = Product::create(['store_id' => $store->store_id, 'product_name' => 'Receiving fixture', 'category_id' => $category->id, 'category' => 'Test', 'selling_unit' => 'piece']);
+        $receiptInventory = StoreInventory::create(['store_id' => $store->store_id, 'product_id' => $receiptProduct->product_id,
+            'selling_price' => '5.00', 'hard_stock_qty' => 0, 'soft_stock_qty' => 0, 'status' => 'active']);
+        $receipt = invokeController(\App\Http\Controllers\Api\StockReceivingController::class, 'store', ['kind' => 'receive', 'quantity' => 3,
+            'received_date' => now('Asia/Manila')->toDateString(), 'expiration_date' => now('Asia/Manila')->addDays(7)->toDateString(),
+            'batch_reference' => 'CONCURRENT-DELIVERY', 'description' => 'Isolated concurrency fixture.'], $inventoryWorker->id, null, ['item' => $receiptInventory->store_inventory_id]);
         $worker = Worker::create(['store_id' => $store->store_id, 'full_name' => 'Isolated Worker', 'work_type' => 'picker_packer', 'created_by_user_id' => $supervisor->id]);
         $attempts = [];
         $inventoryIds = [];
@@ -83,11 +93,41 @@ try {
             $quote = invokeController(CheckoutController::class, 'quote', $cart, $shopper->id);
             $attempts[] = ['user_id' => $shopper->id, 'payload' => array_merge($cart, ['quote_token' => $quote['data']['quote_token'], 'idempotency_key' => (string) Str::uuid()])];
         }
-        file_put_contents($runtime, json_encode(['attempts' => $attempts, 'supervisor_id' => $supervisor->id, 'worker_id' => $worker->worker_id, 'inventory_ids' => $inventoryIds]));
+        file_put_contents($runtime, json_encode(['attempts' => $attempts, 'supervisor_id' => $supervisor->id, 'worker_id' => $worker->worker_id, 'inventory_ids' => $inventoryIds,
+            'inventory_worker_id' => $inventoryWorker->id, 'category_id' => $category->id, 'receipt_id' => $receipt['data']['id'], 'receipt_inventory_id' => $receiptInventory->store_inventory_id]));
         echo json_encode(['status' => 'isolated_schema_ready']);
     } else {
         $state = json_decode(file_get_contents($runtime), true, 512, JSON_THROW_ON_ERROR);
-        if ($mode === 'reserve') {
+        if ($mode === 'batch-current-read') {
+            $product = Product::create(['store_id' => 1, 'product_name' => 'Snapshot safety fixture', 'category' => 'Test']);
+            $inventory = StoreInventory::create(['store_id' => 1, 'product_id' => $product->product_id, 'selling_price' => '1.00', 'status' => 'active']);
+            config(['database.connections.mysql_snapshot_writer' => config('database.connections.mysql')]);
+            $writer = DB::connection('mysql_snapshot_writer');
+            DB::beginTransaction();
+            DB::table('users')->first(); // Establish the older REPEATABLE READ snapshot.
+            $writer->transaction(function () use ($writer, $inventory, $state) {
+                $writer->table('stock_batches')->insert(['store_id' => 1, 'store_inventory_id' => $inventory->store_inventory_id,
+                    'batch_reference' => 'EXPIRED-SNAPSHOT-FIXTURE', 'received_date' => now()->subDays(3)->toDateString(), 'expiration_date' => now()->subDay()->toDateString(),
+                    'quantity_received' => 3, 'remaining_qty' => 3, 'status' => 'available', 'received_by_user_id' => $state['inventory_worker_id'], 'created_at' => now(), 'updated_at' => now()]);
+                $writer->table('store_inventory')->where('store_inventory_id', $inventory->store_inventory_id)->update(['hard_stock_qty' => 3]);
+            });
+            $current = StoreInventory::whereKey($inventory->store_inventory_id)->lockForUpdate()->firstOrFail();
+            if ($current->hard_stock_qty !== 3 || $current->availableStock(true) !== 0) throw new RuntimeException('Current stock safety read used a stale batch snapshot.');
+            DB::rollBack();
+            echo json_encode(['status' => 'current_batch_safety_read_passed']);
+        } elseif ($mode === 'create-product') {
+            $result = invokeController(\App\Http\Controllers\Api\StoreInventoryController::class, 'store', ['product_name' => 'Concurrent product '.($argv[3] ?? 0),
+                'category_id' => $state['category_id'], 'selling_unit' => 'piece', 'selling_price' => '10.00', 'status' => 'inactive'], $state['inventory_worker_id']);
+            echo json_encode(['status' => $result['status'], 'sku' => $result['data']['inventory']['sku']]);
+        } elseif ($mode === 'approve-receiving') {
+            $result = invokeController(\App\Http\Controllers\Api\StockReceivingController::class, 'decide', ['decision' => 'approved', 'decision_note' => 'Isolated verified delivery.'],
+                $state['supervisor_id'], null, ['receiving' => $state['receipt_id']]);
+            echo json_encode(['status' => $result['status']]);
+        } elseif ($mode === 'generate-invoice') {
+            $result = invokeController(\App\Http\Controllers\Api\InvoiceController::class, 'generate', [], $state['supervisor_id'], $state['completion_order_id']);
+            if (DB::table('order_invoices')->count() !== 1) throw new RuntimeException('Invoice duplicate guard failed.');
+            echo json_encode(['status' => $result['status'], 'reference' => $result['data']['invoice']['reference']]);
+        } elseif ($mode === 'reserve') {
             $attempt = $state['attempts'][(int) ($argv[3] ?? 0)];
             $result = invokeController(CheckoutController::class, 'store', $attempt['payload'], $attempt['user_id']);
             echo json_encode(['status' => $result['status']]);
@@ -125,6 +165,7 @@ try {
             $result = invokeController(PickupController::class, 'handover', ['physically_handed_over' => true], $state['supervisor_id'], $state['completion_order_id']);
             echo json_encode(['status' => $result['status']]);
         } elseif ($mode === 'verify') {
+            if (StoreInventory::findOrFail($state['receipt_inventory_id'])->hard_stock_qty !== 3 || DB::table('stock_batches')->where('store_inventory_id', $state['receipt_inventory_id'])->count() !== 1) throw new RuntimeException('Receiving approval double-counted physical stock.');
             $inventory = StoreInventory::findOrFail($state['completion_inventory_id']);
             if ($inventory->hard_stock_qty !== 0 || $inventory->soft_stock_qty !== 0 || DB::table('order_handovers')->count() !== 1 || DB::table('order_payments')->count() !== 1) throw new RuntimeException('Concurrent completion invariant failed.');
             echo json_encode(['status' => 'all_invariants_passed']);

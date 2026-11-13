@@ -35,7 +35,9 @@ class StoreCategoryController extends Controller
             $input = $request->validate(['name' => ['required', 'string', 'max:100'], 'active' => ['required', 'boolean'],
                 'store_id' => ['prohibited'], 'updated_by_user_id' => ['prohibited']]);
             $key = mb_strtolower($input['name']);
-            validator(['name' => $key], ['name' => [Rule::unique('store_categories', 'name_key')->where('store_id', $storeId)->ignore($record->id)]])->validate();
+            $duplicate = StoreCategory::where('store_id', $storeId)->where('name_key', $key)
+                ->when($record->exists, fn ($query) => $query->where('id', '!=', $record->id))->lockForUpdate()->first();
+            if ($duplicate) throw \Illuminate\Validation\ValidationException::withMessages(['name' => 'A category with this name already exists in your store.']);
             $before = $record->exists ? $record->only(['name', 'active']) : null;
             $old = $record->name;
             $record->fill($input + ['name_key' => $key, 'updated_by_user_id' => $context['user']->id])->save();
@@ -47,7 +49,7 @@ class StoreCategoryController extends Controller
                     if ($settings) {
                         $previous = $settings->settingsData();
                         foreach (['included_categories', 'excluded_categories'] as $field) {
-                            $settings->$field = array_values(array_unique(array_map(fn ($name) => $name === $old ? $record->name : $name, $settings->$field ?? [])));
+                            $settings->$field = array_values(array_unique(array_map(fn ($name) => mb_strtolower(trim($name)) === mb_strtolower(trim($old)) ? $record->name : $name, $settings->$field ?? [])));
                         }
                         $settings->updated_by = $context['user']->id;
                         $settings->save();

@@ -208,7 +208,7 @@ class StoreInventoryController extends Controller
             'size' => ['sometimes', 'nullable', 'string', 'max:100'],
             'category' => ['prohibited'],
             'category_id' => [...$required, 'integer', function ($attribute, $value, $fail) use ($store, $product) {
-                $category = StoreCategory::where('store_id', $store->store_id)->find($value);
+                $category = StoreCategory::where('store_id', $store->store_id)->lockForUpdate()->find($value);
                 if (! $category || (! $category->active && $product?->category_id !== $category->id)) {
                     $fail('Select an active category from your store. Ask your Supervisor to manage categories.');
                 }
@@ -226,7 +226,7 @@ class StoreInventoryController extends Controller
     private function metadata(array $validated): array
     {
         $metadata = array_intersect_key($validated, array_flip(['product_name', 'barcode', 'size', 'category_id', 'selling_unit']));
-        if (isset($metadata['category_id'])) $metadata['category'] = StoreCategory::findOrFail($metadata['category_id'])->name;
+        if (isset($metadata['category_id'])) $metadata['category'] = StoreCategory::lockForUpdate()->findOrFail($metadata['category_id'])->name;
         return $metadata;
     }
 

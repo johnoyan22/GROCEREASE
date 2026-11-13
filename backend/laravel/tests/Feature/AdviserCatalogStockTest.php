@@ -199,4 +199,22 @@ class AdviserCatalogStockTest extends TransactionTestCase
         $this->assertSame(2, $this->inventory->fresh()->soft_stock_qty);
         $this->assertDatabaseCount('order_handovers', 0);
     }
+
+    public function test_admin_low_stock_summary_uses_sellable_batch_safety(): void
+    {
+        $this->inventory->low_stock_threshold = 97; $this->inventory->save();
+        $this->approve($this->receive(['quantity' => 100]));
+        $this->travelTo(now()->addDays(3));
+        // 200 physical - 2 reserved - 100 expired = 98, still above threshold.
+        $this->signIn($this->admin)->getJson('/api/dashboard/summary')->assertOk()->assertJsonPath('low_stock_products', 0);
+        $this->inventory->low_stock_threshold = 98; $this->inventory->save();
+        $this->getJson('/api/dashboard/summary')->assertOk()->assertJsonPath('low_stock_products', 1)->assertJsonPath('low_stock_records.0.available_stock', 98);
+    }
+
+    public function test_csv_error_lines_account_for_embedded_newlines(): void
+    {
+        $csv = "sku,quantity,received_date,expiration_date,batch_reference\nRICE,2,2026-10-19,,\"BAD\nREFERENCE\"\nRICE,1.5,2026-10-19,,OTHER\n";
+        $this->signIn($this->inventoryWorker)->post('/api/inventory/receiving/preview', ['file' => UploadedFile::fake()->createWithContent('delivery.csv', $csv)], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonPath('errors.0.line', 2)->assertJsonPath('errors.1.line', 4)->assertJsonPath('rejected', 2);
+    }
 }

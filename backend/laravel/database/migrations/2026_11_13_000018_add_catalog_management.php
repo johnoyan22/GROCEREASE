@@ -37,7 +37,7 @@ return new class extends Migration
             $table->foreignId('changed_by_user_id')->constrained('users')->restrictOnDelete();
             $table->decimal('old_price', 10, 2);
             $table->decimal('new_price', 10, 2);
-            $table->timestamp('created_at');
+            $table->dateTime('created_at');
         });
         Schema::create('category_audits', function (Blueprint $table) {
             $table->id();
@@ -45,7 +45,7 @@ return new class extends Migration
             $table->foreignId('actor_user_id')->constrained('users')->restrictOnDelete();
             $table->text('before')->nullable();
             $table->text('after');
-            $table->timestamp('created_at');
+            $table->dateTime('created_at');
         });
         // Populate only the new relationship. Old names, SKUs, prices and counts remain untouched.
         DB::table('products')->whereNotNull('store_id')->orderBy('product_id')->chunkById(100, function ($rows) {

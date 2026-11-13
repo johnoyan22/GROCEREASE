@@ -1,51 +1,42 @@
-# GrocerEase module-role point audit
+# GrocerEase module-role progress audit
 
-Date: October 20, 2026. Scope: the current feature/multi-store-foundation branch
-and results recorded in this development session, not unreviewed teammate branches.
+Updated November 13, 2026 (Asia/Manila). Scope: `feature/adviser-improvements`,
+based on reviewed AI integration `b611ae3`. Earlier acceptance evidence is retained
+in Git history and the linked sprint reports; this update does not reinterpret
+an automated test as human/module acceptance.
 
-Source: Latest_list_of_modules_CHANGES_MAY_HAPPEN.pdf, Table 6, document pages
-113-124. Its totals are Shopper 12, Inventory Worker 6, Supervisor 14, Admin 8:
-40 applicable module-role combinations across 17 named modules. One complete
-module for one applicable role earns one point, regardless of its number of
-screens, endpoints, migrations or passing tests.
+Source scope: `Latest_list_of_modules_CHANGES_MAY_HAPPEN.pdf`, Table 6, pages
+113–124, as transcribed in the prior audit. The original PDF is not present in
+this checkout. Totals: Shopper 12, Inventory Worker 6, Supervisor 14, Admin 8;
+**40 applicable module-role combinations across 17 modules**.
 
-## Conservative count
+## Accepted evidence and count
 
-**3 completed points can currently be supported: 3/40 = 7.5%.**
+**Previously credited points retained: 3/40 (7.5%). New accepted points: 0.**
 
-| Module | Role | Evidence and approved scope |
-|---|---|---|
-| Account Management | Shopper | Registration, login/session/logout, email verification and own-profile management are integrated; auth/profile regression tests passed. |
-| Product Catalog Management | Inventory Worker | Own-store browse/search/filter/details, creation, metadata editing and active/inactive product state are integrated; user reported browser completion and API/store-isolation tests passed. |
-| Product Catalog Management | Supervisor | Own-store browse, search and product details are integrated and read-only, as required for this role; user reported browser completion and store-scope tests passed. |
+| Module / role | Prior accepted evidence | Adviser additions |
+| --- | --- | --- |
+| Account Management / Shopper | Registration, login/session/logout, verification and own-profile management | Own photo and UI improvements implemented/tested; human recheck pending |
+| Product Catalog Management / Inventory Worker | Own-store catalog CRUD/search/filter; prior user browser acceptance | Generated SKU, categories, unit, photo and price audit await approved migration/manual acceptance |
+| Product Catalog Management / Supervisor | Assigned-store read-only catalog/search/details; prior browser acceptance | Category management and new catalog presentation await setup/manual acceptance |
 
-**Two additional Account Management role points remain provisional, not included
-in that 3-point count:** Inventory Worker and Supervisor. Admin creates/approves
-their accounts under the confirmed current onboarding policy; login, profile
-viewing and password-change screens/endpoints exist. However, the complete
-acceptance meaning of Manage Own Account and the dedicated staff password-change
-verification have not been fully signed off in this review. Staff identity/contact
-fields are currently view-only. The PDF itself does not define exactly which
-self-service profile edits are required, so this audit does not invent that rule.
-If the approved scope is profile viewing plus password changes and those flows
-are verified, these two points can be added, bringing the count to 5/40 (12.5%).
+The consultation's approximate 80% completion is an adviser estimate; it is not
+substituted for a complete, accepted module-role count. A module earns one point
+per applicable role only after its full approved scope is accepted.
 
-The Admin Account Management point remains partial: login, own-account viewing/
-password controls, staff creation/approval and staff role/store placement exist,
-but authentication-account activation/deactivation now awaits migration 000016 and browser acceptance. Store activation
-and staff approval are separate operations and do not satisfy that account-status
-requirement. The Role Management screen is still a prototype.
+## Current matrix
 
-## Full matrix
-
-C = previously credited; P = provisional account scope; R = connected implementation with relevant automation, awaiting full module acceptance; W = partial; N = not verified; dash = not applicable. **Only C earns a point.**
+C = previously credited; P = provisional account scope; R = connected code with
+relevant automation, awaiting full acceptance; W = partial; N = not verified;
+dash = not applicable. **Only C earns a point.** C does not claim that new adviser
+requirements have already been accepted in the working environment.
 
 | Official module | Shopper | Inventory Worker | Supervisor | Admin |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Account Management | C | P | P | W |
 | Product Catalog Management | R | C | C | - |
 | Stock Management | R | R | R | - |
-| AI Recommendation Management | N | - | N | - |
+| AI Recommendation Management | R | - | R | - |
 | Automated Cart Management | R | - | - | - |
 | Checkout and Cart Processing | R | - | - | - |
 | Payment and Transaction Management | W | - | W | W |
@@ -57,102 +48,56 @@ C = previously credited; P = provisional account scope; R = connected implementa
 | Receipt and Invoice Management | W | - | W | W |
 | Worker Tip Incentive Management | - | - | N | N |
 | Financial Setup Management | - | - | - | N |
-| Reports and Analytics Management | - | - | W | W |
-| Notification Management | W | N | N | N |
+| Reports and Analytics Management | - | - | R | R |
+| Notification Management | W | R | R | N |
 
-R is a review status, not a claim that every panel requirement has been accepted.
-Checkout currently offers the approved COP path. Shared pickup guards also cover trusted paid-order fixtures;
-a real digital-provider/browser acceptance remains an integration dependency.
-COP review includes the newly confirmed closing, strikes, suspension, reschedule and disposition rules.
-Receipt viewing/printing is connected; the full invoice requirement is not claimed complete.
-Order notifications are real, but do not complete the entire multi-role Notification module.
+## Evidence behind changed readiness states
 
-## Connected work awaiting acceptance
+- AI R: existing store-scoped text/image/Gemini integration, audited Supervisor
+  settings, alternatives and shared-cart checks are retained. Provider HTTP fakes
+  and responsive fixtures pass. **Real Gemini acceptance remains pending** with
+  the assigned teammate. AI migration 000017 is already applied locally.
+- Reports R: actual scoped PDF orders/stock/sales/transactions and Admin COP
+  exports, filters, Manila dates/totals and rendered pagination are implemented.
+  Full official report scope and partner/human acceptance remain unconfirmed.
+- Staff Notifications R: real persistent store-specific low-stock episodes and
+  per-user acknowledgement are implemented. Other notification/module channels
+  are not claimed complete. Admin notification delivery is not invented.
 
-- Stock: approved absolute physical corrections; stale/version and reservation-floor protection; low-stock reports/thresholds; availability/policy audit; limits enforced again at actual Checkout.
-- Shopper catalog/cart: own selected store, real prices/availability/limits, search/filter/details, one-store cart, quantity changes/removal and account-specific drafts.
-- Checkout: required actual-hours pickup selection; authoritative centavo quote; explicit price-change review; atomic unpaid COP creation/reservation; retry-key recovery; ₱1,500 cap.
-- Tracking/preparation: real own-Shopper/current-store orders, schedules/history, digital item checklist, Supervisor preparation review and validated stage transitions.
-- Delegation: store-owned non-login personnel, one active order per worker, Busy/Available state, reassignment reason/history and task completion.
-- Pickup: locally rendered QR plus PIN, per-order expiry, claimant check without representative registration/images, separate cashier evidence/verification/handover, once-only paid completion and stock deduction.
-- COP: backend-enforced strikes/restrictions, scheduler/manual deadline command, exceptions preventing unjustified strikes, Admin correction/monitoring, physical resale disposition and paid unclaimed refund-review state.
-- Transactions: actual payment/handover records for Supervisor/Admin and stable completed receipt viewing/printing.
+## Remaining dependencies and limits
 
-Transaction migrations 000009–000013 are applied. The later Supervisor pickup-settings migration 000014 is also applied with explicit approval; all 28 business tables passed original-column hash/count preservation checks. Browser acceptance remains separate from automation.
-Approved migrations 000009–000013 were applied with 11 existing business tables preserved and all 17 new tables empty. The application record is in pending-transaction-migrations.md.
-Previously approved stock migrations 000007/000008 were applied without altering existing business records.
+- Working payment migration 000015 and account-status migration 000016 remain
+  pending. PayMongo stays test-only/disabled unless authorized test merchant
+  configuration exists. No real hosted-checkout transaction was executed here.
+- New adviser migrations 18–20 remain pending explicit approval. Catalog/stock/
+  invoice database-dependent additions cannot be claimed live before that step.
+- Invoice architecture exports **Draft / Pro Forma**, independently of receipts.
+  Partner legal identity, numbering authority, tax rules and applicable BIR
+  electronic-invoicing approvals are not fabricated; official issuance remains
+  a separate dependency. Receipt/Invoice role points remain W.
+- Worker/Supervisor own-account screens and password changes are tested, while
+  full approved Manage Own Account acceptance remains provisional. Staff identity
+  edits remain under Admin permissions. Admin account activation awaits setup.
+- No approved incentive/payout or SaaS financial formula was supplied; no point,
+  financial amount, subscription or payout was invented.
+- Legacy stock is preserved without invented batch dates. It needs physical
+  review; old counts must never be reimported as new deliveries.
+- Physical-phone, screen-reader, authorized partner-data and human/module
+  acceptance remain pending even where automated Chrome checks pass.
 
-**New credited points: 0. Verified count remains 3/40 (7.5%); gap to 26/40 remains 23 points.**
-No aggregate implementation score is substituted for completed module-role points.
-The two provisional Account Management combinations remain excluded.
+## Verification references
 
-## Exact 26-combination stretch target
+Checkpoint results and exact changes: `adviser-improvements-changelog.md`.
+Browser/viewport evidence: `ui-responsive-checklist.md` (29 real Chrome cases).
+Data/migration review: `adviser-database-review.md`; original-value SQLite
+preservation tests and six disposable MariaDB concurrency scenarios pass.
+Manual sign-off: `manual-acceptance-checklist.md` (all human results explicitly
+pending). Provider setup: `ai-teammate-handoff.md` and
+`invoice-and-payment-readiness.md`. Final full-suite counts are recorded in the
+checkpoint 6 changelog after execution.
 
-This is a planning list, not an achievement claim. Every entry must satisfy its full approved module scope.
+Prior operational work remains documented in `october-20-implementation-sprint-report.md`,
+`feature-5-stock-management.md`, `feature-6-shopper-catalog-cart.md`,
+`feature-7-to-10-transactions.md`, and `ai-integration-acceptance.md`.
 
-| Target IDs | Official module | Exact applicable roles | Running total |
-|---|---|---|---|
-| 1–4 | Account Management | Shopper, Inventory Worker, Supervisor, Admin | 4 |
-| 5–7 | Product Catalog Management | Shopper, Inventory Worker, Supervisor | 7 |
-| 8–10 | Stock Management | Shopper, Inventory Worker, Supervisor | 10 |
-| 11 | Automated Cart Management | Shopper | 11 |
-| 12 | Checkout and Cart Processing | Shopper | 12 |
-| 13–15 | Payment and Transaction Management | Shopper, Supervisor, Admin | 15 |
-| 16–18 | Cash on Pickup Management | Shopper, Supervisor, Admin | 18 |
-| 19–21 | Order Tracking and Status Monitoring | Shopper, Inventory Worker, Supervisor | 21 |
-| 22–23 | Order Preparation Management | Inventory Worker, Supervisor | 23 |
-| 24 | Order Delegation Management | Supervisor | 24 |
-| 25–26 | Pickup Verification Management | Shopper, Supervisor | 26 |
-
-The 65% target is not verified tonight. Actual payment-provider integration and Admin account-status
-work remain among its substantive gaps; browser/manual full-module acceptance is also pending.
-No fake digital payment, refund, worker credit or automatic release is used to manufacture progress.
-
-## Evidence and boundaries
-
-- Latest full Laravel after the Supervisor settings revision: 305 passed / 4,813 assertions. Client API/cart: 86 passed.
-- All 13 frontend files changed by the Supervisor settings revision linted. Production build passed with the existing chunk-size warning.
-- A temporary MariaDB database accepted all migrations and passed actual concurrent reservation,
-  worker assignment and handover checks. It and its runtime file were removed afterward.
-- Store A/B, own-Shopper access, current staff approval/placement, inactive stores, invalid transitions,
-  protected fields, stale decisions, rollback, deadlines, strike correction and duplicate effects are tested.
-- User browser acceptance for these transaction changes has not been claimed.
-- Normal transaction migrations 000009–000013 completed with approval. Migration 000014 is also applied with explicit approval and preservation checks; Supervisor settings editing and Admin read-only oversight await browser acceptance.
-- AI/Habel, owner functionality, deferred profile enhancements, external payment/refund transfers,
-  incentive allocation/payout and broad financial/reporting modules remain untouched or incomplete.
-
-See feature-5-stock-management.md, feature-6-shopper-catalog-cart.md and
-feature-7-to-10-transactions.md for role-specific manual checklists.
-
-## October 20 sprint evidence (no additional points)
-
-- One account-scoped shared cart now connects Browse, My Cart, Checkout, Header
-  and Dashboard, including storage recovery, header search and real cart totals.
-- Dashboard cards use an authenticated role/store-scoped summary, actual active
-  orders/stock/personnel/approvals/COP restrictions and verified Manila-day payments.
-  Missing/unapproved financial data is labeled unavailable or not configured.
-- Shopper order notifications, History and Pickup Information use real records;
-  staff updates show actual store stock records without fake unread messages.
-- A PayMongo test-only Hosted Checkout adapter, signed-webhook verification,
-  separate attempts, replay protection and guarded reservation expiration are
-  automated with provider HTTP fakes. **It remains disabled; authorized merchant
-  credentials, webhook setup, migration 000015 and actual provider/browser
-  acceptance are outstanding.** No real payment integration point is awarded.
-- Admin account-status code and audit/session guards await approval/application
-  of migration 000016. Account/store/COP state remains separate. Staff own-profile
-  viewing/password regression tests pass, but the complete approved Manage Own
-  Account scope remains provisional.
-- Supervisor/Admin payment reports use verified records and date/store filters;
-  invoice issuance, broad report exports, staff/Admin notification delivery and
-  approved incentive/financial formulas remain incomplete.
-- Current automation: **337 Laravel tests / 5,436 assertions; 102 frontend tests**;
-  ESLint/build pass, npm audit has no reported vulnerabilities. New migrations were
-  tested only in isolated SQLite, preserving existing columns/records; neither was
-  applied to working MariaDB. Browser acceptance remains separate and pending.
-
-Full phased file/endpoint inventory, definitions, migration review and manual setup:
-[October 20 sprint report](october-20-implementation-sprint-report.md).
-
-**Credited count remains 3/40 (7.5%); new credited points: 0.** AI and Owner scope
-remain untouched. Product substitutions and invoices await approved full acceptance
-requirements; no service charge, markup, tip or payout formula was invented.
+**Verified accepted count remains 3/40; implementation readiness is not a score.**

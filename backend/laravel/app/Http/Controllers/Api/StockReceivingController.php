@@ -136,10 +136,18 @@ class StockReceivingController extends Controller
                 $header = fgetcsv($stream, 0, ',', '"', '');
                 if ($header) $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]);
                 abort_unless($header === self::COLUMNS, 422, 'Use the provided CSV template and keep its five column headers unchanged.');
-                $rows = []; $errors = []; $seen = []; $line = 1;
+                $rows = []; $errors = []; $seen = []; $line = 1; $recordCount = 0;
+                $source = file_get_contents($request->file('file')->getRealPath());
+                $nextLine = 2;
+                $offset = ftell($stream);
                 while (($values = fgetcsv($stream, 0, ',', '"', '')) !== false) {
-                    $line++; abort_if($line > 501, 422, 'Import up to 500 data rows at a time.');
+                    $line = $nextLine;
+                    $endOffset = ftell($stream);
+                    $nextLine += max(1, substr_count(substr($source, $offset, $endOffset - $offset), "\n"));
+                    $offset = $endOffset;
+                    $recordCount++; abort_if($recordCount > 500, 422, 'Import up to 500 data rows at a time.');
                     if ($values === [null]) continue;
+                    if (! mb_check_encoding(implode('', $values), 'UTF-8')) { $errors[] = ['line' => $line, 'message' => 'Save the file as UTF-8 CSV and try again.']; continue; }
                     if (count($values) !== count(self::COLUMNS)) { $errors[] = ['line' => $line, 'message' => 'Expected five columns.']; continue; }
                     $row = array_combine(self::COLUMNS, array_map('trim', $values));
                     $row['batch_reference'] = mb_strtoupper($row['batch_reference']);
@@ -192,8 +200,8 @@ class StockReceivingController extends Controller
 
     private function duplicate(int $storeId, int $item, string $reference, string $kind): bool
     {
-        return DB::table('stock_receiving_requests')->where('store_id', $storeId)->where('store_inventory_id', $item)->where('batch_reference', $reference)->where('kind', $kind)->exists()
-            || ($kind === 'receive' && DB::table('stock_batches')->where('store_id', $storeId)->where('store_inventory_id', $item)->where('batch_reference', $reference)->exists());
+        return DB::table('stock_receiving_requests')->where('store_id', $storeId)->where('store_inventory_id', $item)->where('batch_reference', $reference)->where('kind', $kind)->lockForUpdate()->first() !== null
+            || ($kind === 'receive' && DB::table('stock_batches')->where('store_id', $storeId)->where('store_inventory_id', $item)->where('batch_reference', $reference)->lockForUpdate()->first() !== null);
     }
 
     private function ensureUnique(int $storeId, int $item, string $reference, string $kind): void

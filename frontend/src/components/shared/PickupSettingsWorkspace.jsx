@@ -152,4 +152,3 @@ export function PickupSettingsWorkspace({ readOnly = false, storeId = null }) {
     </>}
   </section>;
 }
-

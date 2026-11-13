@@ -39,7 +39,7 @@ return new class extends Migration
             $table->text('decision_note')->nullable();
             $table->unsignedInteger('hard_stock_before')->nullable();
             $table->unsignedInteger('hard_stock_after')->nullable();
-            $table->timestamp('decided_at')->nullable();
+            $table->dateTime('decided_at')->nullable();
             $table->timestamps();
             // Rejected deliveries need a corrected new reference, preventing accidental reimport.
             $table->unique(['store_id', 'store_inventory_id', 'batch_reference', 'kind'], 'receiving_request_duplicate_guard');
@@ -52,7 +52,7 @@ return new class extends Migration
             $table->string('event', 30);
             $table->unsignedInteger('quantity')->default(0);
             $table->text('description');
-            $table->timestamp('created_at');
+            $table->dateTime('created_at');
         });
         Schema::create('stock_alerts', function (Blueprint $table) {
             $table->id();
@@ -61,8 +61,8 @@ return new class extends Migration
             $table->string('product_name');
             $table->integer('available_qty');
             $table->unsignedInteger('reorder_level');
-            $table->timestamp('recovered_at')->nullable();
-            $table->timestamp('created_at');
+            $table->dateTime('recovered_at')->nullable();
+            $table->dateTime('created_at');
         });
         Schema::create('stock_alert_states', function (Blueprint $table) {
             $table->foreignId('store_inventory_id')->primary()->constrained('store_inventory', 'store_inventory_id')->restrictOnDelete();
@@ -72,7 +72,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('alert_id')->constrained('stock_alerts')->restrictOnDelete();
             $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
-            $table->timestamp('read_at');
+            $table->dateTime('read_at');
             $table->unique(['alert_id', 'user_id']);
         });
     }

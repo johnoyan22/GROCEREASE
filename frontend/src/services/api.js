@@ -551,6 +551,7 @@ export function quarantineStockBatch(id, description) { return writeAction('/sup
 export async function previewStockImport(file) { const token = await getXsrfToken(); const body = new FormData(); body.append('file', file); return sendRequest('/inventory/receiving/preview', { method: 'POST', body, headers: { 'X-XSRF-TOKEN': token } }); }
 export function submitStockImport(preview_token) { return writeAction('/inventory/receiving/import', 'POST', { preview_token }); }
 export function getStockAlerts({ signal } = {}) { return sendRequest('/inventory/stock-alerts', { signal, cache: 'no-store' }); }
+export function getProductPriceHistory(id, { signal } = {}) { return sendRequest('/inventory/items/' + encodeURIComponent(id) + '/price-history', { signal, cache: 'no-store' }); }
 export function acknowledgeStockAlert(id) { return writeAction('/inventory/stock-alerts/' + encodeURIComponent(id) + '/read', 'PUT', {}); }
 export async function downloadStockTemplate() { await downloadAuthenticated('/inventory/receiving/template', 'stock-receiving-template.csv', 'text/csv'); return { message: 'CSV template downloaded.' }; }
 export async function downloadAuthenticated(path, filename, mime = 'application/pdf') {

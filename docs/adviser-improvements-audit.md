@@ -32,7 +32,8 @@ full module acceptance.
 
 - No working-database migration, reset, seed, `.env` change, push, merge or branch deletion.
 - Historical migrations, especially AI 000017 and payment 000015, remain intact.
-- Additive migrations are reviewed and tested in disposable SQLite only.
+- Additive migrations are reviewed and tested in disposable SQLite and MariaDB.
+  The working database is inspected through read-only queries only.
 - Legacy stock stays physically counted. Untracked stock remains explicitly legacy;
   expired/quarantined batch quantities reduce sellable stock, never silently hard stock.
 - Invoices remain Draft / Pro Forma until partner legal/tax/numbering authorization is confirmed.
@@ -41,4 +42,39 @@ full module acceptance.
 ## Baseline
 
 - Frontend: 113/113 tests; ESLint passed; Vite build passed (existing chunk-size warning).
-- Backend baseline: running; result recorded in the changelog after completion.
+- Backend baseline: 357 passed / 5,957 assertions (disposable SQLite).
+
+## Final audit findings
+
+- Checkpoints 1–5 are recorded as separate local commits; final regression and
+  handoff are recorded in checkpoint 6. No merge/push/branch deletion or `.env` change.
+- Current working status (read-only): AI 000017 applied; payment 000015,
+  account-status 000016 and adviser 18–20 pending. New schema is not live yet.
+- Added `StoreCategoryController`, `ProductPhotoController`,
+  `StockReceivingController`, `StockAlertController`, `InvoiceController`,
+  `ReportPdfController` under `backend/laravel/app/Http/Controllers/Api/`;
+  routes are in `backend/laravel/routes/adviser.php`.
+- Batch safety/FEFO and persistent episodes live in
+  `backend/laravel/app/Services/{BatchStock,StockAlerts}.php`; printable PDFs in
+  `app/Services/DocumentPdf.php` and `resources/views/pdf/`.
+- Original migrations through 000017 are preserved. New 18–20 are additive;
+  disposable MariaDB testing corrected their audit date-column compatibility
+  and verified current-read duplicate guards under real concurrency.
+- Price history is available in the shared catalog table and scoped API. Unit
+  snapshots and existing authoritative price review protect historical orders.
+- Nonfunctional Google/reset, Shopper/Admin preference toggles, staff search/cart,
+  invented dashboard products/role counts and public store claims were removed.
+  Existing password, account/staff-management and Supervisor operational/AI APIs remain.
+- Registration files now live in `components/auth/` and `pages/auth/`.
+  `components/shared/PickupSettingsWorkspace.jsx` owns one implementation;
+  Admin/Supervisor wrappers retain their original permissions and URLs.
+- Browser tests (`frontend/e2e/adviser-responsive.spec.js`) use real rendered
+  pages and labeled fixtures; Laravel/MariaDB tests cover persistence and locks.
+  No physical-device, Gemini/PayMongo or human full-module acceptance is claimed.
+- Remaining dependencies are explicit in the manual checklist, database review,
+  invoice/payment readiness and Gemini handoff. Accepted module points stay 3/40.
+- Final verification: 381 Laravel tests / 6,527 assertions, 125 frontend tests,
+  ESLint, production build and 29 Chrome cases pass. Six disposable MariaDB
+  concurrency scenarios pass; read-only comparison preserves all 31 working
+  business tables. Composer/production npm audits are clean; seven moderate
+  development-tool findings remain documented in `dependency-audit.md`.

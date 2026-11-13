@@ -29,7 +29,7 @@ return new class extends Migration
             $table->string('document_type', 20)->default('pro_forma');
             $table->longText('snapshot');
             $table->foreignId('generated_by_user_id')->constrained('users')->restrictOnDelete();
-            $table->timestamp('generated_at');
+            $table->dateTime('generated_at');
         });
         Schema::create('invoice_audits', function (Blueprint $table) {
             $table->id();
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->foreignId('actor_user_id')->constrained('users')->restrictOnDelete();
             $table->string('action', 40);
             $table->text('details')->nullable();
-            $table->timestamp('created_at');
+            $table->dateTime('created_at');
         });
     }
 

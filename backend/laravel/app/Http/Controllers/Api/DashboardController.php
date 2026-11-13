@@ -90,13 +90,14 @@ class DashboardController extends Controller
             if ($order && $order->refund_status !== 'completed' && app(PaymentEvidence::class)->valid($order, $payment)) $sales += (int) $payment->amount_centavos;
         }
         $low = StoreInventory::where('status', 'active')->whereNotNull('low_stock_threshold')
-            ->whereRaw('(hard_stock_qty - soft_stock_qty) <= low_stock_threshold');
+            ->with(['store', 'product'])->orderBy('store_id')->orderBy('store_inventory_id')->get()
+            ->filter(fn ($row) => $row->isLowStock());
         return ['total_users' => User::count(), 'active_orders' => Order::active()->count(),
-            'low_stock_products' => (clone $low)->count(), 'cop_restricted_accounts' => $restricted->count(),
+            'low_stock_products' => $low->count(), 'cop_restricted_accounts' => $restricted->count(),
             'todays_sales_centavos' => $sales, 'service_charge_pool_centavos' => null, 'subscription_revenue_centavos' => null,
             'roles' => DB::table('roles')->leftJoin('users', 'users.role_id', '=', 'roles.role_id')
                 ->groupBy('roles.role_id', 'roles.name', 'roles.slug')->selectRaw('roles.name, roles.slug, COUNT(users.id) as user_count')->get(),
-            'low_stock_records' => (clone $low)->with(['store', 'product'])->orderBy('store_id')->orderBy('store_inventory_id')->limit(5)->get()->map(fn ($row) => [
+            'low_stock_records' => $low->take(5)->values()->map(fn ($row) => [
                 'store_inventory_id' => $row->store_inventory_id, 'store_name' => $row->store->store_name,
                 'product_name' => $row->product->product_name, 'available_stock' => $row->availableStock(), 'low_stock_threshold' => $row->low_stock_threshold,
             ]),

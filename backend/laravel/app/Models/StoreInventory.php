@@ -45,9 +45,9 @@ class StoreInventory extends Model
         ];
     }
 
-    public function availableStock(): int
+    public function availableStock(bool $current = false): int
     {
-        return max(0, $this->hard_stock_qty - $this->soft_stock_qty - app(\App\Services\BatchStock::class)->blocked($this));
+        return max(0, $this->hard_stock_qty - $this->soft_stock_qty - app(\App\Services\BatchStock::class)->blocked($this, $current));
     }
 
     public function isLowStock(): bool

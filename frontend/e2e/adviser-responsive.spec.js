@@ -23,6 +23,7 @@ async function fixtures(page, role = 'shopper') {
     if (path.endsWith('/products')) return reply({ store, products: [product] });
     if (path === '/api/inventory/items') return reply({ store, inventory: [product] });
     if (path === '/api/inventory/categories') return reply({ store, categories: [{ id: 1, store_id: 1, name: 'Staples', active: true, products_count: 1 }] });
+    if (path.endsWith('/price-history')) return reply({ history: [] });
     if (path === '/api/inventory/receiving') return reply({ store, requests: [], batches: [] });
     if (path === '/api/inventory/stock-alerts') return reply({ store, alerts: [{ id: 1, product_name: 'QA Rice', available_qty: 4, reorder_level: 4, created_at: timestamp, read_at: null, recovered_at: null }] });
     if (path === '/api/inventory/stock-adjustments') return reply({ store, adjustments: [] });

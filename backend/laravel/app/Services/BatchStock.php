@@ -8,13 +8,17 @@ use Illuminate\Support\Facades\Schema;
 
 class BatchStock
 {
-    public function blocked(StoreInventory $inventory): int
+    public function blocked(StoreInventory $inventory, bool $current = false): int
     {
         if (! Schema::hasTable('stock_batches')) return 0;
-        return (int) DB::table('stock_batches')->where('store_inventory_id', $inventory->store_inventory_id)
+        $query = DB::table('stock_batches')->where('store_inventory_id', $inventory->store_inventory_id)
             ->where('store_id', $inventory->store_id)->where(function ($query) {
                 $query->where('status', 'quarantined')->orWhere('expiration_date', '<', now('Asia/Manila')->toDateString());
-            })->sum('remaining_qty');
+            });
+        // Writers already hold store/inventory locks. A locking read avoids an
+        // older MariaDB snapshot after waiting for another stock transaction.
+        if ($current) $query->lockForUpdate();
+        return (int) $query->pluck('remaining_qty')->sum();
     }
 
     // Called under the existing store/inventory locks immediately before physical handover.
@@ -22,7 +26,7 @@ class BatchStock
     public function consume(StoreInventory $inventory, int $quantity, int $orderId, int $actor): void
     {
         if (! Schema::hasTable('stock_batches')) return;
-        abort_if($inventory->hard_stock_qty - $this->blocked($inventory) < $inventory->soft_stock_qty, 409,
+        abort_if($inventory->hard_stock_qty - $this->blocked($inventory, true) < $inventory->soft_stock_qty, 409,
             'Expired or quarantined stock affects reservations. Supervisor reconciliation is required before handover.');
         $batches = DB::table('stock_batches')->where('store_id', $inventory->store_id)->where('store_inventory_id', $inventory->store_inventory_id)
             ->where('remaining_qty', '>', 0)->where('status', 'available')

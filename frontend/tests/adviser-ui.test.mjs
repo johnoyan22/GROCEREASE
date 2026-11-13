@@ -8,7 +8,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const { act, createElement: h } = await import('react');
 const { createRoot } = await import('react-dom/client');
 const { MemoryRouter } = await import('react-router-dom');
-let server, root, Login, Register, Profile, Settings, Avatar;
+let server, root, Login, Register, Profile, Settings, Avatar, Header;
 before(async () => {
   server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' });
   Login = (await server.ssrLoadModule('/src/components/auth/loginForm.jsx')).default;
@@ -16,6 +16,7 @@ before(async () => {
   Profile = (await server.ssrLoadModule('/src/components/Shoppers/ShopperMyProfile.jsx')).default;
   Settings = (await server.ssrLoadModule('/src/components/Shoppers/ShopperSettings.jsx')).default;
   Avatar = (await server.ssrLoadModule('/src/components/shared/Avatar.jsx')).default;
+  Header = (await server.ssrLoadModule('/src/components/Shoppers/ShopperHeader.jsx')).default;
 });
 afterEach(async () => { if (root) { await act(async () => root.unmount()); root = null; } });
 after(async () => { await server.close(); dom.window.close(); });
@@ -63,4 +64,24 @@ test('Initials avatar rerenders from the current account name and safely falls b
   await act(async () => document.querySelector('img').dispatchEvent(new Event('error')));
   assert.equal(document.querySelector('img'), null);
   assert.equal(document.querySelector('[role="img"]').textContent, 'MS');
+});
+
+test('saving Shopper details updates the shared parent identity and header while preserving contact and verification fields', async t => {
+  document.cookie = 'XSRF-TOKEN=secure';
+  let updated;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/csrf-cookie')) return new Response(null, { status: 204 });
+    assert.ok(url.endsWith('/shopper/profile')); assert.equal(options.method, 'PUT');
+    const data = JSON.parse(options.body); assert.deepEqual(Object.keys(data).sort(), ['address','first_name','last_name']);
+    updated = { ...account, profile: { ...account.profile, ...data } };
+    return new Response(JSON.stringify({ user: updated, message: 'Profile updated successfully.' }), { headers: { 'Content-Type': 'application/json' } });
+  });
+  const { useState } = await import('react');
+  function Workspace() { const [user, setUser] = useState(account); return h('div', null, h(Header, { user }), h(Profile, { user, onProfileUpdated: setUser })); }
+  await mount(Workspace); await click(button('Edit Profile'));
+  const field = document.querySelector('[name="first_name"]');
+  await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(field, 'Maria'); field.dispatchEvent(new Event('input', { bubbles: true })); field.dispatchEvent(new Event('change', { bubbles: true })); });
+  await act(async () => field.closest('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  assert.equal(updated.profile.first_name, 'Maria'); assert.equal(updated.profile.phone_number, account.profile.phone_number); assert.equal(updated.email_verified_at, account.email_verified_at);
+  assert.match(document.body.textContent, /Profile updated successfully/); assert.equal(document.querySelector('header [role="img"]').getAttribute('aria-label'), 'Maria Cruz avatar');
 });

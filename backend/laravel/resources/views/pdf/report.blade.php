@@ -6,7 +6,7 @@ th { text-align: left; background: #f0fdf4; color: #14532d; } td, th { border-bo
 tr { page-break-inside: avoid; } .totals { margin-top: 16px; padding: 10px; background: #f8faf9; } .note { color: #475569; font-size: 8px; }
 footer { position: fixed; bottom: -26px; font-size: 8px; color: #475569; }
 </style></head><body><footer>GrocerEase • {{ $report['scope'] }} • Generated {{ $report['generated_at'] }}</footer>
-<h1>{{ $report['report_title'] }}</h1><p>Scope: {{ $report['scope'] }}<br>Period: {{ $report['from'] ?? 'All recorded dates' }} to {{ $report['until'] ?? 'Latest recorded date' }}<br>Generated: {{ $report['generated_at'] }}<br>Records: {{ count($report['rows']) }}</p>
+<h1>{{ $report['report_title'] }}</h1><p>Scope: {{ $report['scope'] }}<br>Period: @if(isset($report['period_label'])){{ $report['period_label'] }}@else{{ $report['from'] ?? 'All recorded dates' }} to {{ $report['until'] ?? 'Latest recorded date' }}@endif<br>Generated: {{ $report['generated_at'] }}<br>Records: {{ count($report['rows']) }}</p>
 @if ($report['filters'])<p class="note">Filters: @foreach ($report['filters'] as $key => $value) {{ $key }} = {{ $value }}; @endforeach</p>@endif
 <table><thead><tr>@foreach ($report['headings'] as $heading)<th>{{ $heading }}</th>@endforeach</tr></thead><tbody>
 @forelse ($report['rows'] as $row)<tr>@foreach ($row as $cell)<td>{{ $cell }}</td>@endforeach</tr>

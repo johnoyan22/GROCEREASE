@@ -232,7 +232,7 @@ function RegisterForm() {
               required
             />
             <label htmlFor="terms" className="text-xs text-gray-600">
-              I agree to the <a href="#" className="text-primary font-bold hover:underline">Terms of Service</a> and <a href="#" className="text-primary font-bold hover:underline">Privacy Policy</a>
+              I agree to the Terms of Service and Privacy Policy provided by the GrocerEase team.
             </label>
           </div>
 

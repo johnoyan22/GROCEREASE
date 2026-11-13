@@ -78,7 +78,7 @@ class CheckoutPricing
             $inventory->setRelation('product', Product::forStore($store->store_id)
                 ->whereKey($inventory->product_id)->lockForUpdate()->firstOrFail());
             $quantity = $requested['quantity'];
-            if ($quantity > $inventory->availableStock()) {
+            if ($quantity > $inventory->availableStock(true)) {
                 $this->invalid($index, $inventory->product->product_name.' has insufficient available stock.');
             }
             if ($inventory->max_per_order !== null && $quantity > $inventory->max_per_order) {

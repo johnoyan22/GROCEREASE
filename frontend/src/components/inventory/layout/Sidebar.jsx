@@ -10,7 +10,7 @@ const navigationItems = [
   { label: "Stock Verification Requests", href: "/inventory/verifications", icon: "clipboard" },
   { label: "Low Stock Monitoring", href: "/inventory/low-stock", icon: "warning" },
   { label: "Submit Stock Update", href: "/inventory/stock-update", icon: "upload" },
-  { label: "Supervisor Notification", href: "/inventory/notifications", icon: "user" },
+  { label: "Notifications", href: "/inventory/notifications", icon: "user" },
   { label: "Activity Log", href: "/inventory/activity", icon: "activity" },
   { label: "Profile", href: "/inventory/profile", icon: "user" },
 ];

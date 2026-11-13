@@ -1,6 +1,6 @@
 import Avatar from '../shared/Avatar';
-import { 
-  LayoutDashboard, ShoppingBag, Sparkles, Package, Store, Bell, 
+import {
+  LayoutDashboard, ShoppingBag, Sparkles, Package, Store, Bell,
   User, CreditCard, History, Settings, LogOut, ShoppingCart
 } from 'lucide-react';
 import Logo from '../../assets/images/Logo.png';
@@ -12,8 +12,8 @@ function ShopperSidebar({ activeTab, setActiveTab, user }) {
 
   const getButtonClass = (tabName) => {
     const baseClass = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border";
-    return activeTab === tabName 
-      ? `${baseClass} bg-primary text-white border-primary shadow-sm` 
+    return activeTab === tabName
+      ? `${baseClass} bg-primary text-white border-primary shadow-sm`
       : `${baseClass} text-gray-700 hover:bg-gray-100 border-gray-200`;
   };
 
@@ -61,8 +61,8 @@ function ShopperSidebar({ activeTab, setActiveTab, user }) {
           <button
             onClick={() => setActiveTab('AI')}
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border ${
-              activeTab === 'AI' 
-                ? 'bg-primary text-white border-primary' 
+              activeTab === 'AI'
+                ? 'bg-primary text-white border-primary'
                 : 'text-gray-700 hover:bg-gray-100 border-gray-200'
             }`}
           >
@@ -88,8 +88,8 @@ function ShopperSidebar({ activeTab, setActiveTab, user }) {
           <button
             onClick={() => setActiveTab('Pickup')}
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border ${
-              activeTab === 'Pickup' 
-                ? 'bg-primary text-white border-primary' 
+              activeTab === 'Pickup'
+                ? 'bg-primary text-white border-primary'
                 : 'text-gray-700 hover:bg-gray-100 border-gray-200'
             }`}
           >
@@ -110,7 +110,7 @@ function ShopperSidebar({ activeTab, setActiveTab, user }) {
       </div>
 
       <div className="space-y-1.5 pt-4 border-t border-gray-100">
-        <button 
+        <button
           onClick={() => setActiveTab('Profile')}
           className={getButtonClass('Profile')}
         >
@@ -118,7 +118,7 @@ function ShopperSidebar({ activeTab, setActiveTab, user }) {
           My Profile
         </button>
 
-        <button 
+        <button
           onClick={() => setActiveTab('Payment')}
           className={getButtonClass('Payment')}
         >
@@ -126,7 +126,7 @@ function ShopperSidebar({ activeTab, setActiveTab, user }) {
           Payment Methods
         </button>
 
-        <button 
+        <button
           onClick={() => setActiveTab('History')}
           className={getButtonClass('History')}
         >
@@ -134,7 +134,7 @@ function ShopperSidebar({ activeTab, setActiveTab, user }) {
           History
         </button>
 
-        <button 
+        <button
           onClick={() => setActiveTab('Settings')}
           className={getButtonClass('Settings')}
         >

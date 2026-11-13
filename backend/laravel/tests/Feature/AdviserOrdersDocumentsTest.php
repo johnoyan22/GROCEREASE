@@ -107,6 +107,8 @@ class AdviserOrdersDocumentsTest extends TransactionTestCase
         $this->get('/api/supervisor/reports/cop.pdf')->assertForbidden();
         $this->getJson('/api/supervisor/reports/orders.pdf?from=2026-11-20&until=2026-11-01')->assertUnprocessable();
         $this->getJson('/api/supervisor/reports/stock.pdf?from=2026-11-01')->assertUnprocessable();
+        $this->getJson('/api/supervisor/reports/sales.pdf?category=Staples')->assertUnprocessable();
+        $this->getJson('/api/supervisor/reports/transactions.pdf?status=paid')->assertUnprocessable();
         $this->signIn($this->shopper)->getJson('/api/admin/reports/stock.pdf')->assertForbidden();
         $this->signIn($this->admin)->get('/api/admin/reports/stock.pdf')->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->get('/api/admin/reports/cop.pdf')->assertOk()->assertHeader('Content-Type', 'application/pdf');

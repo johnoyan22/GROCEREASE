@@ -2,7 +2,7 @@
 
 Date: 2026-11-13 (Asia/Manila). Automated real-browser tests use local Chrome,
 with labeled API fixtures. Backend/database correctness is tested separately in
-Laravel SQLite. These checks are not human acceptance or physical-device tests.
+Laravel SQLite and disposable MariaDB. These checks are not human acceptance or physical-device tests.
 
 ## Visual system and corrected issues
 
@@ -30,11 +30,11 @@ Laravel SQLite. These checks are not human acceptance or physical-device tests.
 
 | Experience | Viewports | Checks | Actual status |
 | --- | --- | --- | --- |
-| Shopper Dashboard, Browse, AI, Cart, Checkout review, Orders/QR, Pickup Information, Notifications, Profile/Edit, Account & Security | 320, 375, 390, 430, 768, 1024, 1440 px wide | Render, navigation, root/main overflow, cart quantity, explicit quote review, native dialog Escape, readable QR/PIN, profile cancel | Running; final result appended below |
-| Public landing, Login, Registration | Same seven widths | Valid guest CTA, responsive layout, preserved auth forms | Running |
-| Inventory Worker Dashboard, Products/Add dialog, Stock/Receiving, Notifications, Profile | 1366×768, 1440×900, 1920×1080; 768×1024, 390×844 | Desktop/table containment, mobile access, SKU read-only/category select, avatar, native product modal | Running |
-| Supervisor Dashboard, Products, Stock Approvals/Receiving, System Configuration/Categories/AI, Profile, Notifications | Same five staff viewports | Desktop layout, smaller-screen containment, store workflow presentation | Running |
-| Admin Dashboard, Reports/Seller Configuration, Role Permissions, Profile | Same five staff viewports | Desktop layout, mobile drawer/layout, no fake settings | Running |
+| Shopper Dashboard, Browse, AI, Cart, Checkout review, Orders/QR, Pickup Information, Notifications, Profile/Edit, Account & Security | 320, 375, 390, 430, 768, 1024, 1440 px wide | Render, navigation, root/main overflow, cart quantity, explicit quote review, native dialog Escape, readable QR/PIN, profile cancel | Passed with fixtures |
+| Public landing, Login, Registration | Same seven widths | Valid guest CTA, responsive layout, preserved auth forms | Passed with fixtures |
+| Inventory Worker Dashboard, Products/Add dialog, Stock/Receiving, Notifications, Profile | 1366×768, 1440×900, 1920×1080; 768×1024, 390×844 | Desktop/table containment, mobile access, SKU read-only/category select, avatar, native product modal | Passed with fixtures |
+| Supervisor Dashboard, Products, Stock Approvals/Receiving, System Configuration/Categories/AI, Profile, Notifications | Same five staff viewports | Desktop layout, smaller-screen containment, store workflow presentation | Passed with fixtures |
+| Admin Dashboard, Reports/Seller Configuration, Role Permissions, Profile | Same five staff viewports | Desktop layout, mobile drawer/layout, no fake settings | Passed with fixtures |
 
 Run `cd frontend; npm run test:responsive`. The config uses installed Windows
 Chrome when available, or `GROCEREASE_BROWSER_PATH`; elsewhere install Playwright
@@ -44,7 +44,7 @@ contact Gemini/PayMongo. Screenshots/results live under ignored `tmp/`.
 Human screen-reader checks, physical phones, touch keyboards and real partner
 records require the manual acceptance checklist after approved database setup.
 
-Final browser run: **29 passed, 0 failed, 0 skipped** (61.5 seconds). All listed
+Final browser run: **29 passed, 0 failed, 0 skipped** (65.44 seconds). All listed
 widths/screens passed the automated overflow and interaction checks. The first
 attempt exposed selector casing and incomplete pickup-setting fixtures; both
 were corrected, then all 29 cases passed together. In the sandbox the dedicated
@@ -53,7 +53,7 @@ avoid a Windows child-process teardown hang; application test behavior is unchan
 Screenshots visually inspected: 375 px cart and landing, 390 px Checkout,
 1440 px landing, and 1366 px Inventory Worker/Supervisor/Admin dashboards.
 
-Frontend component/API suite: **124 passed**; ESLint and Vite build passed.
+Frontend component/API suite: **125 passed**; ESLint and Vite 8.3.8 build passed.
 The main production bundle is approximately 239 kB, versus approximately 637 kB
 at baseline; the previous large-chunk warning is gone.
 

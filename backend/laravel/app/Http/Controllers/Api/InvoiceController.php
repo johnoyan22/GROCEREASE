@@ -42,19 +42,24 @@ class InvoiceController extends Controller
             $record = $this->order($request, $order);
             $this->requireSchema();
             $payment = DB::table('order_payments')->where('order_id', $record->order_id)->lockForUpdate()->first();
+            $handover = DB::table('order_handovers')->where('order_id', $order)->lockForUpdate()->first();
             abort_unless($record->status === 'completed' && $record->reservation_status === 'fulfilled'
-                && DB::table('order_handovers')->where('order_id', $order)->exists() && app(PaymentEvidence::class)->valid($record, $payment),
+                && $handover && app(PaymentEvidence::class)->valid($record, $payment),
                 409, 'Generate the order invoice document after verified payment and completed physical handover.');
-            $invoice = DB::table('order_invoices')->where('order_id', $order)->first();
+            // Current read after the order lock, including MariaDB REPEATABLE READ.
+            $invoice = DB::table('order_invoices')->where('order_id', $order)->lockForUpdate()->first();
             if ($invoice) return response()->json(['invoice' => $this->present($invoice), 'message' => 'Existing Draft / Pro Forma document retrieved.']);
-            $seller = DB::table('store_invoice_settings')->where('store_id', $record->store_id)->first();
+            $seller = DB::table('store_invoice_settings')->where('store_id', $record->store_id)->lockForUpdate()->first();
             $reference = 'PF-'.$record->store_id.'-'.Str::ulid();
             $snapshot = [
                 'reference' => $reference, 'label' => 'Draft / Pro Forma', 'official_invoice' => false,
                 'invoice_date' => now('Asia/Manila')->format('Y-m-d'), 'generated_at' => now()->toIso8601String(),
                 'seller' => $seller ? collect($seller)->only(['registered_name', 'registered_address', 'tin', 'branch_code', 'tax_registration', 'numbering_authority'])->all() : null,
                 'seller_note' => $seller ? 'Seller details recorded by Admin; official invoicing authorization is not enabled.' : 'Registered seller details and numbering authority have not been confirmed. Store identity below comes from the order.',
-                'order' => app(OrderData::class)->present($record),
+                'order' => collect(app(OrderData::class)->present($record))->only([
+                    'order_id', 'store_id', 'store_name', 'store_address', 'shopper_name', 'status', 'completed_at',
+                    'payment_method', 'payment_status', 'subtotal_centavos', 'service_fee_centavos', 'total_centavos', 'currency', 'items',
+                ])->all(),
                 'transaction_id' => $payment->id, 'payment_reference' => $payment->provider_reference ?: 'TX-'.$payment->id,
                 'tax_note' => 'Tax breakdown is unconfirmed. No VAT, exemption or input-tax entitlement is represented by this draft.',
                 'warning' => 'Draft / Pro Forma — Not a BIR-authorized Sales Invoice. Obtain the supermarket’s authorized invoice for tax purposes.',
