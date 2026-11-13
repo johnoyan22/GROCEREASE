@@ -1,3 +1,4 @@
+import ProductImage from '../../shared/ProductImage';
 import { Pencil } from 'lucide-react';
 
 const moneyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -9,13 +10,13 @@ function ProductTable({ products, onEdit }) {
         <table className="w-full min-w-[900px] text-left text-xs">
           <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
             <tr>
-              {['Product', 'SKU / Barcode', 'Category', 'Selling Price', 'Physical', 'Reserved', 'Available', 'Limit / order', 'Low threshold', 'Offering Status', 'Last Updated', ...(onEdit ? ['Actions'] : [])].map((title) => <th key={title} scope="col" className="px-4 py-3 font-medium">{title}</th>)}
+              {['Product', 'SKU / Barcode', 'Category', 'Selling Price', 'Physical', 'Reserved', 'Available', 'Limit / order', 'Reorder level', 'Offering Status', 'Last Updated', ...(onEdit ? ['Actions'] : [])].map((title) => <th key={title} scope="col" className="px-4 py-3 font-medium">{title}</th>)}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 text-gray-700">
             {products.map((product) => (
               <tr key={product.store_inventory_id} className="hover:bg-gray-50/70">
-                <td className="px-4 py-3"><p className="font-medium text-gray-900">{product.product_name}</p><p className="mt-1 text-gray-500">{product.size || '—'}</p></td>
+                <td className="px-4 py-3"><div className="flex items-center gap-3"><ProductImage product={product} className="h-12 w-12" /><p className="font-medium text-gray-900">{product.product_name}</p></div><p className="mt-1 text-gray-500">{product.selling_unit ? product.selling_unit + ' · ' : ''}{product.size || '—'}</p></td>
                 <td className="px-4 py-3"><p>{product.sku}</p><p className="mt-1 text-gray-500">{product.barcode || '—'}</p></td>
                 <td className="px-4 py-3">{product.category}</td>
                 <td className="px-4 py-3 font-medium">{moneyFormatter.format(product.selling_price)}</td>

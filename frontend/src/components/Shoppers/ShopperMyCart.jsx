@@ -1,3 +1,4 @@
+import ProductImage from '../shared/ProductImage';
 import { useState } from 'react';
 import { maximumQuantity } from '../../services/cart';
 import ShopperCheckout from './ShopperCheckout';
@@ -21,8 +22,8 @@ export default function ShopperMyCart({ shopping, userId, onContinue }) {
       <section aria-label="Cart items" className="space-y-4">
         {cart.items.length === 0 && <div className="rounded-xl border border-gray-200 bg-white p-6"><h2 className="font-semibold">Your cart is empty</h2><p className="mt-2 text-sm text-gray-500">Browse your supermarket to add products.</p></div>}
         {!catalog.loading && summary.rows.map(row => <article key={row.store_inventory_id} className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="font-semibold">{row.product?.product_name ?? 'Unavailable product #' + row.store_inventory_id}</h2>
-          {row.product && <><p className="mt-1 text-sm text-gray-600">{row.product.category} · {row.product.size || 'Size not provided'}</p><p className="mt-1 text-xs text-gray-500">SKU: {row.product.sku} · Barcode: {row.product.barcode || 'Not provided'}</p><p className="mt-2 text-sm">Current price: {money.format(row.product.selling_price)}</p><p className="mt-1 text-xs text-gray-500">Available: {row.product.available_stock} · Limit/order: {row.product.max_per_order ?? 'No extra limit'}</p></>}
+          <ProductImage product={row.product} className="mb-3 h-20 w-20" /><h2 className="font-semibold">{row.product?.product_name ?? 'Unavailable product #' + row.store_inventory_id}</h2>
+          {row.product && <><p className="mt-1 text-sm text-gray-600">{row.product.category} · {row.product.size || 'Size not provided'}</p><p className="mt-1 text-xs text-gray-500">SKU: {row.product.sku} · Barcode: {row.product.barcode || 'Not provided'}</p><p className="mt-2 text-sm">Current price: {money.format(row.product.selling_price)}{row.product.selling_unit && ' / ' + row.product.selling_unit}</p><p className="mt-1 text-xs text-gray-500">Available: {row.product.available_stock} · Limit/order: {row.product.max_per_order ?? 'No extra limit'}</p></>}
           {row.error && <p role="alert" className="mt-2 text-sm text-red-700">{row.error}</p>}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
             {row.product && <label className="text-sm">Quantity<input aria-label={'Cart quantity for ' + row.product.product_name} type="number" min="1" max={maximumQuantity(row.product)} step="1" value={row.quantity} disabled={locked} onChange={event => changeQuantity(row.product, Number(event.target.value))} className="ml-3 w-20 rounded border border-gray-300 p-2" /></label>}

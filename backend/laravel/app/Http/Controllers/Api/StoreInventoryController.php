@@ -7,6 +7,7 @@ use App\Models\InventoryAvailabilityLog;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreInventory;
+use App\Models\StoreCategory;
 use App\Models\User;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,7 +40,7 @@ class StoreInventoryController extends Controller
     {
         try {
             return $this->withAssignedStore($request, function (Store $store) use ($request) {
-                $this->normalizeSku($request);
+                $this->requireCatalogSchema();
                 $validated = $request->validate(array_merge(
                     $this->writeRules(),
                     $this->productRules($store)
@@ -81,13 +82,20 @@ class StoreInventoryController extends Controller
                 $product = Product::forStore($store->store_id)
                     ->whereKey($inventory->product_id)->lockForUpdate()->firstOrFail();
 
-                $this->normalizeSku($request);
+                $this->requireCatalogSchema();
                 $validated = $request->validate(array_merge(
                     $this->writeRules(),
                     $this->productRules($store, $product)
                 ));
 
                 $previousStatus = $inventory->status;
+                if ($inventory->selling_price !== number_format((float) $validated['selling_price'], 2, '.', '')) {
+                    DB::table('product_price_changes')->insert([
+                        'store_id' => $store->store_id, 'store_inventory_id' => $inventory->store_inventory_id,
+                        'changed_by_user_id' => $request->user()->id, 'old_price' => $inventory->selling_price,
+                        'new_price' => $validated['selling_price'], 'created_at' => now(),
+                    ]);
+                }
                 $product->update($this->metadata($validated));
                 $inventory->fill([
                     'selling_price' => $validated['selling_price'],
@@ -115,6 +123,16 @@ class StoreInventoryController extends Controller
     {
         return StoreInventory::forStore($store->store_id)
             ->whereHas('product', fn ($query) => $query->forStore($store->store_id));
+    }
+
+    public function priceHistory(Request $request, string $item): JsonResponse
+    {
+        return $this->withAssignedStore($request, function (Store $store) use ($item) {
+            $inventory = $this->ownedInventory($store)->whereKey($item)->firstOrFail();
+            abort_unless(Schema::hasTable('product_price_changes'), 503, 'Price history awaits reviewed catalog database setup.');
+            return response()->json(['history' => DB::table('product_price_changes')->where('store_id', $store->store_id)
+                ->where('store_inventory_id', $inventory->store_inventory_id)->orderByDesc('id')->get()]);
+        }, true);
     }
 
     private function recordAvailability(StoreInventory $inventory, User $user, ?string $previousStatus): void
@@ -183,32 +201,33 @@ class StoreInventoryController extends Controller
     private function productRules(Store $store, ?Product $product = null): array
     {
         $required = $product ? ['sometimes', 'required'] : ['required'];
-        $sku = Rule::unique('products', 'sku')->where('store_id', $store->store_id);
-        if ($product) {
-            $sku->ignore($product->product_id, 'product_id');
-        }
-
         return [
             'product_name' => [...$required, 'string', 'max:255'],
-            'sku' => [...$required, 'string', 'max:64', $sku],
+            'sku' => ['prohibited'],
             'barcode' => ['sometimes', 'nullable', 'string', 'max:64'],
             'size' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'category' => [...$required, 'string', 'max:100'],
+            'category' => ['prohibited'],
+            'category_id' => [...$required, 'integer', function ($attribute, $value, $fail) use ($store, $product) {
+                $category = StoreCategory::where('store_id', $store->store_id)->find($value);
+                if (! $category || (! $category->active && $product?->category_id !== $category->id)) {
+                    $fail('Select an active category from your store. Ask your Supervisor to manage categories.');
+                }
+            }],
+            'selling_unit' => [...$required, Rule::in(Product::SELLING_UNITS)],
         ];
     }
 
-    private function normalizeSku(Request $request): void
+    private function requireCatalogSchema(): void
     {
-        if (is_string($request->input('sku'))) {
-            $request->merge(['sku' => strtoupper(trim($request->input('sku')))]);
-        }
+        abort_unless(Schema::hasTable('store_categories') && Schema::hasColumn('products', 'selling_unit'), 503,
+            'Product editing is awaiting the reviewed catalog database setup. Your existing products are preserved.');
     }
 
     private function metadata(array $validated): array
     {
-        return array_intersect_key($validated, array_flip([
-            'product_name', 'sku', 'barcode', 'size', 'category',
-        ]));
+        $metadata = array_intersect_key($validated, array_flip(['product_name', 'barcode', 'size', 'category_id', 'selling_unit']));
+        if (isset($metadata['category_id'])) $metadata['category'] = StoreCategory::findOrFail($metadata['category_id'])->name;
+        return $metadata;
     }
 
     private function storeData(Store $store): array
@@ -221,6 +240,9 @@ class StoreInventoryController extends Controller
         return array_merge($item->product->only([
             'product_id', 'product_name', 'sku', 'barcode', 'size', 'category',
         ]), [
+            'category_id' => $item->product->category_id,
+            'selling_unit' => $item->product->selling_unit,
+            'image_url' => $item->product->imageUrl(),
             'store_inventory_id' => $item->store_inventory_id,
             'store_id' => $item->store_id,
             'selling_price' => $item->selling_price,

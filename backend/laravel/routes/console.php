@@ -21,6 +21,11 @@ Artisan::command('payments:expire-unpaid {--dry-run : Preview candidates without
 })->purpose('Expire unpaid sandbox sessions before safely releasing their reservations');
 Schedule::command('payments:expire-unpaid')->everyMinute()->withoutOverlapping();
 
+Artisan::command('inventory:monitor', function () {
+    $this->info('Checked '.app(\App\Services\StockAlerts::class)->scan().' inventory records for persistent stock alerts.');
+})->purpose('Detect low sellable stock, including date-based batch expiry, without changing physical quantities');
+Schedule::command('inventory:monitor')->everyMinute()->withoutOverlapping();
+
 Artisan::command('payments:reconcile-session {attempt : Existing attempt UUID} {session : Provider session ID from the authorized merchant dashboard}', function () {
     app(\App\Services\PaymentCheckout::class)->reconcileSession($this->argument('attempt'), $this->argument('session'));
     $this->info('Provider session identity verified and bound. Await the signed paid webhook or run the expiration command.');

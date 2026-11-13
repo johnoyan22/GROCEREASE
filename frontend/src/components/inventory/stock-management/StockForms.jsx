@@ -7,7 +7,7 @@ const buttonClass = 'rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium tex
 export function StockAdjustmentForm({ inventory, onSaved, onFailure }) {
   const [itemId, setItemId] = useState('');
   const [count, setCount] = useState('');
-  const [reason, setReason] = useState('');
+  const [reason, setDescription] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const saving = useRef(false);
@@ -45,7 +45,7 @@ export function StockAdjustmentForm({ inventory, onSaved, onFailure }) {
         </select></label>
         <label className="text-sm">New physical count<input required type="number" min={item?.soft_stock_qty ?? 0} max="2147483647" step="1" value={count} onChange={function (event) { setCount(event.target.value); }} className={inputClass} /></label>
         {item && <p className="text-sm text-gray-600 md:col-span-2">Recorded physical: {item.hard_stock_qty} · Reserved: {item.soft_stock_qty} · Available: {item.available_stock}. A count below reserved units needs separate reconciliation.</p>}
-        <label className="text-sm md:col-span-2">Reason<textarea required maxLength="1000" rows="3" value={reason} onChange={function (event) { setReason(event.target.value); }} className={inputClass} /></label>
+        <label className="text-sm md:col-span-2">Description<textarea required maxLength="1000" rows="3" value={reason} onChange={function (event) { setDescription(event.target.value); }} className={inputClass} /></label>
         <div><button disabled={pending || !item} className={buttonClass}>{pending ? 'Submitting...' : 'Submit for approval'}</button></div>
       </fieldset>
     </form>
@@ -172,7 +172,7 @@ export function StockPolicyForm({ item, onSaved, onFailure }) {
       {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
       <fieldset disabled={pending} className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="text-sm">Maximum units per order<input type="number" min="1" max="2147483647" step="1" value={limit} onChange={function (event) { setLimit(event.target.value); }} className={inputClass} /></label>
-        <label className="text-sm">Low-stock threshold<input type="number" min="0" max="2147483647" step="1" value={threshold} onChange={function (event) { setThreshold(event.target.value); }} className={inputClass} /></label>
+        <label className="text-sm">Reorder level<input type="number" min="0" max="2147483647" step="1" value={threshold} onChange={function (event) { setThreshold(event.target.value); }} className={inputClass} /></label>
         <div><button disabled={pending} className={buttonClass}>{pending ? 'Saving...' : 'Save product policy'}</button></div>
       </fieldset>
     </form>

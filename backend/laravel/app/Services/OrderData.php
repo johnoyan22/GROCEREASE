@@ -25,7 +25,7 @@ class OrderData
         $items = [];
         foreach ($order->items as $item) {
             $items[] = $item->only([
-                'order_item_id', 'store_inventory_id', 'product_name', 'sku', 'size',
+                'order_item_id', 'store_inventory_id', 'product_name', 'sku', 'size', 'selling_unit',
                 'quantity', 'unit_price_centavos', 'line_total_centavos',
                 'prepared_qty', 'prepared_by_user_id', 'prepared_at',
             ]);

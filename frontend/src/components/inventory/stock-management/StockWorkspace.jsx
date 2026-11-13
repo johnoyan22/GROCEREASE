@@ -42,7 +42,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
   return (
     <div>
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">{title}</h1><p className="mt-1 text-sm text-gray-600">Physical stock includes reservations. Available stock = physical stock − reserved stock.</p></div>
+        <div><h1 className="text-2xl font-bold text-gray-900">{title}</h1><p className="mt-1 text-sm text-gray-600">Physical stock includes reservations. Sellable availability excludes reservations and expired or quarantined batch units.</p></div>
         <StoreSelector store={stock.store} loading={stock.loading} error={stock.error} />
       </div>
       {notice && <p role={noticeIsError ? 'alert' : 'status'} className={'mb-4 rounded-lg border p-3 text-sm ' + (noticeIsError ? 'border-red-200 bg-red-50 text-red-800' : 'border-green-200 bg-green-50 text-green-800')}>{notice}</p>}
@@ -53,7 +53,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
             {supervisor && <>
               <button type="button" aria-pressed={view === 'requests'} onClick={function () { setView('requests'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Corrections ({stock.adjustments.filter(function (row) { return row.status === 'pending'; }).length} pending)</button>
               <button type="button" aria-pressed={view === 'low'} onClick={function () { setView('low'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Low stock ({lowStock.length})</button>
-              <button type="button" aria-pressed={view === 'policies'} onClick={function () { setView('policies'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Quantity limits & thresholds</button>
+              <button type="button" aria-pressed={view === 'policies'} onClick={function () { setView('policies'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Order limits & reorder levels</button>
               <button type="button" aria-pressed={view === 'activity'} onClick={function () { setView('activity'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Availability history</button>
             </>}
             <button type="button" onClick={stock.reload} className="rounded-lg border border-green-700 bg-white px-4 py-2 text-sm text-green-800">Refresh</button>
@@ -63,7 +63,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
             <section className="mt-5 space-y-4" aria-label="Stock correction requests">
               <h2 className="text-lg font-semibold">Correction requests and decisions</h2>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <input type="search" aria-label="Search correction requests" value={search} onChange={function (event) { setSearch(event.target.value); }} placeholder="Search product, requester, or reason..." className="flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm" />
+                <input type="search" aria-label="Search correction requests" value={search} onChange={function (event) { setSearch(event.target.value); }} placeholder="Search product, requester, or description..." className="flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm" />
                 <select aria-label="Correction status" value={status} onChange={function (event) { setStatus(event.target.value); }} className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"><option value="">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
               </div>
               {adjustments.length === 0 && <p className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">No matching correction requests.</p>}
@@ -72,7 +72,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
                   <div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">#{row.id} · {row.product_name} ({row.sku})</h3><span className="rounded bg-gray-100 px-3 py-1 text-sm font-semibold capitalize">{row.status}</span></div>
                   <p className="mt-3 text-sm">Observed physical: {row.observed_hard_stock_qty} · Observed reserved: {row.observed_soft_stock_qty} · Requested physical: <strong>{row.requested_hard_stock_qty}</strong></p>
                   <p className="mt-1 text-sm text-gray-600">Current physical: {row.current_hard_stock_qty} · Current reserved: {row.current_soft_stock_qty}</p>
-                  <p className="mt-3 whitespace-pre-wrap break-words text-sm">Reason: {row.reason}</p>
+                  <p className="mt-3 whitespace-pre-wrap break-words text-sm">Description: {row.reason}</p>
                   <p className="mt-2 text-xs text-gray-500">Submitted by {row.requested_by_name} · {recordedAt(row.created_at)}</p>
                   {row.decided_at && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-700">{row.status} by {row.decided_by_name} · {recordedAt(row.decided_at)}. {row.decision_note}</p>}
                   {!supervisor && row.is_stale && <p className="mt-3 text-sm text-amber-800">Stock changed after submission. Ask your Supervisor to reject this request, then submit a fresh count.</p>}

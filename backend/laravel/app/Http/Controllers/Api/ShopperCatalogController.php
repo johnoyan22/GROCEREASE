@@ -36,6 +36,8 @@ class ShopperCatalogController extends Controller
                 'barcode' => $item->product->barcode,
                 'category' => $item->product->category,
                 'size' => $item->product->size,
+                'selling_unit' => $item->product->selling_unit,
+                'image_url' => $item->product->imageUrl(),
                 'selling_price' => $item->selling_price,
                 'available_stock' => $item->availableStock(),
                 'max_per_order' => $item->max_per_order,

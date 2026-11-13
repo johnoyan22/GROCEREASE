@@ -197,10 +197,10 @@ export function getInventoryItems({ signal } = {}) {
 function productDetails(details) {
   return {
     product_name: details.product_name,
-    sku: details.sku,
     barcode: details.barcode,
     size: details.size,
-    category: details.category,
+    category_id: details.category_id,
+    selling_unit: details.selling_unit,
     selling_price: details.selling_price,
     status: details.status,
   };
@@ -539,3 +539,23 @@ export async function uploadProfilePhoto(photo) {
   return sendRequest('/shopper/profile/photo', { method: 'POST', body, headers: { 'X-XSRF-TOKEN': token } });
 }
 export function removeProfilePhoto() { return writeAction('/shopper/profile/photo', 'DELETE', {}); }
+
+export function getStoreCategories({ signal } = {}) { return sendRequest('/inventory/categories', { signal, cache: 'no-store' }); }
+export function saveStoreCategory(id, details) { return writeAction(id ? '/supervisor/categories/' + encodeURIComponent(id) : '/supervisor/categories', id ? 'PUT' : 'POST', { name: details.name, active: details.active }); }
+export async function uploadProductPhoto(id, photo) { const token = await getXsrfToken(); const body = new FormData(); body.append('photo', photo); return sendRequest('/inventory/items/' + encodeURIComponent(id) + '/photo', { method: 'POST', body, headers: { 'X-XSRF-TOKEN': token } }); }
+export function removeProductPhoto(id) { return writeAction('/inventory/items/' + encodeURIComponent(id) + '/photo', 'DELETE', {}); }
+export function getStockReceiving({ signal } = {}) { return sendRequest('/inventory/receiving', { signal, cache: 'no-store' }); }
+export function submitStockReceiving(id, details) { const { kind, quantity, received_date, expiration_date, batch_reference, batch_id, description } = details; return writeAction('/inventory/items/' + encodeURIComponent(id) + '/receiving', 'POST', { kind, quantity, received_date, expiration_date, batch_reference, batch_id, description }); }
+export function decideStockReceiving(id, decision, decision_note) { return writeAction('/supervisor/receiving/' + encodeURIComponent(id) + '/decision', 'PUT', { decision, decision_note }); }
+export function quarantineStockBatch(id, description) { return writeAction('/supervisor/batches/' + encodeURIComponent(id) + '/quarantine', 'PUT', { description }); }
+export async function previewStockImport(file) { const token = await getXsrfToken(); const body = new FormData(); body.append('file', file); return sendRequest('/inventory/receiving/preview', { method: 'POST', body, headers: { 'X-XSRF-TOKEN': token } }); }
+export function submitStockImport(preview_token) { return writeAction('/inventory/receiving/import', 'POST', { preview_token }); }
+export function getStockAlerts({ signal } = {}) { return sendRequest('/inventory/stock-alerts', { signal, cache: 'no-store' }); }
+export function acknowledgeStockAlert(id) { return writeAction('/inventory/stock-alerts/' + encodeURIComponent(id) + '/read', 'PUT', {}); }
+export async function downloadStockTemplate() { await downloadAuthenticated('/inventory/receiving/template', 'stock-receiving-template.csv', 'text/csv'); return { message: 'CSV template downloaded.' }; }
+export async function downloadAuthenticated(path, filename, mime = 'application/pdf') {
+  const response = await fetch(API_URL + path, { credentials: 'include', cache: 'no-store', headers: { Accept: mime } });
+  if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || 'The download is unavailable.'); }
+  if (!response.headers.get('content-type')?.includes(mime)) throw new Error('The server returned an unexpected document type.');
+  const url = URL.createObjectURL(await response.blob()); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

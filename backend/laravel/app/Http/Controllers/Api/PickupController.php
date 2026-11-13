@@ -122,6 +122,7 @@ class PickupController extends Controller
             foreach ($record->items()->orderBy('store_inventory_id')->get() as $item) {
                 $inventory = StoreInventory::forStore($record->store_id)->whereKey($item->store_inventory_id)->lockForUpdate()->firstOrFail();
                 abort_if($inventory->soft_stock_qty < $item->quantity || $inventory->hard_stock_qty < $item->quantity, 409, 'Reserved stock requires reconciliation.');
+                app(\App\Services\BatchStock::class)->consume($inventory, $item->quantity, $record->order_id, $context['user']->id);
                 $inventory->hard_stock_qty -= $item->quantity;
                 $inventory->soft_stock_qty -= $item->quantity;
                 $inventory->stock_version += 1;

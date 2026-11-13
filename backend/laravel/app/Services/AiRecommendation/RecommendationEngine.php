@@ -31,6 +31,7 @@ class RecommendationEngine
                     $q->whereNotIn('category', $settings->excluded_categories);
                 }
             })->with('product')->orderBy('store_inventory_id')->get()
+            ->filter(fn ($p) => $p->availableStock() > 0)
             ->map(fn ($p) => $this->present($p));
     }
 
@@ -172,6 +173,7 @@ class RecommendationEngine
         return (object) ['store_inventory_id' => $p->store_inventory_id, 'store_id' => $p->store_id,
             'product_id' => $p->product_id, 'product_name' => $p->product->product_name, 'name' => $p->product->product_name,
             'category' => $p->product->category, 'size' => $p->product->size, 'selling_price' => $p->selling_price,
+            'selling_unit' => $p->product->selling_unit, 'image_url' => $p->product->imageUrl(),
             'sku' => $p->product->sku, 'barcode' => $p->product->barcode, 'is_low_stock' => $p->isLowStock(),
             'available_stock' => $p->availableStock(), 'max_per_order' => $p->max_per_order, 'stock_version' => $p->stock_version];
     }

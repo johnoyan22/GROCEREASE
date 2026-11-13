@@ -64,7 +64,7 @@ function OrderCard({ order, role, workers, onSaved, onFailure }) {
       <p className="mt-3 text-sm">{order.payment_method === 'cash_on_pickup' ? 'Cash on Pickup' : order.payment_method} · Payment: <strong>{order.payment_status}</strong> · Reservation: {order.reservation_status}</p>
       {role === 'shopper' && <OrderPayment order={order} onSaved={onSaved} />}
       <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[420px] text-left text-sm"><thead><tr className="border-b border-gray-200"><th scope="col" className="py-2">Item</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Line total</th></tr></thead><tbody>{order.items.map(function (item) {
-        return <tr key={item.order_item_id} className="border-b border-gray-100"><td className="py-3">{item.product_name} {item.size}<span className="block text-xs text-gray-500">{item.sku}</span></td><td>{item.quantity}</td><td>{money.format(item.unit_price_centavos / 100)}</td><td>{money.format(item.line_total_centavos / 100)}</td></tr>;
+        return <tr key={item.order_item_id} className="border-b border-gray-100"><td className="py-3">{item.product_name} {item.size}<span className="block text-xs text-gray-500">{item.sku}</span></td><td>{item.quantity}{item.selling_unit && ' ' + item.selling_unit}</td><td>{money.format(item.unit_price_centavos / 100)}</td><td>{money.format(item.line_total_centavos / 100)}</td></tr>;
       })}</tbody></table></div>
       <p className="mt-4 text-sm">Groceries: {money.format(order.subtotal_centavos / 100)} · Service charge: {money.format(order.service_fee_centavos / 100)}</p>
       <p className="mt-2 text-lg font-bold">Total: {money.format(order.total_centavos / 100)}</p>

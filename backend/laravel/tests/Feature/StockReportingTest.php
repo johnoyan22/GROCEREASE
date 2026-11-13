@@ -101,7 +101,7 @@ class StockReportingTest extends TestCase
     private function productPayload(): array
     {
         return [
-            'product_name' => 'New product', 'sku' => 'NEW', 'category' => 'Staples',
+            'product_name' => 'New product', 'category_id' => \App\Models\StoreCategory::firstOrCreate(['store_id' => $this->first->store_id, 'name_key' => 'staples'], ['name' => 'Staples', 'active' => true])->id, 'selling_unit' => 'piece',
             'selling_price' => '60.00', 'status' => 'inactive',
         ];
     }

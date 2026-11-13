@@ -1,6 +1,7 @@
 <?php
 
 require __DIR__.'/habel.php';
+require __DIR__.'/adviser.php';
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,12 @@ Route::put('/shopper/profile', [ShopperProfileController::class, 'update'])
         'role:shopper',
     ])
     ->name('shopper.profile.update');
+
+Route::middleware(['auth:sanctum', 'verified', 'role:shopper'])->group(function () {
+    Route::get('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'show']);
+    Route::post('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'store'])->middleware('throttle:10,1,profile-photo:');
+    Route::delete('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'destroy'])->middleware('throttle:10,1,profile-photo:');
+});
 
 Route::put('/shopper/password',[ShopperProfileController::class, 'updatePassword'])
     ->middleware([
@@ -262,10 +269,4 @@ Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
         ->middleware('throttle:20,1,store-worker-create:')->name('supervisor.workers.store');
     Route::put('/supervisor/workers/{worker}', [WorkerController::class, 'update'])
         ->whereNumber('worker')->middleware('throttle:30,1,store-worker-update:')->name('supervisor.workers.update');
-});
-
-Route::middleware(['auth:sanctum', 'verified', 'role:shopper'])->group(function () {
-    Route::get('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'show']);
-    Route::post('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'store'])->middleware('throttle:10,1,profile-photo:');
-    Route::delete('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'destroy'])->middleware('throttle:10,1,profile-photo:');
 });

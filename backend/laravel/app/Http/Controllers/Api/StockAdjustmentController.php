@@ -111,6 +111,9 @@ class StockAdjustmentController extends Controller
                 if ($record->requested_hard_stock_qty < $inventory->soft_stock_qty) {
                     abort(409, 'The physical count cannot be below reserved units. Reconciliation is required.');
                 }
+                if (Schema::hasTable('stock_batches') && $record->requested_hard_stock_qty < DB::table('stock_batches')->where('store_id', $inventory->store_id)->where('store_inventory_id', $inventory->store_inventory_id)->sum('remaining_qty')) {
+                    abort(409, 'This count is below tracked batch quantities. Use an approved batch-disposal request or reconcile batch records first.');
+                }
                 $inventory->hard_stock_qty = $record->requested_hard_stock_qty;
                 $inventory->stock_version = $inventory->stock_version + 1;
                 $inventory->save();

@@ -19,7 +19,26 @@ class Product extends Model
         'barcode',
         'size',
         'category',
+        'category_id',
+        'selling_unit',
+        'image_path',
     ];
+
+    public const SELLING_UNITS = ['piece', 'pack', 'bottle', 'can', 'box', 'kilogram', 'gram', 'liter', 'milliliter'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $product) {
+            if (! $product->sku) {
+                $product->sku = 'GE-'.$product->store_id.'-'.\Illuminate\Support\Str::ulid();
+            }
+        });
+    }
+
+    public function imageUrl(): ?string
+    {
+        return $this->image_path ? url('/api/catalog/products/'.$this->product_id.'/photo').'?v='.rawurlencode(basename($this->image_path)) : null;
+    }
 
     protected function sku(): Attribute
     {

@@ -24,7 +24,7 @@ class AiRecommendationSetting extends Model
 
     public static function forStore(int $storeId): self
     {
-        abort_unless(Schema::hasTable('store_ai_recommendation_settings'), 503, 'Store AI settings require the reviewed AI migration.');
+        abort_unless(Schema::hasTable('store_ai_recommendation_settings'), 503, 'AI recommendations are not available yet. Your team needs to complete the reviewed AI database setup. Shopping and other store features remain available.');
 
         // Reads do not create singleton rows or modify the database.
         return static::query()->firstOrNew(['store_id' => $storeId]);

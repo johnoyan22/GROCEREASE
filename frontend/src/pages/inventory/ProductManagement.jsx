@@ -35,7 +35,7 @@ function ProductManagement() {
       : await createStoreProduct(details);
     setFormOpen(false);
     setEditing(null);
-    setSuccess(result.message);
+    setSuccess(result.message + ' SKU: ' + result.inventory.sku);
     reload();
   }
 
@@ -73,7 +73,7 @@ function ProductManagement() {
           <ProductTable products={filtered} onEdit={openForm} />
         </>
       )}
-      {formOpen && <ProductFormModal key={editing?.store_inventory_id ?? 'new'} product={editing} storeName={store?.store_name} onClose={() => setFormOpen(false)} onSave={saveProduct} />}
+      {formOpen && <ProductFormModal key={editing?.store_inventory_id ?? 'new'} product={editing} storeName={store?.store_name} onClose={() => { setFormOpen(false); reload(); }} onSave={saveProduct} />}
     </InventoryLayout>
   );
 }

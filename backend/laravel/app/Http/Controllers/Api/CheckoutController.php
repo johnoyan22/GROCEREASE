@@ -106,6 +106,7 @@ class CheckoutController extends Controller
                     'order_id' => $order->order_id, 'store_id' => $store->store_id,
                     'store_inventory_id' => $inventory->store_inventory_id,
                     'product_name' => $line['product_name'], 'sku' => $line['sku'], 'size' => $line['size'],
+                    ...(\Illuminate\Support\Facades\Schema::hasColumn('order_items', 'selling_unit') ? ['selling_unit' => $line['selling_unit']] : []),
                     'quantity' => $line['quantity'], 'unit_price_centavos' => $line['unit_price_centavos'],
                     'line_total_centavos' => $line['line_total_centavos'],
                 ]);

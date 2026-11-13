@@ -4,7 +4,7 @@ function StockUpdateModal({ items, product, onClose, onSave }) {
   const startingProduct = product || items[0];
   const [productId, setProductId] = useState(startingProduct.id);
   const [newQuantity, setNewQuantity] = useState(startingProduct.stock);
-  const [reason, setReason] = useState("Physical stock count");
+  const [reason, setDescription] = useState("Physical stock count");
 
   const selectedItem = items.find((item) => item.id === Number(productId));
   const difference = Number(newQuantity) - selectedItem.stock;
@@ -62,8 +62,8 @@ function StockUpdateModal({ items, product, onClose, onSave }) {
           </div>
 
           <label className="block text-sm font-medium text-gray-700">
-            Reason for adjustment
-            <select value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass}>
+            Description for adjustment
+            <select value={reason} onChange={(event) => setDescription(event.target.value)} className={fieldClass}>
               <option>Physical stock count</option>
               <option>Received new delivery</option>
               <option>Damaged or expired items</option>

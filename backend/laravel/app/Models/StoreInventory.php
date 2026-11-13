@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StoreInventory extends Model
 {
+    protected static function booted(): void
+    {
+        static::saved(fn (self $item) => app(\App\Services\StockAlerts::class)->sync($item));
+    }
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
 
@@ -43,7 +47,7 @@ class StoreInventory extends Model
 
     public function availableStock(): int
     {
-        return $this->hard_stock_qty - $this->soft_stock_qty;
+        return max(0, $this->hard_stock_qty - $this->soft_stock_qty - app(\App\Services\BatchStock::class)->blocked($this));
     }
 
     public function isLowStock(): bool

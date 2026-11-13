@@ -31,3 +31,44 @@ staff account, authentication and email verification; **114 frontend tests**,
 ESLint and production build passed. Initial photo fixture required GD; replaced
 with an actual PNG fixture so no PHP configuration change is required.
 
+## 3. Products and stock
+
+- Additive catalog migration **000018** creates `store_categories`,
+  `category_audits`, `product_price_changes`; adds nullable product category,
+  selling-unit and image-reference fields plus historical order-item selling unit.
+  Backfills only new category relationships from existing store category names.
+- Automatic store-prefixed ULID SKU, existing database unique constraint,
+  immutable API SKU; barcode remains separate. Active category dropdown and
+  Supervisor CRUD/archive preserve products and AI category filter names/audits.
+- Integer selling units, owned private catalog photos, lazy image fallback,
+  purchase-time unit snapshot and store/actor/old/new price audit.
+- **000019** creates receiving requests, batches/events and persistent alert,
+  state and per-user acknowledgement tables. No existing stock is moved.
+- Receiving/disposal requests and CSV preview/confirmation require Supervisor
+  approval; no import overwrites stock. Signed preview expires after 15 minutes
+  and is bound to actor/store; duplicate delivery references cannot be replayed.
+- `low_stock_threshold` remains the one reorder level; order limit is separate.
+- Sellable availability = max(0, Hard − Soft − expired/quarantined batch remainder).
+  Expiration date is sellable through that Philippine calendar day. Hard Stock
+  changes only through approval/handover; FEFO handover consumes safe batches.
+  Legacy stock retains its existing count without invented expiry dates.
+- Handover blocks if unsafe batches make total reservations unsafe. Supervisor
+  reconciliation is required; no automatic order substitution or reservation release.
+- Stock corrections cannot undercut tracked batch totals; approved disposal has
+  before/after physical counts, actor, description and batch event audit.
+- Model changes generate alerts; scheduled `inventory:monitor` detects date-based
+  expiry every minute. Reads never generate alerts. Recovery closes an episode;
+  another drop creates a new alert. Acknowledgements are user/store scoped.
+- UI label Reason becomes Description; backend `reason` remains intact.
+
+Catalog/stock targeted tests: **9 passed / 165 assertions**; updated catalog,
+reporting and profile tests: **43 passed / 733 assertions**. Prior catalog API
+fixtures now use category IDs and generated SKU behavior. No business/security
+regression tests were removed. Schema-preservation/full regression follows.
+
+Checkpoint 3 full regression: **372 Laravel tests / 6,269 assertions passed**;
+**122 frontend tests passed**; ESLint and production build passed (same chunk
+warning). Migration preservation covered original columns across every existing
+SQLite table. FEFO and unsafe-handover tests passed. Working-database application
+and actual MariaDB concurrency verification remain pending; no real-provider
+tests were performed.

@@ -58,14 +58,14 @@ test('creating a store product sends metadata with CSRF and excludes ownership o
     assert.equal(options.headers['X-XSRF-TOKEN'], 'secure=token');
     assert.equal(options.headers['Content-Type'], 'application/json');
     assert.deepEqual(JSON.parse(options.body), {
-      product_name: 'Store Rice', sku: 'RICE-001', barcode: '000123', size: '1 kg',
-      category: 'Staples', selling_price: '25.50', status: 'inactive',
+      product_name: 'Store Rice', barcode: '000123', size: '1 kg',
+      category_id: 4, selling_unit: 'pack', selling_price: '25.50', status: 'inactive',
     });
     return json({ message: 'Product added to your store.' }, 201);
   });
   await createStoreProduct({
-    product_name: 'Store Rice', sku: 'RICE-001', barcode: '000123', size: '1 kg',
-    category: 'Staples', selling_price: '25.50', status: 'inactive',
+    product_name: 'Store Rice', barcode: '000123', size: '1 kg',
+    category_id: 4, selling_unit: 'pack', selling_price: '25.50', status: 'inactive',
     store_id: 999, product_id: 999, hard_stock_qty: 99, soft_stock_qty: 88,
   });
   assert.deepEqual(calls, [
@@ -80,7 +80,7 @@ test('updates preserve decimal text and exclude product/store/quantity changes',
     assert.equal(url, 'http://localhost:8000/api/inventory/items/7');
     assert.equal(options.method, 'PUT');
     assert.equal(options.headers['X-XSRF-TOKEN'], 'secure=token');
-    assert.deepEqual(JSON.parse(options.body), { product_name: 'Updated Rice', sku: 'RICE-001', selling_price: '72.25', status: 'active' });
+    assert.deepEqual(JSON.parse(options.body), { product_name: 'Updated Rice', selling_price: '72.25', status: 'active' });
     return json({ message: 'Store price and status saved.' });
   });
   await updateStoreProduct(7, {

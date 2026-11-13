@@ -1,3 +1,4 @@
+import ProductImage from '../shared/ProductImage';
 import { useEffect, useRef, useState } from 'react';
 import {
   MessageSquare,
@@ -5,7 +6,6 @@ import {
   ArrowRight,
   Sparkles,
   Lightbulb,
-  Package,
 } from 'lucide-react';
 import {
   askShopperAi,
@@ -42,13 +42,11 @@ function imageErrorMessage(error) {
 function ProductCard({ item, onAdd, onAlternatives }) {
   return (
     <div className="border border-gray-300 rounded-xl p-2.5 flex flex-col justify-between items-center text-center bg-white">
-      <div className="w-full h-24 flex items-center justify-center mb-2 rounded bg-gray-100">
-        <Package className="w-8 h-8 text-gray-400" aria-hidden="true" />
-      </div>
+      <ProductImage product={item} className="mb-2 h-28 w-full" />
       <div className="w-full">
         <h3 className="text-xs font-bold text-black truncate" title={item.name}>{item.name}</h3>
         <p className="text-xs font-black text-black mt-0.5">{formatPrice(item.selling_price)}</p>
-        {item.size && <p className="text-[10px] text-gray-500">{item.size}</p>}
+        {item.size && <p className="text-[10px] text-gray-500">{item.size}{item.selling_unit && ' · ' + item.selling_unit}</p>}
         <p className="text-[10px] text-gray-500 mt-0.5 truncate" title={item.reason}>{item.reason}</p>
         <p className="mt-1 text-[10px] text-gray-500">Available: {item.available_stock} · Limit/order: {item.max_per_order ?? 'No extra limit'}</p>
         <button
