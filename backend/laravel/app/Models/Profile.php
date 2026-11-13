@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Profile extends Model
 {
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->imagesrc && str_starts_with($this->imagesrc, 'profile-photos/')
+            ? url('/api/shopper/profile/photo').'?v='.rawurlencode(basename($this->imagesrc)) : null;
+    }
+
     protected $primaryKey = 'profile_id';
 
     protected $fillable = [

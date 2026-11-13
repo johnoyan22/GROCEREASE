@@ -27,7 +27,7 @@ async function sendRequest(path, options = {}) {
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
       ...options.headers,
     },
   });
@@ -533,3 +533,9 @@ export function getOrderReceipt(id, role, { signal } = {}) {
   if (role === 'supervisor') prefix = 'supervisor';
   return sendRequest(`/${prefix}/orders/${encodeURIComponent(id)}/receipt`, { signal, cache: 'no-store' });
 }
+
+export async function uploadProfilePhoto(photo) {
+  const token = await getXsrfToken(); const body = new FormData(); body.append('photo', photo);
+  return sendRequest('/shopper/profile/photo', { method: 'POST', body, headers: { 'X-XSRF-TOKEN': token } });
+}
+export function removeProfilePhoto() { return writeAction('/shopper/profile/photo', 'DELETE', {}); }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserRound } from 'lucide-react'
+import Avatar from '../shared/Avatar';
 import { PageHeader } from './SupervisorUI'
 import { useSupervisor } from './SupervisorContext'
 import { changeSupervisorPassword } from '../../services/api'
@@ -131,7 +131,7 @@ export function SupervisorProfile() {
       <section className="rounded-2xl border border-green-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center gap-4">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-            <UserRound size={40} />
+            <Avatar profile={profile} />
           </div>
 
           <div>

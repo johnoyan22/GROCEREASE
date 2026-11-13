@@ -263,3 +263,9 @@ Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
     Route::put('/supervisor/workers/{worker}', [WorkerController::class, 'update'])
         ->whereNumber('worker')->middleware('throttle:30,1,store-worker-update:')->name('supervisor.workers.update');
 });
+
+Route::middleware(['auth:sanctum', 'verified', 'role:shopper'])->group(function () {
+    Route::get('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'show']);
+    Route::post('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'store'])->middleware('throttle:10,1,profile-photo:');
+    Route::delete('/shopper/profile/photo', [\App\Http\Controllers\Api\ProfilePhotoController::class, 'destroy'])->middleware('throttle:10,1,profile-photo:');
+});

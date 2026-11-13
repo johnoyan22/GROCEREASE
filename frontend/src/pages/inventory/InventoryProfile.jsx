@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import InventoryLayout from "../../components/inventory/layout/InventoryLayout";
 import { changeInventoryPassword } from "../../services/api";
-import { UserRound } from "lucide-react";
+import Avatar from '../../components/shared/Avatar';
 
 function InventoryProfile() {
   const { user } = useOutletContext();
@@ -152,7 +152,7 @@ function InventoryProfile() {
             aria-hidden="true"
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400"
           >
-            <UserRound size={36} />
+            <Avatar profile={profile} />
           </div>
 
           <div className="min-w-0">

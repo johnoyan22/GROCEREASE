@@ -1,5 +1,6 @@
+import Avatar from '../shared/Avatar';
 import { useState } from 'react';
-import { Search, ShoppingCart, Bell, User, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, Bell, ChevronDown } from 'lucide-react';
 
 function ShopperHeader({ user, quantity = 0, unreadCount, onCart, onNotifications, onProfile, onSearch }) {
   const [search, setSearch] = useState('');
@@ -29,9 +30,7 @@ function ShopperHeader({ user, quantity = 0, unreadCount, onCart, onNotification
         </button>
 
         <button type="button" onClick={onProfile} aria-label="Open your profile" className="flex items-center gap-2 border-l pl-4 border-gray-200">
-          <div className="w-8 h-8 rounded-full bg-gray-200 border flex items-center justify-center text-gray-700">
-            <User className="w-4 h-4" />
-          </div>
+          <Avatar profile={user?.profile} imageUrl={user?.profile?.image_url} className="h-8 w-8" />
           <span className="text-xs font-bold text-gray-800">
             {fullName || 'Shopper'}
           </span>

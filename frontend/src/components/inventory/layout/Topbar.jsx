@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { UserRound } from "lucide-react";
+import Avatar from '../../shared/Avatar';
 
 // Shared top navigation for Inventory Worker pages.
 function Topbar({ onMenuClick, user }) {
@@ -29,17 +29,6 @@ function Topbar({ onMenuClick, user }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-
-        <div className="relative hidden w-full max-w-md sm:block">
-          <input
-            type="text" disabled aria-label="Global search unavailable; use the filters on each page"
-            placeholder="Use the search on each page"
-            className="w-full pl-4 pr-10 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <svg className="w-4 h-4 text-gray-400 absolute right-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
       </div>
 
       {/* Right: Notifications & Profile */}
@@ -66,7 +55,7 @@ function Topbar({ onMenuClick, user }) {
             className="flex items-center gap-2 border-l border-gray-200 pl-3 sm:gap-3 sm:pl-4"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-800">
-              <UserRound size={18} />
+              <Avatar profile={user?.profile} />
             </div>
 
             <div className="hidden text-left md:block">

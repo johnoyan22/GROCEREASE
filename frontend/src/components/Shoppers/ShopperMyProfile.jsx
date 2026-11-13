@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Edit3 } from 'lucide-react';
-import { updateShopperProfile } from '../../services/api';
+import { Edit3 } from 'lucide-react';
+import { updateShopperProfile, uploadProfilePhoto, removeProfilePhoto } from '../../services/api';
+import Avatar from '../shared/Avatar';
 
 export default function ShopperMyProfile({ user, onProfileUpdated }) {
   const navigate = useNavigate();
 
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState({
@@ -19,6 +22,25 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
 
   const profile = user?.profile;
 
+  async function savePhoto(remove = false) {
+    if (isSaving) return;
+    setIsSaving(true); setErrorMessage(''); setSuccessMessage('');
+    try {
+      const result = remove ? await removeProfilePhoto() : await uploadProfilePhoto(photo);
+      onProfileUpdated(result.user); setSuccessMessage(result.message);
+      setPhoto(null); setPhotoPreview('');
+    } catch (error) { setErrorMessage(error.message || 'Photo could not be saved.'); }
+    finally { setIsSaving(false); }
+  }
+  function selectPhoto(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+      setErrorMessage('Choose a JPEG, PNG or WebP image up to 2 MB.'); return;
+    }
+    setPhoto(file); setErrorMessage('');
+    const reader = new FileReader(); reader.onload = () => setPhotoPreview(reader.result); reader.readAsDataURL(file);
+  }
   function startEditing() {
     setDraft({
       first_name: profile.first_name || '',
@@ -157,11 +179,9 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
         )}
 
          <section className="border border-green-600 rounded-xl p-5 bg-white shadow-xs">
-          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center bg-gray-50">
-                <User className="w-5 h-5 text-gray-700" />
-              </div>
+              <Avatar profile={profile} imageUrl={profile.image_url} />
               <div>
                 <h2 className="text-sm font-bold text-black">
                   {fullName || 'Shopper'}
@@ -182,6 +202,16 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
             )}
           </div>
 
+          <fieldset disabled={isSaving} className="mb-6 space-y-3 border-b border-slate-200 pb-5">
+            <legend className="mb-2 text-sm font-semibold">Profile photo (optional)</legend>
+            <label className="block text-sm" htmlFor="profile-photo">JPEG, PNG or WebP, up to 2 MB</label>
+            <input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={selectPhoto} className="w-full text-sm" />
+            {photoPreview && <img src={photoPreview} alt="New profile photo preview" className="h-24 w-24 rounded-full object-cover" />}
+            <div className="flex flex-wrap gap-3">
+              {photo && <><button type="button" onClick={() => savePhoto()} className="rounded-lg bg-green-800 px-4 py-2 text-sm text-white">Save photo</button><button type="button" onClick={() => { setPhoto(null); setPhotoPreview(''); }} className="rounded-lg border px-4 py-2 text-sm">Cancel photo</button></>}
+              {profile.image_url && <button type="button" onClick={() => savePhoto(true)} className="rounded-lg border px-4 py-2 text-sm">Remove photo</button>}
+            </div>
+          </fieldset>
           {isEditing ? (
             <form onSubmit={handleSave} className="space-y-4">
               <fieldset
