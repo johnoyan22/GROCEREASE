@@ -6,6 +6,8 @@ Read-only `php artisan migrate:status` on 2026-11-13 confirmed:
 - Existing AI migration **000017 is already applied**.
 - Existing payment **000015** and account-status **000016** remain pending.
 - New adviser migrations **000018, 000019 and 000020** remain pending.
+- Follow-up locator migration **000021** is also pending; it is separately
+  proposed after the user's landing-page correction, without working application.
 
 ## Exact proposed changes (awaiting user approval)
 
@@ -14,6 +16,7 @@ Read-only `php artisan migrate:status` on 2026-11-13 confirmed:
 | `2026_11_13_000018_add_catalog_management.php` | `store_categories`, `category_audits`, `product_price_changes` | `products`: nullable `category_id` with same-store FK, nullable `selling_unit`, nullable `image_path`. `order_items`: nullable historical `selling_unit`. Existing category strings produce store-specific category rows and populate only the new category relationship. Existing names, SKUs, barcodes, prices, stock, orders and receipts remain unchanged. |
 | `2026_11_13_000019_add_stock_receiving_and_alerts.php` | `stock_batches`, `stock_receiving_requests`, `stock_batch_events`, `stock_alerts`, `stock_alert_states`, `stock_alert_acknowledgements` | No original business table columns or stock counts change. New tables start empty. |
 | `2026_11_13_000020_create_pro_forma_invoices.php` | `store_invoice_settings`, `order_invoices`, `invoice_audits` | No original business table columns or order/payment values change. New tables start empty. |
+| `2026_11_13_000021_create_verified_store_locations.php` | `store_locations`, `store_location_audits` | No existing table or value changes. New tables start empty; no invented coordinates or automatic public store verification. Exact columns/workflow: `landing-page-and-store-locator.md`. Approval is separate from 18–20. |
 
 Original migration files through 000017 remain unchanged. The new, unapproved
 18–20 audit date fields were corrected to `dateTime` after actual disposable
@@ -43,6 +46,12 @@ After explicit approval for these exact migrations:
 php artisan migrate --path=database/migrations/2026_11_13_000018_add_catalog_management.php
 php artisan migrate --path=database/migrations/2026_11_13_000019_add_stock_receiving_and_alerts.php
 php artisan migrate --path=database/migrations/2026_11_13_000020_create_pro_forma_invoices.php
+```
+
+If migration **21 is also explicitly approved**, its separate exact path is:
+
+```text
+php artisan migrate --path=database/migrations/2026_11_13_000021_create_verified_store_locations.php
 ```
 
 4. Run `php tests/adviser-data-fingerprint.php verify maintenance-review` with the

@@ -17,6 +17,8 @@ async function fixtures(page, role = 'shopper') {
     const reply = (data, status = 200) => route.fulfill({ status, headers, contentType: 'application/json', body: JSON.stringify(data) });
     if (request.method() === 'OPTIONS' || path.endsWith('/csrf-cookie')) return route.fulfill({ status: 204, headers });
     if (path === '/api/user') return role === 'guest' ? reply({ message: 'Unauthenticated.' }, 401) : reply({ id: 5, role: { slug: role, name: role === 'inventory_worker' ? 'Inventory Worker' : role }, email: 'qa@example.test', email_verified_at: timestamp, account_status: 'active', profile: { first_name: 'Maria', last_name: 'Santos', phone_number: '09123456789', address: 'QA address' } });
+    if (path === '/api/public/store-locations') return reply({ available: true, stores: [{ ...store, latitude: 10.3, longitude: 123.9 }] });
+    if (path.endsWith('/map-location')) return reply({ location: null });
     if (path.endsWith('/dashboard/summary')) return reply({ role, server_time: timestamp, store, active_orders: 1, recent_active_orders: [{ ...order, item_quantity: 2 }], unread_notifications: 1, waiting_orders: 0, preparing_orders: 0, ready_orders: 1, schedule_reviews: 0, busy_workers: 0, available_workers: 2, products_managed: 1, inventory_records: 1, physical_units: 25, reserved_units: 5, available_units: 20, low_stock_products: 0, stock_statuses: { in_stock: 1, low_stock: 0, out_of_stock: 0, inactive: 0 }, pending_stock_approvals: 0, stock_updates_today: 0, recent_adjustments: [], recent_reports: [], recent_activity: [], total_users: 4, cop_restricted_accounts: 0, todays_sales_centavos: 13450, low_stock_records: [], restricted_accounts: [], roles: [{ name: 'Shopper', slug: 'shopper', user_count: 1 }, { name: 'Supervisor', slug: 'supervisor', user_count: 1 }, { name: 'Inventory Worker', slug: 'inventory_worker', user_count: 1 }, { name: 'Admin', slug: 'admin', user_count: 1 }] });
     if (path === '/api/shopper/stores' || path === '/api/admin/stores') return reply({ stores: [store] });
     if (path === '/api/staff/store') return reply({ store });
@@ -87,8 +89,14 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
   });
   test('Public and authentication at ' + width, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 }); const issues = await fixtures(page, 'guest');
-    await page.goto('/'); await expect(page.getByRole('heading', { name: /Fresh plans/ })).toBeVisible(); await noOverflow(page, 'Landing');
+    await page.goto('/'); await expect(page.getByRole('heading', { name: /Smart Grocery/ })).toBeVisible(); await expect(page.getByRole('heading', { name: 'Shop Near You.' })).toBeVisible(); await expect(page.locator('#categories img')).toHaveCount(5);
+    await page.context().grantPermissions(['geolocation']); await page.context().setGeolocation({ latitude: 10.301, longitude: 123.901 });
+    await page.getByRole('button', { name: 'Use my location', exact: true }).click(); await expect(page.getByText('Nearest registered store', { exact: true })).toBeVisible(); await expect(page.getByRole('link', { name: /Get directions/ })).toHaveAttribute('href', /www.google.com\/maps\/dir/); await noOverflow(page, 'Landing and nearest-store results');
     await expect(page.getByRole('link', { name: 'Start Shopping' })).toHaveAttribute('href', '/login');
+    await page.locator('#categories img').evaluateAll(images => images.forEach(image => { image.loading = 'eager'; }));
+    await expect.poll(() => page.locator('#categories img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0))).toBe(true);
+    for (const image of await page.locator('#categories img').all()) { await image.scrollIntoViewIfNeeded(); await image.evaluate(element => element.decode()); }
+    await page.evaluate(() => window.scrollTo(0, 0));
     if ([375,1440].includes(width)) await page.screenshot({ path: '../tmp/browser-results/landing-' + width + '.png', fullPage: true });
     await page.getByRole('link', { name: 'Start Shopping' }).click(); await expect(page.getByRole('button', { name: 'Login', exact: true })).toBeVisible(); await noOverflow(page, 'Login');
     await page.getByRole('link', { name: 'Register', exact: true }).click(); await expect(page.getByRole('button', { name: 'Create Account' })).toBeVisible(); await noOverflow(page, 'Register');
@@ -99,11 +107,12 @@ const viewports = [{ width: 1366, height: 768 }, { width: 1440, height: 900 }, {
 for (const role of ['inventory_worker', 'supervisor', 'admin']) for (const viewport of viewports) {
   test(role + ' workspaces at ' + viewport.width, async ({ page }) => {
     await page.setViewportSize(viewport); const issues = await fixtures(page, role);
-    const paths = role === 'inventory_worker' ? ['/inventory/dashboard','/inventory/products','/inventory/stock','/inventory/notifications','/inventory/profile'] : role === 'supervisor' ? ['/supervisor/dashboard','/supervisor/inventory','/supervisor/stock-approvals','/supervisor/system-configuration','/supervisor/profile','/supervisor/notifications'] : ['/admin/dashboard','/admin/reports','/admin/roles','/admin/settings'];
+    const paths = role === 'inventory_worker' ? ['/inventory/dashboard','/inventory/products','/inventory/stock','/inventory/notifications','/inventory/profile'] : role === 'supervisor' ? ['/supervisor/dashboard','/supervisor/inventory','/supervisor/stock-approvals','/supervisor/system-configuration','/supervisor/profile','/supervisor/notifications'] : ['/admin/dashboard','/admin/reports','/admin/roles','/admin/settings','/admin/stores'];
     for (const path of paths) {
       await page.goto(path); await expect(page.locator('main h1').first()).toBeVisible(); await page.waitForTimeout(180); await noOverflow(page, path);
       if (path === '/inventory/products') { await expect(page.getByText('QA Rice', { exact: true })).toBeVisible(); await page.getByRole('button', { name: '+ Add New Product' }).click(); const dialog = page.getByRole('dialog', { name: 'Add New Product' }); await expect(dialog).toBeVisible(); await expect(dialog.getByRole('textbox', { name: 'SKU', exact: true })).toHaveAttribute('readonly', ''); await noOverflow(page, 'Product dialog'); await page.keyboard.press('Escape'); }
       if (path.endsWith('/profile') && role !== 'admin') await expect(page.getByRole('img', { name: 'Maria Santos avatar' }).first()).toBeVisible();
+      if (path === '/admin/stores') { await page.getByRole('button', { name: 'Map location', exact: true }).click(); await expect(page.getByRole('dialog', { name: 'Store map location', exact: true })).toBeVisible(); await noOverflow(page, 'Store map location dialog'); await page.keyboard.press('Escape'); }
       if (path.includes('dashboard') && viewport.width === 1366) await page.screenshot({ path: '../tmp/browser-results/' + role + '-desktop.png', fullPage: true });
     }
     expect(issues).toEqual([]);

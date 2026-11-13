@@ -78,3 +78,19 @@ full module acceptance.
   concurrency scenarios pass; read-only comparison preserves all 31 working
   business tables. Composer/production npm audits are clean; seven moderate
   development-tool findings remain documented in `dependency-audit.md`.
+
+## Landing-page correction
+
+The user's follow-up supersedes the broader landing redesign: original hero/
+Shop Near You/category composition and grocery image are restored, with proper
+local category photographs and responsive controls. The locator is prepared for
+only active, Admin-verified GrocerEase locations; Google Places grocery search
+is not treated as system membership or inventory evidence.
+
+New migration 21 creates only empty `store_locations` and `store_location_audits`;
+no working application or invented coordinates. Admin verification is audited,
+address changes hide pins, and stale address publication is rejected. Actual
+Google key/billing/provider acceptance and real partner locations remain pending.
+Follow-up tests: 387 Laravel / 6,694 assertions, 131 frontend, real-browser
+responsive checks and six disposable MariaDB scenarios pass. All 31 working
+business tables remain unchanged. Accepted module credit stays 3/40.

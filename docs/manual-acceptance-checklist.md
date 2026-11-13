@@ -71,6 +71,16 @@ does not invent legal policy text or change backend agreement validation.
 
 ## AI and final acceptance
 
+Locator follow-up (all human/provider results pending):
+
+| ID | Procedure | Expected behavior | Human result / evidence |
+| --- | --- | --- | --- |
+| L1 | Open restored landing on phone/tablet/desktop | Original hero/adjacent locator/category structure, five proper images, readable responsive controls | Pending — ___ |
+| L2 | Admin: save a real verified store pin with review note; leave a demo store unverified | Only active verified store appears; actor/before/after audit; no inventory/order changes | Pending approved migration 21 — ___ |
+| L3 | Activate authorized restricted Google Maps config; click/drag a pin; use keyboard center | Nearby registered stores recalculate and sort; radius/no-result states accurate; distances labeled straight-line | Pending authorized Google setup/test — ___ |
+| L4 | Accept/deny browser location permission; open directions; refresh page | Request only after click; friendly denial; directions to selected store; chosen origin not saved to account | Pending — ___ |
+| L5 | Change store address or deactivate it; try stale verification | Pin hidden until appropriate re-verification; stale address rejects; other stores unaffected | Pending — ___ |
+
 | ID | Procedure | Expected behavior | Human result / evidence |
 | --- | --- | --- | --- |
 | AI1 | Follow `ai-teammate-handoff.md` text/alternatives/settings tests in two stores | Actual catalog prices/stock, shared cart, stale/foreign context rejected; friendly missing setup | Pending — ___ |

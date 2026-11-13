@@ -84,3 +84,27 @@ pages/auth/RegisterPage.jsx
 React URLs and backend API paths remain intact. Existing role directories and
 their casing are retained; business-critical components were not broadly moved
 or duplicated. Supervisor store editing does not move to Admin.
+
+## Landing correction and store locator follow-up
+
+The user's original hero, adjacent Shop Near You card and five-category layout
+are restored. Original grocery artwork, title and familiar red/green actions are
+retained; the added marketing sections are removed. Compact mobile navigation,
+stacked hero/locator, two-column phone category cards and five-column desktop
+cards preserve readability without page overflow.
+
+Five original generated category photographs load locally as 93–170 kB WebP
+files with lazy loading. Real Chrome checks scroll/decode every category image
+before screenshots; off-screen lazy-image rasterization is not mistaken for a
+missing asset. All five were visually verified on a 375 px phone viewport and a
+1440 px desktop viewport.
+
+Full follow-up verification: 29 Chrome cases passed, including public geolocation,
+nearest registered-store results and Admin map-location dialog at staff viewports.
+After the final mobile-header adjustment, all seven public/auth widths were
+rechecked and passed. Frontend suite: 131 passed; lint/build passed. Provider-stub
+tests cover map clicks/dragging/keyboard-center selection; actual Google Maps,
+physical-phone and human acceptance remain pending authorized setup.
+
+Exact setup and limitations: `landing-page-and-store-locator.md`. No working
+migration or private environment change was made.

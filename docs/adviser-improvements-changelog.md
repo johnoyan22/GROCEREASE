@@ -167,6 +167,41 @@ ESLint passed. Final full-suite comparison remains checkpoint 6.
   acceptance remain pending. New migrations 18–20 await explicit approval;
   existing pending 15/16 are separate. Accepted module count remains **3/40**.
 
+## 7. Original landing restored; verified-store locator prepared
+
+The user's correction restores the original grocery hero, Smart Grocery title,
+adjacent Shop Near You card and Fruits/Vegetables/Dairy & Eggs/Beverages/Meat &
+Poultry categories. The extra marketing sections are removed. Existing artwork,
+red/green identity, genuine links and mobile responsiveness are retained.
+
+- Five original category photographs generated with the built-in image tool,
+  visually checked and bundled as 93–170 kB WebP files. Exact prompts and paths
+  are in `category-image-prompts.md`; no arbitrary product-photo hotlinks.
+- Public read-only locator returns only registered active stores with verified
+  coordinates. Click/drag/keyboard-center pin selection, optional browser location,
+  radius-limited nearest sorting, clear no-result states and Google directions.
+  Straight-line distance is labeled; chosen location is not saved to the account
+  or transmitted to the GrocerEase API. Google loads only after explicit action.
+- Separate Admin map-location form, validation, verification/source note and
+  actor/before/after audit. Changed addresses hide locations; stale-address writes
+  fail safely. Existing store details, stock, reservations and orders are unchanged.
+- Additive migration **21** creates empty `store_locations` and
+  `store_location_audits`, without modifying existing tables, guessing coordinates
+  or auto-publishing stores. It remains **unapplied to the working database**.
+- Google API-key/map-ID setup, official references, data-verification requirements
+  and provider-dependent tests are in `landing-page-and-store-locator.md`.
+  No key, billing activation, real Maps test, environment overwrite, push or merge.
+
+Actual validation: **387 Laravel tests / 6,694 assertions** (49.49 seconds),
+**131 frontend tests**, ESLint and production build passed. **29 Chrome cases**
+passed; seven public/auth viewport cases passed again after the final compact
+header/image QA adjustment. All five photos were checked rendered after scrolling
+on mobile. Actual Google pin interactions use an explicitly labeled API stub;
+provider acceptance remains pending. Disposable MariaDB accepted migration 21
+and all six existing concurrency scenarios; temporary test data was removed.
+Read-only working comparison: **31 business tables unchanged**. Human/module
+acceptance remains pending; no additional module credit.
+
 ## Exact file manifest
 
 Tracked paths below come from the local checkpoint commits; `A`, `M`, `D` and
@@ -420,4 +455,40 @@ A	docs/ai-teammate-handoff.md
 A	docs/dependency-audit.md
 A	docs/manual-acceptance-checklist.md
 A	frontend/src/components/inventory/product-management/ProductPriceHistory.jsx
+```
+
+### Landing follow-up file manifest
+
+```text
+M	backend/laravel/routes/adviser.php
+M	docs/adviser-database-review.md
+M	docs/adviser-improvements-audit.md
+M	docs/adviser-improvements-changelog.md
+M	docs/asset-sources.md
+M	docs/manual-acceptance-checklist.md
+M	docs/ui-responsive-checklist.md
+M	frontend/e2e/adviser-responsive.spec.js
+M	frontend/src/components/public/CategorySection.jsx
+M	frontend/src/components/public/HeroSection.jsx
+M	frontend/src/components/public/Navbar.jsx
+M	frontend/src/pages/admin/StoreManagement.jsx
+M	frontend/src/pages/public/LandingPage.jsx
+M	frontend/src/services/api.js
+A	backend/laravel/app/Http/Controllers/Api/StoreLocationController.php
+A	backend/laravel/database/migrations/2026_11_13_000021_create_verified_store_locations.php
+A	backend/laravel/tests/Feature/StoreLocatorTest.php
+A	docs/category-image-prompts.md
+A	docs/landing-page-and-store-locator.md
+A	frontend/src/assets/categories/beverages.webp
+A	frontend/src/assets/categories/dairy-eggs.webp
+A	frontend/src/assets/categories/fruit.webp
+A	frontend/src/assets/categories/meat-poultry.webp
+A	frontend/src/assets/categories/vegetables.webp
+A	frontend/src/components/admin/StoreLocationDialog.jsx
+A	frontend/src/components/public/GoogleStoreMap.jsx
+A	frontend/src/components/public/StoreLocator.jsx
+A	frontend/src/services/googleMaps.js
+A	frontend/src/services/storeLocator.js
+A	frontend/tests/store-locator-ui.test.mjs
+A	frontend/tests/store-locator.test.mjs
 ```

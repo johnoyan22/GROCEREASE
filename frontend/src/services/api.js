@@ -50,6 +50,17 @@ export function getDashboardSummary({ signal } = {}) {
   return sendRequest('/dashboard/summary', { signal, cache: 'no-store' });
 }
 
+export function getPublicStoreLocations({ signal } = {}) {
+  return sendRequest('/public/store-locations', { signal, cache: 'no-store' });
+}
+export function getAdminStoreLocation(id, { signal } = {}) {
+  return sendRequest('/admin/stores/' + encodeURIComponent(id) + '/map-location', { signal, cache: 'no-store' });
+}
+export function saveAdminStoreLocation(id, details) {
+  const { latitude, longitude, verified, verification_note, expected_address } = details;
+  return writeAction('/admin/stores/' + encodeURIComponent(id) + '/map-location', 'PUT', { latitude, longitude, verified, verification_note, expected_address });
+}
+
 export function getAdminAccounts({ signal } = {}) { return sendRequest('/admin/accounts', { signal, cache: 'no-store' }); }
 export function updateAccountStatus(id, status, reason) { return writeAction(`/admin/accounts/${encodeURIComponent(id)}/status`, 'PUT', { account_status: status, reason }); }
 

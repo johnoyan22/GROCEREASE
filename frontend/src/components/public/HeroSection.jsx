@@ -1,6 +1,22 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock3, ShoppingBag } from 'lucide-react';
-import GroceryIllustration from './GroceryIllustration';
+import heroBackground from '../../assets/images/herobg.png';
+import StoreLocator from './StoreLocator';
+
 export default function HeroSection({ shopPath = '/login', staff = false }) {
-  return <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-8 sm:py-16 lg:grid-cols-2 lg:gap-14"><div><p className="mb-4 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-2 text-sm font-semibold text-green-900"><ShoppingBag size={16} />Your groceries. Your pickup time.</p><h1 className="max-w-xl text-4xl font-bold leading-tight tracking-tight text-green-950 sm:text-5xl lg:text-6xl">Fresh plans for an easier grocery day.</h1><p className="mt-5 max-w-lg text-base leading-7 text-slate-600 sm:text-lg">Choose your supermarket, build your grocery list and schedule a convenient pickup. GrocerEase brings it all together.</p><div className="mt-7 flex flex-wrap gap-3"><Link to={shopPath} className="ge-button gap-2 px-5">{staff ? 'Open workspace' : 'Start Shopping'}<ArrowRight size={18} /></Link><a href="#how-it-works" className="inline-flex min-h-11 items-center rounded-lg border border-green-800 bg-white px-5 text-sm font-semibold text-green-800">See how it works</a></div><p className="mt-5 flex items-start gap-2 text-sm text-slate-600"><Clock3 size={18} className="mt-0.5 shrink-0" />Pickup times and available products depend on your selected supermarket.</p></div><div className="mx-auto w-full max-w-xl"><GroceryIllustration /><p className="mt-1 text-center text-xs text-slate-500">Illustration only. Browse your selected store for its actual catalog.</p></div></section>;
+  return <section className="mx-auto mt-6 grid max-w-7xl gap-3 px-4 sm:mt-10 sm:px-8 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+    <div className="relative min-w-0 overflow-hidden rounded-2xl bg-yellow-50">
+      <img src={heroBackground} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover object-right" />
+      <div className="absolute inset-0 bg-gradient-to-r from-yellow-50 via-yellow-50/85 to-transparent" />
+      <div className="relative flex min-h-[440px] flex-col justify-center px-6 py-10 sm:min-h-[490px] sm:px-10 sm:py-14">
+        <h1 className="max-w-md text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">Smart Grocery<br /><span className="text-red-500">Shopping,</span><br /><span className="text-green-900">Made Easy.</span></h1>
+        <p className="mt-4 max-w-sm text-base leading-7 text-green-900">Shop your groceries online, explore AI-assisted recommendations, and pick up in-store with ease.</p>
+        <div className="mt-8 flex flex-wrap items-center gap-3 font-semibold">
+          <Link to={shopPath} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-red-500 px-5 py-3 text-sm text-white hover:bg-red-600">{staff ? 'Open workspace' : 'Start Shopping'}</Link>
+          <a href="#store-locator" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-green-900 bg-white px-5 py-3 text-sm text-green-800 hover:bg-green-50">Find a store</a>
+        </div>
+        <p className="mt-5 max-w-xs text-xs leading-5 text-green-950">Products, prices and pickup schedules come from the supermarket you select.</p>
+      </div>
+    </div>
+    <StoreLocator shopPath={shopPath} />
+  </section>;
 }

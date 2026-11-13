@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\ProductPhotoController;
 use App\Http\Controllers\Api\StockReceivingController;
 use App\Http\Controllers\Api\StockAlertController;
 
+Route::get('/public/store-locations', [\App\Http\Controllers\Api\StoreLocationController::class, 'index'])->middleware('throttle:60,1,public-store-locations:');
+
 Route::middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])->group(function () {
     Route::get('/inventory/categories', [StoreCategoryController::class, 'index']);
     Route::get('/inventory/items/{item}/price-history', [\App\Http\Controllers\Api\StoreInventoryController::class, 'priceHistory'])->whereNumber('item');
@@ -23,6 +25,8 @@ Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/admin/stores/{store}/map-location', [\App\Http\Controllers\Api\StoreLocationController::class, 'show'])->whereNumber('store');
+    Route::put('/admin/stores/{store}/map-location', [\App\Http\Controllers\Api\StoreLocationController::class, 'update'])->whereNumber('store')->middleware('throttle:20,1,store-map-location:');
     Route::get('/admin/reports/{kind}.pdf', [\App\Http\Controllers\Api\ReportPdfController::class, 'export']);
     Route::get('/admin/stores/{store}/invoice-settings', [\App\Http\Controllers\Api\InvoiceController::class, 'settings'])->whereNumber('store');
     Route::put('/admin/stores/{store}/invoice-settings', [\App\Http\Controllers\Api\InvoiceController::class, 'updateSettings'])->whereNumber('store')->middleware('throttle:15,1,invoice-settings:');
