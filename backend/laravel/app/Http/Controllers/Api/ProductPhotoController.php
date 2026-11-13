@@ -24,8 +24,21 @@ class ProductPhotoController extends Controller
                 abort_unless($record->store_id === $context['store']->store_id, 404);
             });
         }
+        return $this->photo($record);
+    }
+
+    public function publicShow(int $store, int $product, \App\Services\PublicStoreAccess $access, \App\Services\CatalogInventory $catalog)
+    {
+        $selected = $access->find($store);
+        $item = $catalog->sellable($selected)->where('product_id', $product)->firstOrFail();
+        return $this->photo($item->product);
+    }
+
+    private function photo(Product $record)
+    {
         $path = $record->image_path;
         abort_unless($path && str_starts_with($path, 'product-photos/') && ! str_contains($path, '..') && Storage::disk('local')->exists($path), 404);
+        abort_unless(in_array(Storage::disk('local')->mimeType($path), ['image/jpeg', 'image/png', 'image/webp'], true), 404);
         return response()->file(Storage::disk('local')->path($path), ['Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff', 'Content-Security-Policy' => "default-src 'none'"]);
     }
 

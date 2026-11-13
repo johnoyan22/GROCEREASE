@@ -1,3 +1,4 @@
+import { storeDestination } from '../../services/storeIntent';
 import { useEffect, useState } from 'react';
 import {
   Link,
@@ -105,7 +106,7 @@ function VerifyEmailPage() {
       setResendSeconds(60);
     } catch (error) {
       if (error.status === 401) {
-        navigate('/login?verification=required', { replace: true });
+        navigate(storeDestination('/login?verification=required', searchParams.get('store')), { replace: true });
         return;
       }
 
@@ -154,7 +155,8 @@ function VerifyEmailPage() {
   }
 
   const isVerified = Boolean(user?.email_verified_at);
-  const dashboardPath = dashboardByRole[user?.role?.slug];
+  const baseDashboard = dashboardByRole[user?.role?.slug];
+  const dashboardPath = user?.role?.slug === 'shopper' ? storeDestination(baseDashboard, searchParams.get('store')) : baseDashboard;
 
   const differentAccount = Boolean(
     registration?.email && user && registration.email !== user.email
@@ -214,7 +216,7 @@ function VerifyEmailPage() {
             </p>
 
             <Link
-              to="/login?verification=required"
+              to={storeDestination('/login?verification=required', searchParams.get('store'))}
               className="inline-block rounded-lg bg-primary px-4 py-3 font-semibold text-white"
             >
               Sign in to continue

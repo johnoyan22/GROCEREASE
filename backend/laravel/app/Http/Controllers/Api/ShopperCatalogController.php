@@ -20,11 +20,7 @@ class ShopperCatalogController extends Controller
     public function products(int $store): JsonResponse
     {
         $selectedStore = Store::active()->findOrFail($store);
-        $inventory = StoreInventory::forStore($selectedStore->store_id)
-            ->where('status', StoreInventory::STATUS_ACTIVE)
-            ->whereHas('product', function ($query) use ($selectedStore) {
-                $query->forStore($selectedStore->store_id);
-            })->with('product')->orderBy('store_inventory_id')->get();
+        $inventory = app(\App\Services\CatalogInventory::class)->query($selectedStore)->orderBy('store_inventory_id')->get();
         $products = [];
         foreach ($inventory as $item) {
             $products[] = [

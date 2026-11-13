@@ -1,6 +1,7 @@
 import NavigationDrawer from '../../components/shared/NavigationDrawer';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { storeIntent } from '../../services/storeIntent';
 import { getCurrentUser } from '../../services/api';
 import useShopperCart from '../../hooks/useShopperCart';
 import useDashboardSummary from '../../hooks/useDashboardSummary';
@@ -76,7 +77,9 @@ export default function ShopperDashboard() {
 }
 
 function ShopperWorkspace({ user, setUser }) {
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedStoreId = storeIntent(searchParams.get('store'));
+  const [activeTab, setActiveTab] = useState(requestedStoreId ? 'Browse' : 'Dashboard');
   const [navigationOpen, setNavigationOpen] = useState(false);
   function navigateTab(tab) { setActiveTab(tab); setNavigationOpen(false); }
   const [search, setSearch] = useState('');
@@ -90,7 +93,7 @@ function ShopperWorkspace({ user, setUser }) {
       <ShopperHeader onNavigation={() => setNavigationOpen(true)} user={user} quantity={shopping.quantity} unreadCount={summary.data?.unread_notifications} onCart={() => setActiveTab('Cart')} onNotifications={() => setActiveTab('Notifications')} onProfile={() => setActiveTab('Profile')} onSearch={searchProducts} />
       <div className="min-w-0 flex-1 overflow-y-auto">
         {activeTab === 'Dashboard' && <ShopperMainContent setActiveTab={setActiveTab} shopping={shopping} summary={summary} />}
-        {activeTab === 'Browse' && <ShopperBrowseProducts shopping={shopping} search={search} setSearch={setSearch} onViewCart={() => setActiveTab('Cart')} />}
+        {activeTab === 'Browse' && <ShopperBrowseProducts shopping={shopping} search={search} setSearch={setSearch} requestedStoreId={requestedStoreId} onDismissStoreRequest={() => { const next = new URLSearchParams(searchParams); next.delete('store'); setSearchParams(next, { replace: true }); }} onViewCart={() => setActiveTab('Cart')} />}
         {activeTab === 'Cart' && <ShopperMyCart shopping={shopping} userId={user.id} onContinue={() => setActiveTab('Browse')} />}
         {activeTab === 'AI' && <ShopperAIRecommendations key={shopping.storeId ?? 'no-store'} shopping={shopping} onAddToCart={shopping.addRecommendation} onSelectStore={() => setActiveTab('Browse')} onViewCart={() => setActiveTab('Cart')} />}
         {activeTab === 'Orders' && <ShopperMyOrders />}

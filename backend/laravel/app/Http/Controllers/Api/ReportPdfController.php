@@ -11,11 +11,29 @@ use App\Services\StoreStaffAccess;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+
 
 class ReportPdfController extends Controller
 {
+    public function index(Request $request, string $kind, StoreStaffAccess $access)
+    {
+        $request->validate(['page' => ['nullable', 'integer', 'min:1', 'max:100000']]);
+        $report = $this->report($request, $kind, $access);
+        $count = count($report['rows']);
+        $page = (int) $request->input('page', 1);
+        $report['rows'] = array_slice($report['rows'], ($page - 1) * 50, 50);
+        return response()->json(['report' => $report, 'pagination' => ['page' => $page, 'per_page' => 50,
+            'total' => $count, 'last_page' => max(1, (int) ceil($count / 50))]], 200, ['Cache-Control' => 'private, no-store']);
+    }
+
     public function export(Request $request, string $kind, DocumentPdf $pdf, StoreStaffAccess $access)
+    {
+        $report = $this->report($request, $kind, $access);
+        return $pdf->download($pdf->render('pdf.report', ['report' => $report], true), 'grocerease-'.$kind.'-'.now('Asia/Manila')->format('Y-m-d').'.pdf');
+    }
+
+    // Both the Reports screen and PDF use this exact authorized, filtered dataset.
+    private function report(Request $request, string $kind, StoreStaffAccess $access): array
     {
         $input = $request->validate([
             'from' => ['nullable', 'date_format:Y-m-d'], 'until' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])],
@@ -24,15 +42,16 @@ class ReportPdfController extends Controller
         ]);
         $report = DB::transaction(function () use ($request, $kind, $access, $input) {
             $role = $request->user()->role?->slug;
-            abort_unless(in_array($kind, ['orders', 'stock', 'transactions', 'sales', 'cop'], true), 404);
-            abort_if(! empty($input['category']) && $kind !== 'stock', 422, 'Category filters apply only to stock reports.');
-            abort_if(! empty($input['status']) && ! in_array($kind, ['stock', 'orders'], true), 422, 'Status filters apply only to stock or order reports.');
+            abort_unless(in_array($kind, ['orders', 'stock', 'low-stock', 'transactions', 'sales', 'cop'], true), 404);
+            abort_if(! empty($input['category']) && ! in_array($kind, ['stock', 'low-stock'], true), 422, 'Category filters apply only to stock reports.');
+            abort_if(! empty($input['status']) && ! in_array($kind, ['stock', 'low-stock', 'orders'], true), 422, 'Status filters apply only to stock or order reports.');
             abort_if(! empty($input['upcoming']) && $kind !== 'orders', 422, 'Upcoming pickup filters apply only to order reports.');
             $store = null;
-            if ($role === 'supervisor') {
-                abort_if(isset($input['store_id']), 422, 'Supervisor report scope comes from the assigned store.');
-                abort_if($kind === 'cop', 403);
-                $store = $access->resolve($request->user(), ['supervisor'])['store'];
+            if (in_array($role, ['supervisor', 'inventory_worker'], true)) {
+                abort_if(isset($input['store_id']), 422, 'Report scope comes from the assigned active store.');
+                abort_if($role === 'supervisor' && $kind === 'cop', 403);
+                abort_if($role === 'inventory_worker' && ! in_array($kind, ['stock', 'low-stock'], true), 403);
+                $store = $access->resolve($request->user(), [$role])['store'];
             } else {
                 abort_unless($role === 'admin', 403);
                 if (isset($input['store_id'])) $store = Store::findOrFail($input['store_id']);
@@ -54,17 +73,18 @@ class ReportPdfController extends Controller
                     'totals' => ['Verified records' => count($rows), 'Gross payments (excluding completed refunds)' => $money((int) $records->where('refund_status', '!=', 'completed')->sum('amount_centavos'))],
                     'note' => 'Payment confirmation dates use Asia/Manila. Gross supermarket payments are not platform revenue. No invented service charges, tax or worker payouts.'];
             }
-            if ($kind === 'stock') {
+            if (in_array($kind, ['stock', 'low-stock'], true)) {
                 $query = StoreInventory::query()->whereHas('product', fn ($q) => $q->whereColumn('products.store_id', 'store_inventory.store_id'))->with(['product', 'store']);
                 if ($store) $query->where('store_inventory.store_id', $store->store_id);
                 $records = $query->orderBy('store_inventory_id')->get()->filter(fn ($r) => $matches([$r->product->product_name, $r->product->sku, $r->product->barcode, $r->product->category, $r->product->size])
                     && empty($input['from']) && empty($input['until'])
-                    && (empty($input['category']) || $r->product->category === $input['category']) && (empty($input['status']) || $r->status === $input['status']));
+                    && (empty($input['category']) || $r->product->category === $input['category']) && (empty($input['status']) || $r->status === $input['status'])
+                    && ($kind !== 'low-stock' || ($r->status === 'active' && $r->isLowStock())));
                 abort_if(! empty($input['from']) || ! empty($input['until']), 422, 'Stock reports show the current snapshot. Historical inventory balances are not inferred from date filters.');
                 $rows = $records->map(fn ($r) => [$r->store->store_name, $r->product->product_name.' / '.$r->product->sku,
                     $r->product->category, $r->product->selling_unit ?? 'Unspecified', $r->hard_stock_qty, $r->soft_stock_qty,
                     $r->availableStock(), $r->low_stock_threshold ?? 'Not set', $r->status])->values()->all();
-                return $meta + ['report_title' => 'Current Stock Report', 'period_label' => 'Current snapshot at generation time', 'headings' => ['Store', 'Product / SKU', 'Category', 'Unit', 'Physical', 'Reserved', 'Sellable', 'Reorder level', 'Status'], 'rows' => $rows,
+                return $meta + ['report_title' => $kind === 'low-stock' ? 'Low Stock and Reorder Report' : 'Current Stock Report', 'period_label' => 'Current snapshot at generation time', 'headings' => ['Store', 'Product / SKU', 'Category', 'Unit', 'Physical', 'Reserved', 'Sellable', 'Reorder level', 'Status'], 'rows' => $rows,
                     'totals' => ['Products' => count($rows), 'Physical units' => $records->sum('hard_stock_qty'), 'Reserved units' => $records->sum('soft_stock_qty'), 'Sellable units' => $records->sum(fn ($r) => $r->availableStock())],
                     'note' => 'Current snapshot. Sellable availability excludes reservations and expired/quarantined batch remainder. Legacy stock has no inferred receiving or expiry date.'];
             }
@@ -93,7 +113,7 @@ class ReportPdfController extends Controller
                 'note' => 'Failure date filters apply to strike records. Restriction state is current across the Shopper account; a COP restriction does not deactivate the account.'];
         }, 3);
         abort_if(count($report['rows']) > 5000, 422, 'This report exceeds 5,000 records. Narrow the filters before exporting. No records were omitted.');
-        return $pdf->download($pdf->render('pdf.report', ['report' => $report], true), 'grocerease-'.$kind.'-'.now('Asia/Manila')->format('Y-m-d').'.pdf');
+        return $report;
     }
 
     private function date($value): string { return $value ? Carbon::parse($value, 'UTC')->setTimezone('Asia/Manila')->format('M d, Y h:i A') : 'Not recorded'; }

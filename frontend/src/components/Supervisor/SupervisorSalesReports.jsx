@@ -1,2 +1,2 @@
-import TransactionRecords from '../orders/TransactionRecords';
-export function SupervisorSalesReports() { return <TransactionRecords role="supervisor" title="Store Sales and Transactions" report />; }
+import ReportWorkspace from '../reports/ReportWorkspace';
+export function SupervisorSalesReports() { return <ReportWorkspace role="supervisor" />; }

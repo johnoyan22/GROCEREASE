@@ -21,6 +21,7 @@ function run(mode, index) {
 try {
   assert.equal((await run('setup')).status, 'isolated_schema_ready');
   assert.equal((await run('batch-current-read')).status, 'current_batch_safety_read_passed');
+  assert.equal((await run('public-catalog-reports')).status, 'public_catalog_reports_read_only_passed');
   const products = await Promise.all([run('create-product', 0), run('create-product', 1)]);
   assert.ok(products.every(result => result.status === 201));
   assert.notEqual(products[0].sku, products[1].sku);
@@ -38,7 +39,7 @@ try {
   const invoices = await Promise.all([run('generate-invoice'), run('generate-invoice')]);
   assert.deepEqual(invoices.map(result => result.status).sort(), [200, 201]);
   assert.equal(invoices[0].reference, invoices[1].reference);
-  console.log('PASS: isolated MariaDB migrations and 6 concurrency scenarios (SKU creation, receiving approval, reservation, worker assignment, handover, invoice generation).');
+  console.log('PASS: isolated MariaDB migrations, public catalog/report read-only SQL checks, and 6 concurrency scenarios (SKU creation, receiving approval, reservation, worker assignment, handover, invoice generation).');
 } finally {
   await run('cleanup');
   console.log('Temporary MariaDB test database and runtime file removed.');

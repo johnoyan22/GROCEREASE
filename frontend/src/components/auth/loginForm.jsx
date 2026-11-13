@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { login } from '../../services/api';
+import { storeDestination } from '../../services/storeIntent';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -57,11 +58,11 @@ function togglePasswordVisibility(event) {
       const verificationLogin = user.role?.slug === 'shopper' && searchParams.get('verification') === 'required';
 
       if (unverifiedShopper || verificationLogin) {
-        navigate('/verify-email', { replace: true });
+        navigate(storeDestination('/verify-email', searchParams.get('store')), { replace: true });
         return;
       }
 
-      navigate(destination, { replace: true });
+      navigate(user.role?.slug === 'shopper' ? storeDestination(destination, searchParams.get('store')) : destination, { replace: true });
     } catch (error) {
       setErrorMessage(error.message || 'Login failed. Please try again.');
     } finally {
@@ -142,7 +143,7 @@ function togglePasswordVisibility(event) {
 
           <p className="text-center text-xs text-gray-600 mt-6">
             Don't have an account?{' '}
-            <Link to="/register" className="text-primary font-bold hover:underline">
+            <Link to={storeDestination('/register', searchParams.get('store'))} className="text-primary font-bold hover:underline">
               Register
             </Link>
           </p>

@@ -4,12 +4,13 @@ import { maximumQuantity } from '../../services/cart';
 
 const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-export default function ShopperBrowseProducts({ shopping, search, setSearch, onViewCart }) {
+export default function ShopperBrowseProducts({ shopping, search, setSearch, onViewCart, requestedStoreId, onDismissStoreRequest }) {
   const { cart, storeId, stores, storesError, storesLoading, catalog, summary, quantity: cartQuantity,
     pricesAvailable, refresh, switchStore: changeStore, changeQuantity, message, recovery, locked } = shopping;
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('name');
   const [pendingStoreId, setPendingStoreId] = useState(null);
+  const requestedStore = stores.find(store => store.store_id === requestedStoreId);
   const categories = [...new Set(catalog.products.map(function (item) { return item.category; }))].sort();
   const products = catalog.products.filter(function (item) {
     return [item.product_name, item.category, item.sku, item.barcode, item.size].join(' ').toLowerCase().includes(search.toLowerCase())
@@ -25,7 +26,11 @@ export default function ShopperBrowseProducts({ shopping, search, setSearch, onV
   }
 
   function selectStore(event) {
-    const nextId = Number(event.target.value);
+    selectStoreId(Number(event.target.value));
+  }
+
+  function selectStoreId(nextId) {
+    if (!stores.some(store => store.store_id === nextId)) return;
     if (!nextId || nextId === storeId) return;
     if (cart.items.length > 0 && cart.store_id !== nextId) {
       setPendingStoreId(nextId);
@@ -43,6 +48,7 @@ export default function ShopperBrowseProducts({ shopping, search, setSearch, onV
       <label className="block text-sm font-semibold">Shop at<select value={storeId ?? ''} onChange={selectStore} disabled={storesLoading || locked} className="mt-2 w-full rounded-lg border border-gray-300 bg-white p-3"><option value="">Choose an active store</option>{stores.map(function (store) { return <option key={store.store_id} value={store.store_id}>{store.store_name} - {store.address}</option>; })}</select></label>
       {storesLoading && <p role="status" className="mt-3 text-sm">Loading stores...</p>}
       {storesError && <p role="alert" className="mt-3 text-sm text-red-700">{storesError}</p>}
+      {requestedStoreId && !storesLoading && requestedStoreId !== storeId && <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm"><p>{requestedStore ? 'You previewed ' + requestedStore.store_name + '. Choose whether to use this store for your cart.' : 'The previewed store is no longer available. Choose an active store above.'}</p><div className="mt-3 flex flex-wrap gap-3">{requestedStore && <button type="button" disabled={locked} onClick={() => selectStoreId(requestedStoreId)} className="ge-button">Use previewed store</button>}<button type="button" onClick={onDismissStoreRequest} className="min-h-11 rounded-lg border border-green-800 px-3">Dismiss store suggestion</button></div></div>}
       {!storesLoading && !storesError && stores.length === 0 && <p className="mt-3 text-sm">No active stores are available.</p>}
       {pendingStoreId && <div role="alert" className="my-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm"><p>Switching stores clears your current cart. Continue?</p><div className="mt-3 flex gap-3"><button type="button" onClick={function () { switchStore(pendingStoreId); }} className="rounded-lg bg-green-700 px-4 py-2 text-white">Clear cart and switch</button><button type="button" onClick={function () { setPendingStoreId(null); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2">Keep current store</button></div></div>}
       {catalog.loading && <p role="status" className="my-5">Loading store products...</p>}

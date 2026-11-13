@@ -18,6 +18,7 @@ const StockVerificationRequests = lazy(() => import('../pages/inventory/StockVer
 const LowStockMonitoring = lazy(() => import('../pages/inventory/LowStockMonitoring'));
 const SubmitStockUpdate = lazy(() => import('../pages/inventory/SubmitStockUpdate'));
 const InventoryNotifications = lazy(() => import('../pages/inventory/InventoryNotifications'));
+const InventoryReports = lazy(() => import('../pages/inventory/InventoryReports'));
 const ActivityLog = lazy(() => import('../pages/inventory/ActivityLog'));
 const SupervisorApp = lazy(() => import('../components/Supervisor/SupervisorApp'));
 
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/inventory/low-stock" element={<LowStockMonitoring />} />
         <Route path="/inventory/stock-update" element={<SubmitStockUpdate />} />
         <Route path="/inventory/notifications" element={<InventoryNotifications />} />
+        <Route path="/inventory/reports" element={<InventoryReports />} />
         <Route path="/inventory/activity" element={<ActivityLog />} />
       </Route>
 

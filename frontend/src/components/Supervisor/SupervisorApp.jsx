@@ -42,6 +42,7 @@ export default function SupervisorApp({ basePath = '/supervisor', loginPath = '/
           <Route path="workers" element={<SupervisorStoreWorkers />} />
           <Route path="digital-payments" element={<SupervisorDigitalPayments />} />
           <Route path="sales-reports" element={<SupervisorSalesReports />} />
+          <Route path="reports" element={<SupervisorSalesReports />} />
           <Route path="return-refund" element={<SupervisorReturnRefund />} />
           <Route path="system-configuration" element={<SupervisorSystemConfiguration />} />
           <Route path="profile" element={<SupervisorProfile />} />

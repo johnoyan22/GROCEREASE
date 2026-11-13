@@ -10,17 +10,14 @@ use Illuminate\Support\Facades\Schema;
 
 class StoreLocationController extends Controller
 {
-    public function index()
+    public function index(\App\Services\PublicStoreAccess $access)
     {
         if (! Schema::hasTable('store_locations')) {
             return response()->json(['available' => false, 'stores' => [], 'message' => 'Store locations are being prepared. You can still choose a supermarket after signing in.']);
         }
-        $stores = DB::table('store_locations as locations')->join('stores', 'stores.store_id', '=', 'locations.store_id')
-            ->where('stores.status', Store::STATUS_ACTIVE)->whereNotNull('locations.verified_at')
-            ->whereColumn('locations.verified_address', 'stores.address')
-            ->whereBetween('locations.latitude', [-90, 90])->whereBetween('locations.longitude', [-180, 180])
+        $stores = $access->query()
             ->orderBy('stores.store_name')->orderBy('stores.store_id')
-            ->get(['stores.store_id', 'stores.store_name', 'stores.address', 'locations.latitude', 'locations.longitude'])
+            ->get(['stores.store_id', 'stores.store_name', 'stores.address', 'public_locations.latitude', 'public_locations.longitude'])
             ->map(fn ($store) => ['store_id' => $store->store_id, 'store_name' => $store->store_name, 'address' => $store->address,
                 'latitude' => (float) $store->latitude, 'longitude' => (float) $store->longitude]);
 

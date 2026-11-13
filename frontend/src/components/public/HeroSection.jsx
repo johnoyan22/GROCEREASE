@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import heroBackground from '../../assets/images/herobg.png';
 import StoreLocator from './StoreLocator';
 
-export default function HeroSection({ shopPath = '/login', staff = false }) {
+export default function HeroSection({ shopPath = '/login', staff = false, selectedStoreId, onStoreSelect, mapConfig }) {
   return <section className="mx-auto mt-6 grid max-w-7xl gap-3 px-4 sm:mt-10 sm:px-8 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
     <div className="relative min-w-0 overflow-hidden rounded-2xl bg-yellow-50">
       <img src={heroBackground} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover object-right" />
@@ -17,6 +17,6 @@ export default function HeroSection({ shopPath = '/login', staff = false }) {
         <p className="mt-5 max-w-xs text-xs leading-5 text-green-950">Products, prices and pickup schedules come from the supermarket you select.</p>
       </div>
     </div>
-    <StoreLocator shopPath={shopPath} />
+    <StoreLocator shopPath={shopPath} selectedStoreId={selectedStoreId} onStoreSelect={onStoreSelect} mapConfig={mapConfig} />
   </section>;
 }

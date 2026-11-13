@@ -28,11 +28,19 @@ submissions return a conflict. It does not import Google's nearby-grocery result
 - Public read-only `/api/public/store-locations` returns only store ID, name,
   address and verified coordinates. No staff, Shopper or inventory records.
 - Google map loads only after **Choose a map pin**. Click the map, drag the
-  chosen pin, or move the map with the keyboard and use its center.
+  chosen pin, or move the map with the keyboard and use its center. Confirm the
+  selected area before nearby results change; Cancel keeps the previous area.
 - **Use my location** requests browser permission only after clicking it.
 - Nearby registered stores are sorted by distance within 5, 10, 25 or 50 km.
   Distances are explicitly approximate straight-line distances, not driving
-  distances or travel times. Moving a pin recalculates the results.
+  distances or travel times. Confirming a moved pin recalculates the results.
+- A verified pickup-area selector and registered-store/address search offer a
+  manual alternative without geocoding. Verified stores are browsable before
+  choosing an area or configuring Google Maps; distances are not guessed.
+- Marker/card selection is synchronized. **View Available Products** opens a
+  paginated, searchable preview below the hero without Login. Products/photos
+  recheck public participation and sellability. Guests see Login/Register actions;
+  carts, Checkout and personalized AI remain authenticated.
 - Directions open the selected store's coordinates in Google Maps. The user's
   chosen pin is sent to Google only when loading/interacting with the map or
   following the directions link; it is never sent to the GrocerEase API or saved
@@ -44,6 +52,9 @@ submissions return a conflict. It does not import Google's nearby-grocery result
 - Admin → Store Management → **Map location** saves coordinates, explicit public
   verification and a mandatory source/review note with actor/before/after audit.
   Saving coordinates does not alter store details, inventory or orders.
+- Admin address edits revoke and audit public verification. Restoring an older
+  address does not republish it. An authenticated Shopper's public store choice
+  reaches the existing explicit cart-switch workflow without adding products.
 
 “Active and verified” is a participation/location filter, not “open now” or a
 promise that a specific product/pickup slot is available. Check these in the
@@ -124,3 +135,9 @@ geolocation/results. **Provider stubs and browser geolocation fixtures do not
 prove real Google Maps acceptance.** Record authorized provider/physical-device
 results in the manual checklist after setup. Current full verification results
 are recorded in the follow-up changelog.
+
+Public catalog/report follow-up: **398 Laravel tests / 6,971 assertions**,
+**137 frontend tests**, lint/build and **44 Chrome cases** pass. The browser SDK
+is a labeled provider stub, not a live Maps test. See
+`public-catalog-and-report-exports.md` for endpoints, visibility, authentication
+boundaries, actual verification and remaining acceptance.

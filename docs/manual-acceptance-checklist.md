@@ -1,5 +1,27 @@
 # Four-role manual acceptance checklist
 
+## Public discovery and report-scope follow-up
+
+All entries below remain **Pending human acceptance**. Automation is separate
+(398 Laravel tests / 6,971 assertions, 137 frontend tests and 44 Chrome cases).
+Use approved partner/test records after reviewed database setup. Google SDK
+browser fixtures do not prove a live provider test.
+
+| ID | Procedure | Expected behavior | Human result / evidence |
+| --- | --- | --- | --- |
+| PC1 | Guest: open landing; choose/drag/center a map pin; confirm/cancel; change radius | Original layout preserved; confirmed area controls nearby results; marker/card selection synchronized; no guessed distance/ETA | Pending authorized Google setup — ___ |
+| PC2 | Deny location permission; use verified pickup-area selector and store/address search with Maps unavailable | No forced permission; genuine verified store list/areas remain usable; empty/error messages clear | Pending — ___ |
+| PC3 | Guest: View Available Products; search/category/page; switch stores | Current owned sellable products/photos/units/prices; no private quantities; no stale prior-store response | Pending — ___ |
+| PC4 | Guest: inspect controls; Login/Register from preview; authenticated Shopper: use previewed store with existing different-store cart | No guest Add to Cart/Checkout/AI. Existing cart stays until explicit clear-and-switch; no automatic item addition | Pending — ___ |
+| PC5 | Admin: change verified store address, restore old address, then explicitly reverify | Store/catalog/photo hidden until new approval; invalidation and reapproval audits persist | Pending — ___ |
+| RP1 | Worker: Reports → current/low stock; filter and export | Own assigned active store only, accurate rows/totals/PDF; no financial report permission | Pending — ___ |
+| RP2 | Supervisor: Reports → sales/transactions/orders/current/low stock; apply filters and export | Assigned-store records; matching filters/totals; ordinary Orders/Inventory/Stock/Transactions have no generic PDF | Pending — ___ |
+| RP3 | Admin: Reports → store/all-store sales/transactions/stock/COP; filtered/empty export | Actual displayed scope/filters; valid readable PDF, correct totals and Philippine dates | Pending — ___ |
+| RP4 | All roles: wrong-role/foreign-store exports; multi-page report; dirty filters | Server rejects unauthorized scope; PDF includes all filtered pages; unapplied filters disable export; no business changes | Pending — ___ |
+
+Worker operational reports do not add an official module-role point. Invoice/
+receipt documents and CSV receiving remain separate and must retain their checks.
+
 Date: 2026-11-13 (Asia/Manila). Code verification is recorded separately from
 human acceptance. **No human acceptance entry below has passed**; entries are
 Pending or explicitly Blocked by provider setup. Do not mark

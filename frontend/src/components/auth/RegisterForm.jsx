@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { User, Mail, Lock, Phone, MapPin } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { register } from '../../services/api';
+import { storeDestination } from '../../services/storeIntent';
 
 function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ function RegisterForm() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -55,7 +57,7 @@ function RegisterForm() {
         agree_to_terms: formData.agreeToTerms,
       });
 
-      navigate('/verify-email', {
+      navigate(storeDestination('/verify-email', searchParams.get('store')), {
         replace: true,
         state: {
           registration: {
@@ -251,7 +253,7 @@ function RegisterForm() {
       <div>
 
         <p className="text-center text-xs text-gray-600 mt-4">
-          Already have an account? <Link to="/login" className="text-primary font-bold hover:underline">Login</Link>
+          Already have an account? <Link to={storeDestination('/login', searchParams.get('store'))} className="text-primary font-bold hover:underline">Login</Link>
         </p>
       </div>
     </div>

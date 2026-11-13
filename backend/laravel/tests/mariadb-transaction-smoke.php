@@ -98,7 +98,26 @@ try {
         echo json_encode(['status' => 'isolated_schema_ready']);
     } else {
         $state = json_decode(file_get_contents($runtime), true, 512, JSON_THROW_ON_ERROR);
-        if ($mode === 'batch-current-read') {
+        if ($mode === 'public-catalog-reports') {
+            $store = Store::findOrFail(1);
+            $admin = User::whereHas('role', fn ($query) => $query->where('slug', 'admin'))->firstOrFail();
+            DB::table('store_locations')->insert(['store_id' => 1, 'latitude' => 10.3, 'longitude' => 123.9, 'verified_address' => $store->address,
+                'verified_at' => now(), 'verified_by_user_id' => $admin->id, 'created_at' => now(), 'updated_at' => now()]);
+            $snapshot = fn () => json_encode([DB::table('store_inventory')->get(), DB::table('orders')->get(), DB::table('order_payments')->get(), DB::table('stock_batches')->get()]);
+            $before = $snapshot();
+            $request = Request::create('/isolated-public', 'GET', ['search' => 'Test product', 'category' => 'Test', 'per_page' => 1]);
+            $catalog = app(\App\Http\Controllers\Api\PublicCatalogController::class)->index($request, 1, app(\App\Services\PublicStoreAccess::class), app(\App\Services\CatalogInventory::class))->getData(true);
+            if ($catalog['pagination']['total'] !== 2 || count($catalog['products']) !== 1) throw new RuntimeException('Public MariaDB catalog filtering/pagination failed.');
+            DB::table('store_locations')->where('store_id', 1)->update(['verified_address' => mb_strtolower($store->address)]);
+            if (app(\App\Services\PublicStoreAccess::class)->query()->exists()) throw new RuntimeException('Public address verification used a case-insensitive comparison.');
+            DB::table('store_locations')->where('store_id', 1)->update(['verified_address' => $store->address]);
+            $reportRequest = Request::create('/isolated-report', 'GET', ['search' => 'Test product']);
+            $reportRequest->setUserResolver(fn () => User::findOrFail($state['inventory_worker_id']));
+            $report = app(\App\Http\Controllers\Api\ReportPdfController::class)->index($reportRequest, 'stock', app(\App\Services\StoreStaffAccess::class))->getData(true);
+            if ($report['pagination']['total'] !== 2 || $report['report']['scope'] !== $store->store_name || $report['report']['totals']['Physical units'] !== 2) throw new RuntimeException('Assigned-store MariaDB report filtering failed.');
+            if ($before !== $snapshot()) throw new RuntimeException('Public/report reads changed inventory or orders.');
+            echo json_encode(['status' => 'public_catalog_reports_read_only_passed']);
+        } elseif ($mode === 'batch-current-read') {
             $product = Product::create(['store_id' => 1, 'product_name' => 'Snapshot safety fixture', 'category' => 'Test']);
             $inventory = StoreInventory::create(['store_id' => 1, 'product_id' => $product->product_id, 'selling_price' => '1.00', 'status' => 'active']);
             config(['database.connections.mysql_snapshot_writer' => config('database.connections.mysql')]);

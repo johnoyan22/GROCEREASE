@@ -57,7 +57,7 @@ function StockManagement() {
             </div>
             <div className="flex gap-3">
               <button type="button" onClick={reload} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-xs">Refresh</button>
-              <button type="button" onClick={exportStock} disabled={filtered.length === 0} className="rounded-lg border border-green-600 bg-white px-4 py-2.5 text-xs font-medium text-green-700 disabled:opacity-50">Export</button>
+              <button type="button" onClick={exportStock} disabled={filtered.length === 0} className="rounded-lg border border-green-600 bg-white px-4 py-2.5 text-xs font-medium text-green-700 disabled:opacity-50">Export CSV</button>
             </div>
           </section>
           <StockTable items={filtered} />

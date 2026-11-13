@@ -1,6 +1,7 @@
-import AdminStockReport from '../../components/admin/AdminStockReport';
 import InvoiceSellerSettings from '../../components/admin/InvoiceSellerSettings';
-import PdfExportButton from '../../components/shared/PdfExportButton';
-import TransactionRecords from '../../components/orders/TransactionRecords';
+import ReportWorkspace from '../../components/reports/ReportWorkspace';
 import { Link } from 'react-router-dom';
-export default function ReportModule() { return <div><div className="mb-5 flex flex-wrap gap-3"><Link to="/admin/cop" className="rounded-lg border bg-white px-4 py-2 text-sm">COP Monitoring</Link><Link to="/admin/stores" className="rounded-lg border bg-white px-4 py-2 text-sm">Store Oversight</Link></div><TransactionRecords role="admin" title="Sales and Transaction Reports" report /><AdminStockReport /><section className="mt-6 rounded-xl border bg-white p-5"><h2 className="mb-3 text-xl font-semibold">COP failures and restrictions</h2><PdfExportButton role="admin" kind="cop" /></section><InvoiceSellerSettings /><p className="mt-5 text-sm text-gray-500">Worker incentive reports await an approved allocation formula. SaaS subscription revenue is not configured. Invoice documents remain Draft / Pro Forma until partner authorization is complete.</p></div>; }
+
+export default function ReportModule() {
+  return <div className="space-y-6"><div className="flex flex-wrap gap-3"><Link to="/admin/cop" className="rounded-lg border bg-white px-4 py-2 text-sm">COP Monitoring</Link><Link to="/admin/stores" className="rounded-lg border bg-white px-4 py-2 text-sm">Store Oversight</Link></div><ReportWorkspace role="admin" /><InvoiceSellerSettings /><p className="text-sm text-slate-500">Worker incentive reports await an approved allocation formula. SaaS subscription revenue is not configured. Invoice documents remain Draft / Pro Forma until partner authorization is complete.</p></div>;
+}

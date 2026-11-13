@@ -202,6 +202,57 @@ and all six existing concurrency scenarios; temporary test data was removed.
 Read-only working comparison: **31 business tables unchanged**. Human/module
 acceptance remains pending; no additional module credit.
 
+## 8. Complete public catalog discovery and constrain report exports
+
+Base: reviewed/pushed `d330fc0`, clean `feature/adviser-improvements`.
+The existing hero, brand, category images, map loader and Admin verification are
+reused. No additional schema migration or working-database setup was performed.
+
+- Public catalog and eligible public-photo endpoints use shared active-store,
+  public verification, owned-inventory and batch-safety logic. Pagination occurs
+  after SQL sellability filtering. Search/category filters, stable sorting,
+  bounded pages/rate limits and a minimal field whitelist expose no exact stock
+  counts or private commercial/account records. Existing authenticated routes
+  retain their guards, including AI, cart, Checkout and original photo reads.
+- Public pin/drag/center confirmation, browser-location consent, verified pickup
+  area selection, store/address fallback search, synchronized marker/card
+  selection and a public product preview. No geocoded addresses, Google Places
+  membership, partnerships or stock are invented. Temporary location state stays
+  separate from accounts. A safe store-ID intent reaches the existing explicit
+  Shopper store/cart-switch confirmation; it never adds products automatically.
+- Admin address edits explicitly revoke and audit verification, so reverting an
+  old address cannot accidentally republish it without reapproval. Existing
+  location tables/columns are reused; exact matching also handles MariaDB collation.
+- Generic PDF controls removed from ordinary Supervisor Orders/Inventory and
+  shared stock-editing screens. TransactionRecords exports only in report mode.
+  Admin/Supervisor Reports now show one shared real table/filter/export workspace.
+  New Inventory Worker Reports offers assigned-store current/low-stock reports
+  only, with server role/assignment checks. No worker financial access/module credit.
+- Existing `ReportPdfController` now also supplies paginated JSON from the same
+  filtered dataset as Dompdf. Totals/PDF include all matching pages; the existing
+  5,000-record limit rejects excess. Dirty/unloaded filters disable exporting.
+  Current stock remains a snapshot. Invoice/receipt and CSV workflows stay separate.
+  The working stock CSV action is explicitly labeled Export CSV to avoid a
+  misleading generic Export label; receiving templates/imports remain intact.
+- Setup, route/permission matrix, manual procedures and actual evidence are in
+  `public-catalog-and-report-exports.md` and the updated locator/acceptance/UI/
+  database review documents. Human/provider acceptance remains pending; 3/40
+  accepted module points retained. No environment/provider setup, push or merge.
+
+Validation: **398 Laravel tests / 6,971 assertions** (52.25 seconds),
+**137 frontend tests**, ESLint and production build passed. **44 real Chrome
+cases** passed (78.64 seconds), zero failures/skips/flaky cases. The initial new
+browser checks exposed an accessible-name mismatch when distance was appended
+to a store button and an ambiguous Admin report-versus-seller filter selector;
+the label/test scope were corrected before all 44 passed together. Phone/desktop
+screenshots were inspected. Browser API/Google fixtures are explicit; the PDF
+download fixture is real Dompdf output, not proof of live provider acceptance.
+Laravel separately verifies real generated PDFs, shared rows/totals and no writes.
+Disposable MariaDB passed actual public catalog/report query checks and all six
+concurrency scenarios; temporary data removed. Read-only working fingerprint:
+**31 business tables unchanged**. New working migration approval is not requested
+because no new migration exists; existing 18–21 remain pending prior approval.
+
 ## Exact file manifest
 
 Tracked paths below come from the local checkpoint commits; `A`, `M`, `D` and
@@ -491,4 +542,65 @@ A	frontend/src/services/googleMaps.js
 A	frontend/src/services/storeLocator.js
 A	frontend/tests/store-locator-ui.test.mjs
 A	frontend/tests/store-locator.test.mjs
+```
+
+### Public catalog and report-scope file manifest
+
+```text
+M	backend/laravel/app/Http/Controllers/Api/AdminStoreController.php
+M	backend/laravel/app/Http/Controllers/Api/ProductPhotoController.php
+M	backend/laravel/app/Http/Controllers/Api/ReportPdfController.php
+M	backend/laravel/app/Http/Controllers/Api/ShopperCatalogController.php
+M	backend/laravel/app/Http/Controllers/Api/StoreLocationController.php
+M	backend/laravel/app/Services/BatchStock.php
+M	backend/laravel/routes/adviser.php
+M	backend/laravel/tests/mariadb-transaction-smoke.mjs
+M	backend/laravel/tests/mariadb-transaction-smoke.php
+M	docs/adviser-database-review.md
+M	docs/adviser-improvements-changelog.md
+M	docs/landing-page-and-store-locator.md
+M	docs/manual-acceptance-checklist.md
+M	docs/ui-responsive-checklist.md
+M	frontend/e2e/adviser-responsive.spec.js
+M	frontend/src/components/Shoppers/ShopperBrowseProducts.jsx
+M	frontend/src/components/Supervisor/SupervisorApp.jsx
+M	frontend/src/components/Supervisor/SupervisorInventory.jsx
+M	frontend/src/components/Supervisor/SupervisorSalesReports.jsx
+M	frontend/src/components/Supervisor/SupervisorSidebar.jsx
+M	frontend/src/components/auth/RegisterForm.jsx
+M	frontend/src/components/auth/loginForm.jsx
+M	frontend/src/components/inventory/layout/Sidebar.jsx
+M	frontend/src/components/inventory/stock-management/StockWorkspace.jsx
+M	frontend/src/components/orders/OrderWorkspace.jsx
+M	frontend/src/components/orders/TransactionRecords.jsx
+M	frontend/src/components/public/GoogleStoreMap.jsx
+M	frontend/src/components/public/HeroSection.jsx
+M	frontend/src/components/public/StoreLocator.jsx
+M	frontend/src/pages/admin/ReportModule.jsx
+M	frontend/src/pages/auth/VerifyEmailPage.jsx
+M	frontend/src/pages/inventory/StockManagement.jsx
+M	frontend/src/pages/public/LandingPage.jsx
+M	frontend/src/pages/shopper/ShopperDashboard.jsx
+M	frontend/src/routes/AppRoutes.jsx
+M	frontend/src/services/api.js
+M	frontend/src/services/googleMaps.js
+M	frontend/tests/store-locator-ui.test.mjs
+A	backend/laravel/app/Http/Controllers/Api/PublicCatalogController.php
+A	backend/laravel/app/Services/CatalogInventory.php
+A	backend/laravel/app/Services/PublicStoreAccess.php
+A	backend/laravel/tests/Feature/PublicCatalogTest.php
+A	backend/laravel/tests/Feature/ReportScopeTest.php
+A	docs/public-catalog-and-report-exports.md
+A	frontend/e2e/fixtures/README.md
+A	frontend/e2e/fixtures/public-map.html
+A	frontend/e2e/fixtures/public-map.jsx
+A	frontend/e2e/fixtures/report-download.pdf
+A	frontend/e2e/public-catalog-reports.spec.js
+A	frontend/e2e/support/adviser-fixtures.js
+A	frontend/e2e/support/google-maps-stub.js
+A	frontend/src/components/public/PublicCatalog.jsx
+A	frontend/src/components/reports/ReportWorkspace.jsx
+A	frontend/src/pages/inventory/InventoryReports.jsx
+A	frontend/src/services/storeIntent.js
+A	frontend/tests/public-catalog-reports.test.mjs
 ```

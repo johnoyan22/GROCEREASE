@@ -18,14 +18,15 @@ const stores=[{store_id:2,store_name:'Farther registered fixture',address:'Fixtu
 test('locator stays honest without configured map or verified locations and never loads Google automatically',async t=>{
   t.mock.method(globalThis,'fetch',async url=>{assert.ok(url.endsWith('/public/store-locations'));return new Response(JSON.stringify({available:false,stores:[],message:'Store locations are being prepared.'}));});
   await mount(Locator);
-  assert.match(document.body.textContent,/Store locations are being prepared/);assert.match(document.body.textContent,/interactive map is not available yet/);assert.equal(document.querySelector('script[src*="maps.googleapis.com"]'),null);assert.equal(document.querySelector('a[href*="maps/dir"]'),null);
+  assert.match(document.body.textContent,/No verified stores are available/);assert.match(document.body.textContent,/interactive map is not available yet/);assert.equal(document.querySelector('script[src*="maps.googleapis.com"]'),null);assert.equal(document.querySelector('a[href*="maps/dir"]'),null);
 });
 test('location sharing is requested only on click and sorts registered stores without transmitting or persisting the origin',async t=>{
   const requests=[];let requestsForLocation=0;
   t.mock.method(globalThis,'fetch',async url=>{requests.push(url);return new Response(JSON.stringify({available:true,stores}));});
   Object.defineProperty(navigator,'geolocation',{configurable:true,value:{getCurrentPosition(success){requestsForLocation++;success({coords:{latitude:10.3,longitude:123.9}});}}});
   await mount(Locator);assert.equal(requestsForLocation,0);await click('Use my location');
-  assert.equal(requestsForLocation,1);assert.equal(document.querySelector('ol h3').textContent,'Nearest registered fixture');assert.equal(document.querySelectorAll('ol li').length,2);assert.equal(requests.length,1);assert.equal(window.localStorage.length,0);assert.match(document.body.textContent,/straight-line distance/);
+  assert.match(document.body.textContent,/Confirm selected area/);await click('Confirm selected area');
+  assert.equal(requestsForLocation,1);assert.match(document.querySelector('ol button[aria-pressed]').textContent,/Nearest registered fixture/);assert.equal(document.querySelectorAll('ol li').length,2);assert.equal(requests.length,1);assert.equal(window.localStorage.length,0);assert.match(document.body.textContent,/straight-line distance/);
 });
 test('Google map adapter accepts click, drag and keyboard-center pins and removes markers/listeners on unmount using a provider stub',async()=>{
   const maps=[],markers=[],picked=[];
@@ -34,7 +35,7 @@ test('Google map adapter accepts click, drag and keyboard-center pins and remove
   window.google={maps:{importLibrary:async name=>name==='maps'?{Map:FakeMap}:{AdvancedMarkerElement:FakeMarker,PinElement:class {}}}};
   await mount(GoogleMap,{stores,origin:null,onPick:point=>picked.push(point),apiKey:'provider-stub-only',mapId:'provider-stub-only'});
   await act(async()=>maps[0].events.click({latLng:{toJSON:()=>({lat:10.3,lng:123.9})}}));
-  const pin=markers.at(-1);pin.position={lat:10.31,lng:123.91};await act(async()=>pin.events.dragend());await click('Use map center as my pin');
+  const pin=markers.find(marker=>marker.gmpDraggable);pin.position={lat:10.31,lng:123.91};await act(async()=>pin.events.dragend());await click('Use map center as my pin');
   assert.deepEqual(picked,[{lat:10.3,lng:123.9},{lat:10.31,lng:123.91},{lat:10.4,lng:123.8}]);
   assert.equal(document.querySelector('script[src*="maps.googleapis.com"]'),null);
   await act(async()=>window.gm_authFailure());assert.match(document.body.textContent,/Google Maps is unavailable/);

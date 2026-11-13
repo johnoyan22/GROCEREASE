@@ -1,6 +1,5 @@
 import OrderReferenceLookup from './OrderReferenceLookup';
 import InvoiceDocument from './InvoiceDocument';
-import PdfExportButton from '../shared/PdfExportButton';
 import { useRef, useState } from 'react';
 import { cancelShopperOrder, updateOrderStatus, readOrderNotification } from '../../services/api';
 import useOrders from '../../hooks/useOrders';
@@ -112,7 +111,6 @@ export default function OrderWorkspace({ role, title = 'Orders', finalOnly = fal
         {role !== 'shopper' && <StoreSelector store={orders.store} loading={orders.loading} error={orders.error} />}
       </div>
       {role === 'supervisor' && <OrderReferenceLookup onFound={id => { setSearch(String(id)); setStatus(''); setUpcoming(false); orders.reload(); }} />}
-      {role === 'supervisor' && <div className="mb-4"><PdfExportButton role={role} kind="orders" filters={{ search, status, upcoming }} disabled={orders.loading || Boolean(orders.error)} /></div>}
       {notice && <p role="status" className="mb-4 rounded-lg border border-gray-200 bg-white p-3 text-sm">{notice}</p>}
       {role === 'supervisor' && !orders.loading && !orders.error && <p className="mb-4 text-sm">Available workers: {orders.workers.filter(function (worker) { return worker.availability === 'Available'; }).length} · Busy workers: {orders.workers.filter(function (worker) { return worker.availability === 'Busy'; }).length}. Each worker can hold one active order.</p>}
       {role === 'shopper' && orders.cop && <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 text-sm"><p>COP strikes: {orders.cop.strike_count} · {orders.cop.allowed ? 'Cash on Pickup available' : orders.cop.permanently_disabled ? 'Cash on Pickup permanently disabled' : 'Cash on Pickup disabled until '+localTime.format(new Date(orders.cop.disabled_until))}</p><p className="mt-1 text-xs text-gray-600">COP restrictions do not deactivate your Shopper account. Digital checkout will require an actual verified payment integration.</p></div>}

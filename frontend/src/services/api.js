@@ -53,6 +53,11 @@ export function getDashboardSummary({ signal } = {}) {
 export function getPublicStoreLocations({ signal } = {}) {
   return sendRequest('/public/store-locations', { signal, cache: 'no-store' });
 }
+export function getPublicProducts(id, filters = {}, { signal } = {}) {
+  const query = new URLSearchParams();
+  for (const key of ['search', 'category', 'page', 'per_page']) if (filters[key] != null && filters[key] !== '') query.set(key, String(filters[key]));
+  return sendRequest('/public/stores/' + encodeURIComponent(id) + '/products?' + query, { signal, cache: 'no-store' });
+}
 export function getAdminStoreLocation(id, { signal } = {}) {
   return sendRequest('/admin/stores/' + encodeURIComponent(id) + '/map-location', { signal, cache: 'no-store' });
 }
@@ -583,5 +588,16 @@ export function saveInvoiceSettings(id, details) {
 export function downloadReportPdf(role, kind, filters = {}) {
   const query = new URLSearchParams();
   for (const key of ['from','until','store_id','search','status','category','upcoming']) if (filters[key] != null && filters[key] !== '' && filters[key] !== false) query.set(key, filters[key] === true ? '1' : String(filters[key]));
-  return downloadAuthenticated('/' + role + '/reports/' + kind + '.pdf?' + query, 'grocerease-' + kind + '.pdf');
+  return downloadAuthenticated('/' + reportPrefix(role) + '/reports/' + encodeURIComponent(kind) + '.pdf?' + query, 'grocerease-' + kind + '.pdf');
+}
+
+function reportPrefix(role) {
+  const prefix = { inventory_worker: 'inventory', supervisor: 'supervisor', admin: 'admin' }[role];
+  if (!prefix) throw new Error('Reports are available only to authorized staff.');
+  return prefix;
+}
+export function getReportData(role, kind, filters = {}, { signal } = {}) {
+  const query = new URLSearchParams();
+  for (const key of ['from','until','store_id','search','status','category','upcoming','page']) if (filters[key] != null && filters[key] !== '' && filters[key] !== false) query.set(key, filters[key] === true ? '1' : String(filters[key]));
+  return sendRequest('/' + reportPrefix(role) + '/reports/' + encodeURIComponent(kind) + '?' + query, { signal, cache: 'no-store' });
 }

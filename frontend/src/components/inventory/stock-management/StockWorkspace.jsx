@@ -1,4 +1,3 @@
-import PdfExportButton from '../../shared/PdfExportButton';
 import { useState } from 'react';
 import useStoreStock from '../../../hooks/useStoreStock';
 import StoreSelector from '../layout/StoreSelector';
@@ -50,7 +49,6 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
       <InventoryLoadState loading={stock.loading} error={stock.error} onRetry={stock.reload} />
       {!stock.loading && !stock.error && stock.store && (
         <>
-          {supervisor && <div className="mb-4"><PdfExportButton role="supervisor" kind="stock" /></div>}
           <div className="mb-5 flex flex-wrap gap-3">
             {supervisor && <>
               <button type="button" aria-pressed={view === 'requests'} onClick={function () { setView('requests'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Corrections ({stock.adjustments.filter(function (row) { return row.status === 'pending'; }).length} pending)</button>

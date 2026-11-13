@@ -1,5 +1,17 @@
 # Database approval review
 
+Public catalog/report follow-up (2026-11-13): **no additional migration** is
+needed or created. It reuses migration 21's explicit public-verification fields
+and migration 18/19 catalog/batch data. No existing migration was edited or
+applied to the working database. Public/report queries are read-only; future
+authorized Admin address edits revoke verification and append to the existing
+location audit table. See `public-catalog-and-report-exports.md`.
+
+Disposable MariaDB verified actual public catalog/report SQL and no-write
+invariants, plus the six concurrency scenarios. Read-only working comparison
+again found **all 31 business tables unchanged**. Existing pending setup below
+still needs explicit approval; no unrestricted migrate/reset/seed was executed.
+
 No working-database migration was applied in this development session.
 Read-only `php artisan migrate:status` on 2026-11-13 confirmed:
 

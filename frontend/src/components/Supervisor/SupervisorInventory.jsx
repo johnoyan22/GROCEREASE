@@ -1,4 +1,3 @@
-import PdfExportButton from '../shared/PdfExportButton';
 import { useState } from 'react';
 import useStoreInventory from '../../hooks/useStoreInventory';
 import StoreSelector from '../inventory/layout/StoreSelector';
@@ -26,7 +25,6 @@ export function SupervisorInventory() {
             <input aria-label="Search store products" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search your store products..." className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm" />
             <button type="button" onClick={reload} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm">Refresh</button>
           </div>
-          <div className="mb-4"><PdfExportButton role="supervisor" kind="stock" filters={{ search }} /></div>
           <ProductTable products={filtered} />
         </>
       )}

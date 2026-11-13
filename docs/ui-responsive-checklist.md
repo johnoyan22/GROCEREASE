@@ -1,5 +1,27 @@
 # Responsive UI verification
 
+## Public catalog and dedicated Reports follow-up
+
+The existing hero/branding/category images remain intact. Verified stores are
+available without Login or Maps configuration. Pin/drag/center confirmation,
+radius/search/area selector, synchronized store selection and inline product
+preview were checked at **320, 375, 390, 430, 768, 1024, 1366 and 1440 px**.
+Product cards stack at 320 px and use two columns from 375 px; long names/prices
+remain contained. Native map height is 224 px on phones and 288 px on larger screens.
+
+**44 real Chrome cases passed** (78.64 seconds), with labeled API/Google SDK
+fixtures. New cases cover public photos/search/categories/store switching,
+permission denial, missing Maps config, no stores, auth CTA navigation, safe
+mixed-store confirmation and staff PDF downloads. Ordinary Orders, Inventory,
+stock editing and transaction screens were checked for absent generic PDF actions.
+Inventory Worker/Supervisor/Admin Reports were checked at staff desktop/tablet/
+phone sizes with contained tables and matching applied export queries.
+
+Full frontend suite: **137 passed**, ESLint/build passed. Full Laravel: **398 /
+6,971 assertions**. Public 375/1440 px preview screenshots were visually inspected.
+Actual Google rendering/key/referrer behavior, physical devices, screen readers
+and human acceptance remain pending. The preserved older checkpoint evidence follows.
+
 Date: 2026-11-13 (Asia/Manila). Automated real-browser tests use local Chrome,
 with labeled API fixtures. Backend/database correctness is tested separately in
 Laravel SQLite and disposable MariaDB. These checks are not human acceptance or physical-device tests.

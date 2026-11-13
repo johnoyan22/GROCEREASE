@@ -44,7 +44,7 @@ class AdminStoreController extends Controller
         $store = $this->saveChanges($store, [
             'store_name' => $validated['store_name'],
             'address' => $validated['address'],
-        ]);
+        ], $request->user()->id);
 
         return response()->json([
             'message' => 'Store details saved.',
@@ -91,12 +91,14 @@ class AdminStoreController extends Controller
         ], ['prohibited']);
     }
 
-    private function saveChanges(Store $store, array $changes): Store
+    private function saveChanges(Store $store, array $changes, ?int $actorId = null): Store
     {
-        return DB::transaction(function () use ($store, $changes) {
+        return DB::transaction(function () use ($store, $changes, $actorId) {
             // Inventory writes and staff placements lock this same store row.
             $current = Store::query()->lockForUpdate()->findOrFail($store->store_id);
             $current->fill($changes);
+
+            if ($current->isDirty('address') && $actorId !== null) app(\App\Services\PublicStoreAccess::class)->invalidate($current->store_id, $actorId);
 
             if ($current->isDirty()) {
                 $current->save();
