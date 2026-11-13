@@ -72,3 +72,38 @@ warning). Migration preservation covered original columns across every existing
 SQLite table. FEFO and unsafe-handover tests passed. Working-database application
 and actual MariaDB concurrency verification remain pending; no real-provider
 tests were performed.
+
+## 4. Orders, invoices and reports
+
+- Assigned-active-store order ID, `GE-{order}`, existing receipt
+  `GE-{order}-{handover}` and `TX-{payment}` lookup returns current order/payment/
+  preparation/claim state. It does not grant a new verification or handover path.
+- Separate immutable Draft / Pro Forma Sales Invoice with unique reference/order,
+  historical prices/units, confirmed payment reference, seller snapshot, generation
+  and export audit. Existing receipts are unchanged.
+- Additive **000020** creates empty `store_invoice_settings`, `order_invoices`,
+  `invoice_audits`. Admin records approved seller details. Official issuance and
+  tax computation remain unavailable until partner/BIR authorization is reviewed.
+- Real Dompdf **3.1.6** downloads for Supervisor order/stock/sales/transactions and
+  Admin sales/transactions/stock/COP; filters, scope, accurate labeled totals,
+  Philippine dates, Unicode peso, repeated headers and page numbers preserved.
+- PDF fixture QA: one-page invoice and order summary; five-page / 100-row report,
+  rendered through PDF.js to PNG because Poppler/Python are absent. Invoice,
+  first and final report pages visually checked; text extraction verifies peso,
+  page numbers and every-page draft marking. No fake records enter business data.
+- Added `docs/invoice-and-payment-readiness.md`: current primary BIR sources,
+  exact partner dependencies, existing test-only PayMongo setup/acceptance steps.
+- PayMongo adapter and migrations remain intact; no provider credentials or real
+  sandbox transactions were used. Existing HTTP-fake regression is retained.
+- Composer identified existing advisories in five Symfony dependencies; limited
+  patch updates address those packages without changing Laravel major versions.
+
+Before dependency patch update: **378 Laravel tests / 6,439 assertions** passed;
+**122 frontend tests**, ESLint and production build passed. Dedicated document/
+lookup/PDF tests: **6 / 158 assertions** passed. Dependency recheck and final
+regression follow; actual provider and partner acceptance remain pending.
+
+After Symfony patch updates: Composer reports **no security vulnerability
+advisories**. Document, migration, sandbox-payment and pickup regressions:
+**38 tests / 862 assertions passed**; frontend adviser API tests **5 passed**;
+ESLint passed. Final full-suite comparison remains checkpoint 6.

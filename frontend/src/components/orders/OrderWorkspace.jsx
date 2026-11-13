@@ -1,3 +1,6 @@
+import OrderReferenceLookup from './OrderReferenceLookup';
+import InvoiceDocument from './InvoiceDocument';
+import PdfExportButton from '../shared/PdfExportButton';
 import { useRef, useState } from 'react';
 import { cancelShopperOrder, updateOrderStatus, readOrderNotification } from '../../services/api';
 import useOrders from '../../hooks/useOrders';
@@ -75,7 +78,7 @@ function OrderCard({ order, role, workers, onSaved, onFailure }) {
       {role === 'supervisor' && nextStatus && <button type="button" disabled={pending || !canChangeStatus} onClick={function () { perform('status'); }} className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm text-white disabled:opacity-50">{pending ? 'Updating...' : actionLabel}</button>}
       <OrderPickup order={order} role={role} onSaved={onSaved} onFailure={onFailure} />
       {role === 'supervisor' && <OrderResolution order={order} onSaved={onSaved} onFailure={onFailure} />}
-      {['shopper', 'supervisor'].includes(role) && order.status === 'completed' && <OrderReceipt orderId={order.order_id} role={role} />}
+      {['shopper', 'supervisor'].includes(role) && order.status === 'completed' && <><OrderReceipt orderId={order.order_id} role={role} /><InvoiceDocument orderId={order.order_id} role={role} /></>}
       {role === 'shopper' && order.status === 'waiting' && order.payment_status === 'unpaid' && <div className="mt-4 border-t border-gray-100 pt-4"><label className="block text-sm">Cancellation reason<textarea value={reason} disabled={pending} maxLength="500" rows="2" onChange={function (event) { setReason(event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2" /></label><button type="button" disabled={pending} onClick={function () { perform('cancel'); }} className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm text-red-700 disabled:opacity-50">Cancel Waiting order</button></div>}
     </article>
   );
@@ -89,7 +92,7 @@ export default function OrderWorkspace({ role, title = 'Orders', finalOnly = fal
   const [upcoming, setUpcoming] = useState(false);
   const filtered = orders.orders.filter(function (order) {
     return (!finalOnly || ['completed', 'canceled'].includes(order.status)) && (!status || order.status === status) && (!upcoming || (['waiting', 'preparing', 'ready_for_pickup'].includes(order.status) && new Date(order.pickup_window_end_at).getTime() >= orders.asOf))
-      && [order.order_id, order.store_name, order.shopper_name].join(' ').toLowerCase().includes(search.toLowerCase());
+      && [order.order_id, order.order_reference, order.store_name, order.shopper_name].join(' ').toLowerCase().includes(search.toLowerCase());
   });
 
   function saved(message) { setNotice(message); orders.reload(); }
@@ -108,6 +111,8 @@ export default function OrderWorkspace({ role, title = 'Orders', finalOnly = fal
         <div><h1 className="text-2xl font-bold">{title}</h1><p className="mt-1 text-sm text-gray-600">Track actual orders, pickup schedules, preparation, payment, and release.</p></div>
         {role !== 'shopper' && <StoreSelector store={orders.store} loading={orders.loading} error={orders.error} />}
       </div>
+      {role === 'supervisor' && <OrderReferenceLookup onFound={id => { setSearch(String(id)); setStatus(''); setUpcoming(false); orders.reload(); }} />}
+      {role === 'supervisor' && <div className="mb-4"><PdfExportButton role={role} kind="orders" filters={{ search, status, upcoming }} disabled={orders.loading || Boolean(orders.error)} /></div>}
       {notice && <p role="status" className="mb-4 rounded-lg border border-gray-200 bg-white p-3 text-sm">{notice}</p>}
       {role === 'supervisor' && !orders.loading && !orders.error && <p className="mb-4 text-sm">Available workers: {orders.workers.filter(function (worker) { return worker.availability === 'Available'; }).length} · Busy workers: {orders.workers.filter(function (worker) { return worker.availability === 'Busy'; }).length}. Each worker can hold one active order.</p>}
       {role === 'shopper' && orders.cop && <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 text-sm"><p>COP strikes: {orders.cop.strike_count} · {orders.cop.allowed ? 'Cash on Pickup available' : orders.cop.permanently_disabled ? 'Cash on Pickup permanently disabled' : 'Cash on Pickup disabled until '+localTime.format(new Date(orders.cop.disabled_until))}</p><p className="mt-1 text-xs text-gray-600">COP restrictions do not deactivate your Shopper account. Digital checkout will require an actual verified payment integration.</p></div>}

@@ -8,6 +8,19 @@ use Tests\Support\TransactionTestCase;
 
 class AdviserMigrationTest extends TransactionTestCase
 {
+    public function test_invoice_migration_creates_empty_tables_without_changing_orders_or_payments(): void
+    {
+        $migration = require database_path('migrations/2026_11_13_000020_create_pro_forma_invoices.php');
+        $migration->down(); $snapshots = [];
+        foreach (Schema::getTableListing() as $table) {
+            if ($table === 'sqlite_sequence') continue;
+            $snapshots[$table] = DB::table($table)->get()->map(fn ($r) => (array) $r)->all();
+        }
+        $migration->up();
+        foreach ($snapshots as $table => $rows) $this->assertSame($rows, DB::table($table)->get()->map(fn ($r) => (array) $r)->all(), $table.' changed');
+        foreach (['store_invoice_settings', 'order_invoices', 'invoice_audits'] as $table) $this->assertDatabaseCount($table, 0);
+    }
+
     public function test_additive_migrations_preserve_every_original_column_and_business_record(): void
     {
         $stock = require database_path('migrations/2026_11_13_000019_add_stock_receiving_and_alerts.php');

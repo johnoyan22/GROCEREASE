@@ -40,6 +40,7 @@ class OrderData
         }
         return [
             'order_id' => $order->order_id, 'store_id' => $order->store_id,
+            'order_reference' => 'GE-'.$order->order_id,
             'store_name' => $order->store_name, 'store_address' => $order->store_address,
             'shopper_name' => $order->shopper_name, 'status' => $order->status,
             'payment_method' => $order->payment_method, 'payment_status' => $order->payment_status,

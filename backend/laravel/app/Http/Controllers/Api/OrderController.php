@@ -20,6 +20,30 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
+    public function lookup(Request $request, OrderData $data, StoreStaffAccess $access): JsonResponse
+    {
+        $input = $request->validate(['reference' => ['required', 'string', 'max:100', 'regex:/^(?:[0-9]+|GE-[0-9]+(?:-[0-9]+)?|TX-[0-9]+)$/i'], 'store_id' => ['prohibited']]);
+        return DB::transaction(function () use ($request, $input, $data, $access) {
+            $context = $access->resolve($request->user(), ['supervisor']); $data->requireSchema();
+            $reference = strtoupper(trim($input['reference']));
+            $query = Order::where('store_id', $context['store']->store_id);
+            if (str_starts_with($reference, 'TX-')) {
+                $query->whereIn('order_id', DB::table('order_payments')->where('id', substr($reference, 3))->select('order_id'));
+            } elseif (preg_match('/^GE-([0-9]+)-([0-9]+)$/', $reference, $parts)) {
+                $query->whereKey($parts[1])->whereIn('order_id', DB::table('order_handovers')->where('id', $parts[2])->select('order_id'));
+            } else { $query->whereKey(str_starts_with($reference, 'GE-') ? substr($reference, 3) : $reference); }
+            $record = $query->lockForUpdate()->first();
+            abort_unless($record, 404, 'This reference is unavailable in your assigned active store. Check the order ID or receipt / transaction reference.');
+            $notice = match (true) {
+                $record->status === 'completed' => 'This order is already completed. Another handover is not permitted.',
+                $record->status === 'canceled' => 'This order was canceled and cannot be claimed.',
+                $record->claim_status !== 'claimable' || $record->status !== 'ready_for_pickup' => 'This order is not currently ready for claiming. Review preparation and claim status.',
+                default => 'Continue through QR/PIN, claimant verification, cashier/provider payment confirmation and physical handover.',
+            };
+            return response()->json(['order' => $data->present($record, true), 'notice' => $notice]);
+        }, 3);
+    }
+
     public function shopperIndex(Request $request, OrderData $data): JsonResponse
     {
         $data->requireSchema();

@@ -559,3 +559,17 @@ export async function downloadAuthenticated(path, filename, mime = 'application/
   if (!response.headers.get('content-type')?.includes(mime)) throw new Error('The server returned an unexpected document type.');
   const url = URL.createObjectURL(await response.blob()); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export function lookupOrderReference(reference) { return sendRequest('/supervisor/order-lookup?' + new URLSearchParams({ reference }), { cache: 'no-store' }); }
+export function generateOrderInvoice(id, role) { return writeAction('/' + role + '/orders/' + encodeURIComponent(id) + '/invoice', 'POST', {}); }
+export function downloadOrderInvoice(id, role) { return downloadAuthenticated('/' + role + '/orders/' + encodeURIComponent(id) + '/invoice.pdf', 'grocerease-order-' + id + '-pro-forma.pdf'); }
+export function getInvoiceSettings(id, { signal } = {}) { return sendRequest('/admin/stores/' + encodeURIComponent(id) + '/invoice-settings', { signal, cache: 'no-store' }); }
+export function saveInvoiceSettings(id, details) {
+  const { registered_name, registered_address, tin, branch_code, tax_registration, numbering_authority, review_notes } = details;
+  return writeAction('/admin/stores/' + encodeURIComponent(id) + '/invoice-settings', 'PUT', { registered_name, registered_address, tin, branch_code, tax_registration, numbering_authority, review_notes });
+}
+export function downloadReportPdf(role, kind, filters = {}) {
+  const query = new URLSearchParams();
+  for (const key of ['from','until','store_id','search','status','category','upcoming']) if (filters[key] != null && filters[key] !== '' && filters[key] !== false) query.set(key, filters[key] === true ? '1' : String(filters[key]));
+  return downloadAuthenticated('/' + role + '/reports/' + kind + '.pdf?' + query, 'grocerease-' + kind + '.pdf');
+}

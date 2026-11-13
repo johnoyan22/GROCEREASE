@@ -14,11 +14,26 @@ Route::middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])->group(f
     Route::put('/inventory/stock-alerts/{alert}/read', [StockAlertController::class, 'read'])->whereNumber('alert');
 });
 Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
+    Route::get('/supervisor/order-lookup', [\App\Http\Controllers\Api\OrderController::class, 'lookup'])->middleware('throttle:30,1,order-lookup:');
+    Route::get('/supervisor/reports/{kind}.pdf', [\App\Http\Controllers\Api\ReportPdfController::class, 'export']);
     Route::post('/supervisor/categories', [StoreCategoryController::class, 'save'])->middleware('throttle:30,1,categories:');
     Route::put('/supervisor/categories/{category}', [StoreCategoryController::class, 'save'])->whereNumber('category')->middleware('throttle:30,1,categories:');
     Route::put('/supervisor/receiving/{receiving}/decision', [StockReceivingController::class, 'decide'])->whereNumber('receiving')->middleware('throttle:30,1,receiving-decision:');
     Route::put('/supervisor/batches/{batch}/quarantine', [StockReceivingController::class, 'quarantine'])->whereNumber('batch')->middleware('throttle:30,1,batch-quarantine:');
 });
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/admin/reports/{kind}.pdf', [\App\Http\Controllers\Api\ReportPdfController::class, 'export']);
+    Route::get('/admin/stores/{store}/invoice-settings', [\App\Http\Controllers\Api\InvoiceController::class, 'settings'])->whereNumber('store');
+    Route::put('/admin/stores/{store}/invoice-settings', [\App\Http\Controllers\Api\InvoiceController::class, 'updateSettings'])->whereNumber('store')->middleware('throttle:15,1,invoice-settings:');
+});
+foreach (['shopper', 'supervisor', 'admin'] as $invoiceRole) {
+    Route::middleware(['auth:sanctum', 'role:'.$invoiceRole])->group(function () use ($invoiceRole) {
+        Route::post('/'.$invoiceRole.'/orders/{order}/invoice', [\App\Http\Controllers\Api\InvoiceController::class, 'generate'])->whereNumber('order')->middleware('throttle:15,1,invoice-generate:');
+        Route::get('/'.$invoiceRole.'/orders/{order}/invoice', [\App\Http\Controllers\Api\InvoiceController::class, 'show'])->whereNumber('order');
+        Route::get('/'.$invoiceRole.'/orders/{order}/invoice.pdf', [\App\Http\Controllers\Api\InvoiceController::class, 'pdf'])->whereNumber('order')->middleware('throttle:20,1,invoice-export:');
+    });
+}
 Route::middleware(['auth:sanctum', 'role:inventory_worker'])->group(function () {
     Route::post('/inventory/items/{item}/photo', [ProductPhotoController::class, 'save'])->whereNumber('item')->middleware('throttle:20,1,product-photo:');
     Route::delete('/inventory/items/{item}/photo', [ProductPhotoController::class, 'destroy'])->whereNumber('item');

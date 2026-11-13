@@ -52,6 +52,14 @@ class TransactionRecordsController extends Controller
         }, 3);
     }
 
+    public function reportRecords(?int $storeId = null)
+    {
+        app(PickupPolicy::class)->requireSchema();
+        $query = $this->records();
+        if ($storeId !== null) $query->where('orders.store_id', $storeId);
+        return $this->verifiedRecords($query->get());
+    }
+
     private function records()
     {
         return DB::table('order_payments')->join('orders', 'orders.order_id', '=', 'order_payments.order_id')
