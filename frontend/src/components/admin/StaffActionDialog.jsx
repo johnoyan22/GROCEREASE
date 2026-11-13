@@ -146,7 +146,7 @@ export default function StaffActionDialog({ action, stores, onClose, onSave }) {
         {!creating && !assigning && <p className="text-sm text-slate-600">Approve this existing staff account for store assignment and staff operations? Approval will be recorded under your Admin account.</p>}
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
           <button type="button" onClick={onClose} disabled={saving} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm disabled:opacity-50">Cancel</button>
-          <button type="submit" disabled={saving || (assigning && (!selectedStore || unchangedStore)) || [401, 403, 404].includes(errorStatus)} className="rounded-lg bg-[#0E5C2F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">{saving ? 'Saving...' : submitLabel}</button>
+          <button type="submit" disabled={saving || (assigning && (!selectedStore || unchangedStore)) || [401, 403, 404].includes(errorStatus)} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">{saving ? 'Saving...' : submitLabel}</button>
         </div>
       </form>
     </dialog>

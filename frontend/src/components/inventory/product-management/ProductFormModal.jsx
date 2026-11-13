@@ -1,9 +1,11 @@
 import { getStoreCategories } from '../../../services/api';
 import ProductPhotoEditor from './ProductPhotoEditor';
 import { X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 function ProductFormModal({ product, storeName, onClose, onSave }) {
+  const dialog = useRef(null);
+  useEffect(() => { const element = dialog.current; element.showModal(); return () => element.close(); }, []);
   const isEditing = Boolean(product);
   const [form, setForm] = useState({
     product_name: product?.product_name ?? '',
@@ -53,8 +55,8 @@ function ProductFormModal({ product, storeName, onClose, onSave }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onKeyDown={(event) => { if (event.key === 'Escape' && !saving) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="product-form-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+    <dialog ref={dialog} aria-labelledby="product-form-title" onCancel={event => { event.preventDefault(); if (!saving) onClose(); }} className="fixed inset-0 m-auto max-h-[94dvh] w-[min(95vw,672px)] max-w-none overflow-y-auto rounded-2xl border-0 bg-white p-0 shadow-xl backdrop:bg-black/40">
+      <section className="w-full">
         <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4">
           <div><h2 id="product-form-title" className="text-lg font-bold text-gray-900">{isEditing ? 'Edit Product' : 'Add New Product'}</h2><p className="mt-1 text-xs text-gray-500">{storeName}</p></div>
           <button type="button" aria-label="Close product form" disabled={saving} onClick={onClose} className="rounded-md p-2 text-gray-500 disabled:opacity-50"><X size={18} /></button>
@@ -88,7 +90,7 @@ function ProductFormModal({ product, storeName, onClose, onSave }) {
         </form>
         {product ? <ProductPhotoEditor product={product} /> : <p className="px-5 pb-5 text-sm text-slate-600">Save the product, then open Edit to upload its photo.</p>}
       </section>
-    </div>
+    </dialog>
   );
 }
 

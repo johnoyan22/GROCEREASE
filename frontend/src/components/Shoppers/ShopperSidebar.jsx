@@ -1,3 +1,4 @@
+import Avatar from '../shared/Avatar';
 import { 
   LayoutDashboard, ShoppingBag, Sparkles, Package, Store, Bell, 
   User, CreditCard, History, Settings, LogOut, ShoppingCart
@@ -6,13 +7,13 @@ import Logo from '../../assets/images/Logo.png';
 import { logout } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 
-function ShopperSidebar({ activeTab, setActiveTab }) {
+function ShopperSidebar({ activeTab, setActiveTab, user }) {
   const navigate = useNavigate();
 
   const getButtonClass = (tabName) => {
     const baseClass = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border";
     return activeTab === tabName 
-      ? `${baseClass} bg-[#006e00] text-white border-[#006e00] shadow-sm` 
+      ? `${baseClass} bg-primary text-white border-primary shadow-sm` 
       : `${baseClass} text-gray-700 hover:bg-gray-100 border-gray-200`;
   };
 
@@ -27,16 +28,16 @@ function ShopperSidebar({ activeTab, setActiveTab }) {
     };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between p-4 z-10 shrink-0">
+    <aside className="w-full lg:w-64 min-h-full bg-white border-r border-gray-200 flex flex-col justify-between p-4 z-10 shrink-0">
       <div>
         <div className="flex items-center gap-3 px-2 py-3 mb-6">
           <img src={Logo} alt="GrocerEase Logo" className="w-10 h-10 object-contain" />
           <span className="text-2xl font-black text-black tracking-tight">
-            Grocer<span className="text-[#006e00]">Ease</span>
+            Grocer<span className="text-primary">Ease</span>
           </span>
         </div>
 
-        <nav className="space-y-1.5">
+        <div className="mb-5 flex items-center gap-3 rounded-xl bg-green-50 p-3"><Avatar profile={user?.profile} imageUrl={user?.profile?.image_url} className="h-9 w-9" /><div className="min-w-0"><p className="truncate text-sm font-semibold">{[user?.profile?.first_name, user?.profile?.last_name].filter(Boolean).join(" ") || "Shopper"}</p><p className="text-xs text-slate-600">Shopper account</p></div></div><nav aria-label="Shopper navigation" className="space-y-1.5">
           <button
             onClick={() => setActiveTab('Dashboard')}
             className={getButtonClass('Dashboard')}
@@ -61,7 +62,7 @@ function ShopperSidebar({ activeTab, setActiveTab }) {
             onClick={() => setActiveTab('AI')}
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border ${
               activeTab === 'AI' 
-                ? 'bg-[#006e00] text-white border-[#006e00]' 
+                ? 'bg-primary text-white border-primary' 
                 : 'text-gray-700 hover:bg-gray-100 border-gray-200'
             }`}
           >
@@ -69,8 +70,8 @@ function ShopperSidebar({ activeTab, setActiveTab }) {
               <Sparkles className={`w-4 h-4 ${activeTab === 'AI' ? 'text-white' : 'text-emerald-600'}`} />
               AI Recommendations
             </div>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-              activeTab === 'AI' ? 'bg-white text-[#006e00]' : 'bg-emerald-100 text-[#006e00]'
+            <span className={`text-xs px-1.5 py-0.5 rounded font-bold ${
+              activeTab === 'AI' ? 'bg-white text-primary' : 'bg-emerald-100 text-primary'
             }`}>
               ✨ AI
             </span>
@@ -88,7 +89,7 @@ function ShopperSidebar({ activeTab, setActiveTab }) {
             onClick={() => setActiveTab('Pickup')}
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold transition border ${
               activeTab === 'Pickup' 
-                ? 'bg-[#006e00] text-white border-[#006e00]' 
+                ? 'bg-primary text-white border-primary' 
                 : 'text-gray-700 hover:bg-gray-100 border-gray-200'
             }`}
           >
@@ -138,7 +139,7 @@ function ShopperSidebar({ activeTab, setActiveTab }) {
           className={getButtonClass('Settings')}
         >
           <Settings className="w-4 h-4" />
-          Settings
+          Account &amp; Security
         </button>
 
         <button

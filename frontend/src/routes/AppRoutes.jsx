@@ -1,40 +1,41 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 
-import VerifyEmailPage from '../pages/auth/VerifyEmailPage';
+const VerifyEmailPage = lazy(() => import('../pages/auth/VerifyEmailPage'));
 
-import LandingPage from '../pages/public/LandingPage';
-import LoginPage from '../pages/auth/LoginPage';
-import Register from '../pages/shopper/Register';
-import ShopperDashboard from '../pages/shopper/ShopperDashboard';
+const LandingPage = lazy(() => import('../pages/public/LandingPage'));
+const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
+const Register = lazy(() => import('../pages/auth/RegisterPage'));
+const ShopperDashboard = lazy(() => import('../pages/shopper/ShopperDashboard'));
 
-import InventoryDashboard from '../pages/inventory/InventoryDashboard';
-import InventoryProfile from '../pages/inventory/InventoryProfile';
-import ProductManagement from '../pages/inventory/ProductManagement';
-import StockManagement from '../pages/inventory/StockManagement';
-import StoreOrders from '../pages/inventory/StoreOrders';
-import StockVerificationRequests from '../pages/inventory/StockVerificationRequests';
-import LowStockMonitoring from '../pages/inventory/LowStockMonitoring';
-import SubmitStockUpdate from '../pages/inventory/SubmitStockUpdate';
-import InventoryNotifications from '../pages/inventory/InventoryNotifications';
-import ActivityLog from '../pages/inventory/ActivityLog';
-import SupervisorApp from '../components/Supervisor/SupervisorApp';
+const InventoryDashboard = lazy(() => import('../pages/inventory/InventoryDashboard'));
+const InventoryProfile = lazy(() => import('../pages/inventory/InventoryProfile'));
+const ProductManagement = lazy(() => import('../pages/inventory/ProductManagement'));
+const StockManagement = lazy(() => import('../pages/inventory/StockManagement'));
+const StoreOrders = lazy(() => import('../pages/inventory/StoreOrders'));
+const StockVerificationRequests = lazy(() => import('../pages/inventory/StockVerificationRequests'));
+const LowStockMonitoring = lazy(() => import('../pages/inventory/LowStockMonitoring'));
+const SubmitStockUpdate = lazy(() => import('../pages/inventory/SubmitStockUpdate'));
+const InventoryNotifications = lazy(() => import('../pages/inventory/InventoryNotifications'));
+const ActivityLog = lazy(() => import('../pages/inventory/ActivityLog'));
+const SupervisorApp = lazy(() => import('../components/Supervisor/SupervisorApp'));
 
-import AdminLayout from '../components/admin/AdminLayout';
-import AdminDashboard from '../pages/admin/AdminDashboard';
-import AccountManagement from '../pages/admin/AccountManagement';
-import RoleManagement from '../pages/admin/RoleManagement';
-import StaffManagement from '../pages/admin/StaffManagement';
-import StoreManagement from '../pages/admin/StoreManagement';
-import FinancialSetup from '../pages/admin/FinancialSetup';
-import CopManagement from '../pages/admin/CopManagement';
+const AdminLayout = lazy(() => import('../components/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'));
+const AccountManagement = lazy(() => import('../pages/admin/AccountManagement'));
+const RoleManagement = lazy(() => import('../pages/admin/RoleManagement'));
+const StaffManagement = lazy(() => import('../pages/admin/StaffManagement'));
+const StoreManagement = lazy(() => import('../pages/admin/StoreManagement'));
+const FinancialSetup = lazy(() => import('../pages/admin/FinancialSetup'));
+const CopManagement = lazy(() => import('../pages/admin/CopManagement'));
 import TransactionRecords from '../components/orders/TransactionRecords';
-import ReportModule from '../pages/admin/ReportModule';
-import Settings from '../pages/admin/Settings';
+const ReportModule = lazy(() => import('../pages/admin/ReportModule'));
+const Settings = lazy(() => import('../pages/admin/Settings'));
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<p role="status" className="p-6">Loading GrocerEase…</p>}><Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Register />} />
@@ -76,7 +77,7 @@ function AppRoutes() {
       </Route>
 
       <Route path="*" element={<LandingPage />} />
-    </Routes>
+    </Routes></Suspense>
   );
 }
 

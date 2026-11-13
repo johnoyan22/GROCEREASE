@@ -62,7 +62,7 @@ function Topbar({ onMenuClick, user }) {
               <p className="max-w-40 truncate text-xs font-bold leading-none text-gray-800">
                 {fullName}
               </p>
-              <p className="mt-0.5 text-[10px] text-gray-400">
+              <p className="mt-0.5 text-xs text-gray-500">
                 Inventory Worker
               </p>
             </div>

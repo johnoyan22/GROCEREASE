@@ -35,7 +35,7 @@ export default function ShopperBrowseProducts({ shopping, search, setSearch, onV
   }
 
   return (
-    <main className="bg-gray-50 p-6">
+    <main className="bg-page p-4 sm:p-6">
       <div className="mb-5 flex flex-col justify-between gap-4 md:flex-row">
         <div><h1 className="text-2xl font-bold">Browse Store Products</h1><p className="mt-1 text-sm text-gray-600">Choose one store for your cart. Items are reserved only when an order is successfully placed.</p></div>
         <button type="button" onClick={refresh} className="rounded-lg border border-green-700 bg-white px-4 py-2 text-sm text-green-800">Refresh products</button>

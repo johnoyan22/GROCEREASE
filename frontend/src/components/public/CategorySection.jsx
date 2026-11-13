@@ -1,25 +1,4 @@
-// Landing-page categories for the Shopper interface.
-function CategorySection() {
-  return (
-    <section className="mx-auto mt-16 max-w-7xl px-8">
-
-      {/* SECTION HEADER */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-green-900">Shop By Categories</h2>
-        <button className="font-semibold text-red-700">View All</button>
-      </div>
-
-      {/* CATEGORY CARDS */}
-      <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-5">
-        <div>Fruits</div>
-        <div>Vegetables</div>
-        <div>Dairy & Eggs</div>
-        <div>Beverages</div>
-        <div>Meat & Poultry</div>
-      </div>
-
-    </section>
-  );
+import { Apple, Carrot, Milk, CupSoda, Wheat } from 'lucide-react';
+export default function CategorySection() {
+  return <section id="categories" className="mx-auto max-w-7xl px-4 py-10 sm:px-8"><h2 className="text-2xl font-bold text-green-950 sm:text-3xl">Everyday groceries, thoughtfully organized</h2><p className="mt-3 max-w-2xl text-slate-600">Find what belongs on your list. These are illustrative categories; each store maintains its own catalog and availability.</p><div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{[['Fruit',Apple],['Vegetables',Carrot],['Dairy & eggs',Milk],['Beverages',CupSoda],['Pantry staples',Wheat]].map(([label,Icon]) => <article key={label} className="rounded-2xl border border-green-100 bg-white p-5"><div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-green-50"><Icon size={32} className="text-green-800" strokeWidth={1.5} /></div><h3 className="font-semibold">{label}</h3></article>)}</div></section>;
 }
-
-export default CategorySection;

@@ -34,38 +34,38 @@ function VerificationTable({ requests, onViewDetails }) {
                 <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800">{request.id}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${request.requesterColor}`}>
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${request.requesterColor}`}>
                       {request.requesterInitials}
                     </span>
                     <div>
                       <p className="font-medium text-gray-900">{request.requestedBy}</p>
-                      <p className="text-[10px] text-gray-500">Supervisor</p>
+                      <p className="text-xs text-gray-500">Supervisor</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    <span className={`flex h-9 w-8 shrink-0 items-center justify-center rounded-md text-[9px] font-bold ${request.productColor}`}>
+                    <span className={`flex h-9 w-8 shrink-0 items-center justify-center rounded-md text-xs font-bold ${request.productColor}`}>
                       {request.productInitials}
                     </span>
                     <div>
                       <p className="font-medium text-gray-900">{request.product}</p>
-                      <p className="text-[10px] text-gray-500">{request.size} ({request.sku})</p>
+                      <p className="text-xs text-gray-500">{request.size} ({request.sku})</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-800">{request.itemsToVerify}</td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <p>{request.requestDate}</p>
-                  <p className="mt-0.5 text-[10px] text-gray-500">{request.requestTime}</p>
+                  <p className="mt-0.5 text-xs text-gray-500">{request.requestTime}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-md px-2 py-1 text-[10px] font-medium ${priorityStyles[request.priority]}`}>
+                  <span className={`rounded-md px-2 py-1 text-xs font-medium ${priorityStyles[request.priority]}`}>
                     {request.priority}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-md px-2 py-1 text-[10px] font-medium ${statusStyles[request.status]}`}>
+                  <span className={`rounded-md px-2 py-1 text-xs font-medium ${statusStyles[request.status]}`}>
                     {request.status}
                   </span>
                 </td>

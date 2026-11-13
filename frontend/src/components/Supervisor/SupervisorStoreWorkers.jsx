@@ -10,7 +10,7 @@ import { Badge, StatCard } from './SupervisorUI';
 
 function StaffIdentity({ staff }) {
   const name = [staff.first_name, staff.last_name].filter(Boolean).join(' ') || 'Inventory Worker';
-  return <><p className="font-semibold">{name} <span className="text-xs font-normal text-slate-400">#{staff.id}</span></p><p className="mt-1 break-all text-xs text-slate-500">{staff.email}</p></>;
+  return <><p className="font-semibold">{name} <span className="text-xs font-normal text-slate-500">#{staff.id}</span></p><p className="mt-1 break-all text-xs text-slate-500">{staff.email}</p></>;
 }
 
 export function SupervisorStoreWorkers() {
@@ -43,7 +43,7 @@ export function SupervisorStoreWorkers() {
   return (
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="flex flex-col justify-between gap-4 md:flex-row">
-        <div><p className="text-xs font-semibold text-green-700">Supervisor</p><h1 className="mt-1 text-2xl font-bold text-slate-900">Store Workers</h1><p className="mt-1 max-w-2xl text-sm text-slate-500">Manage the Inventory Workers, pickers, and packers for your assigned store.</p>{store && <p className="mt-2 text-xs text-slate-400">Store #{store.store_id}</p>}</div>
+        <div><p className="text-xs font-semibold text-green-700">Supervisor</p><h1 className="mt-1 text-2xl font-bold text-slate-900">Store Workers</h1><p className="mt-1 max-w-2xl text-sm text-slate-500">Manage the Inventory Workers, pickers, and packers for your assigned store.</p>{store && <p className="mt-2 text-xs text-slate-500">Store #{store.store_id}</p>}</div>
         <StoreSelector store={store} loading={loading} error={error} />
       </div>
       <div role="group" aria-label="Worker category" className="flex flex-wrap gap-2">

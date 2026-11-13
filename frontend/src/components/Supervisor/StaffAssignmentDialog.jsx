@@ -57,7 +57,7 @@ export default function StaffAssignmentDialog({ staff, store, onClose, onSave, o
         <h2 id={titleId} className="text-lg font-bold">Assign Inventory Worker</h2>
         {failure && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800"><p>{failure}</p>{details && <p className="mt-1">{details}</p>}{errorStatus === 401 && <Link to="/login" className="mt-2 inline-block underline">Sign in again</Link>}</div>}
         <div className="rounded-xl border border-slate-200 p-4 text-sm">
-          <p className="font-semibold">{name} <span className="font-normal text-slate-400">#{staff.id}</span></p>
+          <p className="font-semibold">{name} <span className="font-normal text-slate-500">#{staff.id}</span></p>
           <p className="mt-1 break-all text-slate-500">{staff.email}</p>
           <p className="mt-2 text-xs font-medium text-green-700">Admin-approved Inventory Worker</p>
         </div>

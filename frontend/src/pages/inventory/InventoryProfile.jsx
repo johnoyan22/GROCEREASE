@@ -150,7 +150,7 @@ function InventoryProfile() {
         <div className="flex items-center gap-4">
           <div
             aria-hidden="true"
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500"
           >
             <Avatar profile={profile} />
           </div>

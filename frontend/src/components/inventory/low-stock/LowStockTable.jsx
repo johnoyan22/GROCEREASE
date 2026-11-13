@@ -22,16 +22,16 @@ function LowStockTable({ items, onView, onUpdate }) {
                 <tr key={item.id} className="hover:bg-gray-50/70">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <span className={`flex h-10 w-9 items-center justify-center rounded-md text-[10px] font-bold ${item.thumbnailColor}`}>{item.thumbnail}</span>
-                      <div><p className="font-medium text-gray-900">{item.name}</p><p className="text-[10px] text-gray-500">{item.size}</p></div>
+                      <span className={`flex h-10 w-9 items-center justify-center rounded-md text-xs font-bold ${item.thumbnailColor}`}>{item.thumbnail}</span>
+                      <div><p className="font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-500">{item.size}</p></div>
                     </div>
                   </td>
-                  <td className="px-4 py-3"><p className="font-medium">{item.sku}</p><p className="text-[10px] text-gray-500">{item.barcode}</p></td>
+                  <td className="px-4 py-3"><p className="font-medium">{item.sku}</p><p className="text-xs text-gray-500">{item.barcode}</p></td>
                   <td className="px-4 py-3">{item.category}</td>
                   <td className={`px-4 py-3 font-semibold ${isCritical ? "text-red-600" : "text-orange-600"}`}>{item.stock} units</td>
                   <td className="px-4 py-3">{item.reorderLevel} units</td>
-                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-[10px] font-medium ${isCritical ? "bg-red-50 text-red-600" : "bg-yellow-50 text-yellow-700"}`}>{isCritical ? "Critical" : "Low"}</span></td>
-                  <td className="whitespace-nowrap px-4 py-3"><p>{item.lastUpdated}</p><p className="text-[10px] text-gray-500">{item.updateTime}</p></td>
+                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-medium ${isCritical ? "bg-red-50 text-red-600" : "bg-yellow-50 text-yellow-700"}`}>{isCritical ? "Critical" : "Low"}</span></td>
+                  <td className="whitespace-nowrap px-4 py-3"><p>{item.lastUpdated}</p><p className="text-xs text-gray-500">{item.updateTime}</p></td>
                   <td className="px-4 py-3"><div className="flex gap-2"><button type="button" onClick={() => onView(item)} className="rounded-md border border-gray-200 px-3 py-2 text-blue-700 hover:bg-blue-50">View</button><button type="button" onClick={() => onUpdate(item)} className="rounded-md border border-green-200 px-3 py-2 text-green-700 hover:bg-green-50">Update</button></div></td>
                 </tr>
               );

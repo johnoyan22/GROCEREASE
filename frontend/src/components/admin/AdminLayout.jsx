@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { Menu } from 'lucide-react';
+import NavigationDrawer from '../shared/NavigationDrawer';
 import {
   NavLink,
   useNavigate,
@@ -32,6 +35,7 @@ const navItems = [
 
 export default function AdminLayout({ children }) {
   const navigate = useNavigate();
+  const [navigationOpen, setNavigationOpen] = useState(false);
     const { user } = useOutletContext();
 
   let fullName = 'Admin';
@@ -57,9 +61,8 @@ export default function AdminLayout({ children }) {
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-800 antialiased font-sans">
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-30">
+  const sidebar = (
+      <aside onClickCapture={event => { if (event.target.closest("a")) setNavigationOpen(false); }} className="h-full w-64 max-w-full overflow-y-auto bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 ">
         <div>
           <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
@@ -69,11 +72,11 @@ export default function AdminLayout({ children }) {
               <h1 className="text-lg font-bold leading-tight">
                 Grocer <span className="text-emerald-600">Ease</span>
               </h1>
-              <p className="text-[11px] text-slate-400 font-medium">Grocery System</p>
+              <p className="text-xs text-slate-500 font-medium">Grocery System</p>
             </div>
           </div>
 
-          <nav className="p-4 space-y-1.5">
+          <nav aria-label="Admin navigation" className="p-4 space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -83,7 +86,7 @@ export default function AdminLayout({ children }) {
                   className={({ isActive }) =>
                     `w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-[#0E5C2F] text-white shadow-sm font-semibold'
+                        ? 'bg-primary text-white shadow-sm font-semibold'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
@@ -105,7 +108,7 @@ export default function AdminLayout({ children }) {
             to="/admin/settings"
             className={function (linkState) {
               if (linkState.isActive) {
-                return "flex w-full items-center gap-3.5 rounded-xl bg-[#0E5C2F] px-4 py-2.5 text-sm font-semibold text-white";
+                return "flex w-full items-center gap-3.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white";
               }
 
               return "flex w-full items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50";
@@ -123,13 +126,20 @@ export default function AdminLayout({ children }) {
           </button>
         </div>
       </aside>
+  );
 
-      <div className="pl-64 flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20">
+  return (
+    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-800 antialiased font-sans">
+      <div className="fixed inset-y-0 left-0 z-30 hidden lg:block">{sidebar}</div>
+      {navigationOpen && <NavigationDrawer onClose={() => setNavigationOpen(false)}>{sidebar}</NavigationDrawer>}
+
+      <div className="lg:pl-64 flex-1 flex flex-col min-w-0">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+<button type="button" aria-label="Open navigation menu" onClick={() => setNavigationOpen(true)} className="rounded-lg p-2 lg:hidden"><Menu size={22} /></button><p className="mr-auto font-semibold text-green-900 lg:hidden">GrocerEase</p>
                       <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
               <div
                 aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-400"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-500"
               >
                 <UserRound size={20} />
               </div>
@@ -139,19 +149,19 @@ export default function AdminLayout({ children }) {
                   {fullName}
                 </p>
 
-                <p className="text-[11px] text-slate-400">
+                <p className="text-xs text-slate-500">
                   {user.role.name}
                 </p>
               </div>
             </div>
         </header>
 
-        <main className="flex-1 p-8">
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
 
-        <footer className="px-8 py-4 border-t border-slate-200 bg-white flex justify-between items-center text-xs text-slate-400">
-          <p>© 2025 GrocerEase Grocery System. All rights reserved.</p>
+        <footer className="px-4 py-4 border-t border-slate-200 bg-white flex flex-wrap gap-3 justify-between items-center text-xs text-slate-500">
+          <p>© 2026 GrocerEase Grocery System. All rights reserved.</p>
           <p>Version 1.0.0</p>
         </footer>
       </div>

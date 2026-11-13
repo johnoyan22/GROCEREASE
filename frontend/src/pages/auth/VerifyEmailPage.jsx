@@ -166,7 +166,7 @@ function VerifyEmailPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12 flex items-center justify-center">
       <section className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 sm:p-10 shadow-sm">
-        <Link to="/" className="text-xl font-black text-[#006e00]">
+        <Link to="/" className="text-xl font-black text-primary">
           GrocerEase
         </Link>
 
@@ -182,7 +182,7 @@ function VerifyEmailPage() {
             <button
               type="button"
               onClick={handleCheckStatus}
-              className="font-semibold text-[#006e00]"
+              className="font-semibold text-primary"
             >
               Try again
             </button>
@@ -215,7 +215,7 @@ function VerifyEmailPage() {
 
             <Link
               to="/login?verification=required"
-              className="inline-block rounded-lg bg-[#006e00] px-4 py-3 font-semibold text-white"
+              className="inline-block rounded-lg bg-primary px-4 py-3 font-semibold text-white"
             >
               Sign in to continue
             </Link>
@@ -241,14 +241,14 @@ function VerifyEmailPage() {
 
             <Link
               to={dashboardPath}
-              className="inline-block rounded-lg bg-[#006e00] px-4 py-3 font-semibold text-white"
+              className="inline-block rounded-lg bg-primary px-4 py-3 font-semibold text-white"
             >
               Continue to dashboard
             </Link>
           </div>
         ) : isVerified ? (
           <div className="mt-6 space-y-4">
-            <h1 className="text-2xl font-bold text-[#006e00]">
+            <h1 className="text-2xl font-bold text-primary">
               Email verified
             </h1>
 
@@ -259,7 +259,7 @@ function VerifyEmailPage() {
             {dashboardPath ? (
               <Link
                 to={dashboardPath}
-                className="inline-block rounded-lg bg-[#006e00] px-4 py-3 font-semibold text-white"
+                className="inline-block rounded-lg bg-primary px-4 py-3 font-semibold text-white"
               >
                 Continue to dashboard
               </Link>
@@ -304,7 +304,7 @@ function VerifyEmailPage() {
                 type="button"
                 onClick={handleCheckStatus}
                 disabled={isBusy}
-                className="rounded-lg bg-[#006e00] px-4 py-3 font-semibold text-white disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-3 font-semibold text-white disabled:opacity-50"
               >
                 I've opened the link — check status
               </button>
@@ -313,7 +313,7 @@ function VerifyEmailPage() {
                 type="button"
                 onClick={handleResend}
                 disabled={isBusy || resendSeconds > 0}
-                className="rounded-lg border border-[#006e00] px-4 py-3 font-semibold text-[#006e00] disabled:opacity-50"
+                className="rounded-lg border border-primary px-4 py-3 font-semibold text-primary disabled:opacity-50"
               >
                 {isResending
                   ? 'Requesting email...'
@@ -337,7 +337,7 @@ function VerifyEmailPage() {
         )}
 
         {notice && (
-          <p role="status" className="mt-4 text-sm text-[#006e00]">
+          <p role="status" className="mt-4 text-sm text-primary">
             {notice}
           </p>
         )}

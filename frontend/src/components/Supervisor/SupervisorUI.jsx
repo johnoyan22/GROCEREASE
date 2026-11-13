@@ -20,9 +20,9 @@ export function StorePicker({ storeName, storeAddress }) {
       </span>
       <span>
         <span className="block text-sm font-semibold text-slate-800">{storeName}</span>
-        <span className="block text-xs text-slate-400">{storeAddress}</span>
+        <span className="block text-xs text-slate-500">{storeAddress}</span>
       </span>
-      <ChevronDown size={16} className="ml-2 text-slate-400" />
+      <ChevronDown size={16} className="ml-2 text-slate-500" />
     </button>
   )
 }
@@ -32,7 +32,7 @@ export function PageHeader({ title, subtitle }) {
     <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
       <div>
         <p className="text-xs font-semibold text-green-700">Supervisor</p>
-        <h1 className="font-serif text-3xl text-slate-900">{title}</h1>
+        <h1 className="font-sans text-3xl text-slate-900">{title}</h1>
         {subtitle ? <p className="mt-1 max-w-2xl text-sm text-slate-500">{subtitle}</p> : null}
       </div>
       <StoreSelector />
@@ -46,7 +46,7 @@ export function StatCard({ icon: Icon, label, value, hint, hintTone = 'green' })
     blue: 'text-sky-600',
     orange: 'text-amber-600',
     red: 'text-red-600',
-    gray: 'text-slate-400',
+    gray: 'text-slate-500',
   }[hintTone]
 
   return (
@@ -157,7 +157,7 @@ export function DonutChart({ totalLabel = 'Total', totalValue, segments }) {
       >
         <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-white text-center">
           <span className="text-lg font-semibold text-slate-900">{totalValue}</span>
-          <span className="text-[10px] text-slate-400">{totalLabel}</span>
+          <span className="text-xs text-slate-500">{totalLabel}</span>
         </div>
       </div>
       <ul className="space-y-1.5 text-sm">
@@ -165,7 +165,7 @@ export function DonutChart({ totalLabel = 'Total', totalValue, segments }) {
           <li key={seg.label} className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: seg.color }} />
             <span className="text-slate-600">{seg.label}</span>
-            <span className="text-slate-400">{seg.percent}</span>
+            <span className="text-slate-500">{seg.percent}</span>
           </li>
         ))}
       </ul>
@@ -185,7 +185,7 @@ export function BarChart({ items, maxValue }) {
               style={{ height: `${Math.max(4, (item.value / max) * 100)}%` }}
             />
           </div>
-          <span className="text-xs text-slate-400">{item.label}</span>
+          <span className="text-xs text-slate-500">{item.label}</span>
         </div>
       ))}
     </div>
@@ -219,7 +219,7 @@ export function DataTable({ columns, rows }) {
           ))}
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="py-6 text-center text-slate-400">
+              <td colSpan={columns.length} className="py-6 text-center text-slate-500">
                 Nothing to show yet.
               </td>
             </tr>
@@ -273,12 +273,12 @@ export function Pagination({ page, pageCount, total, label, onPageChange }) {
 export function SearchInput({ value, onChange, placeholder }) {
   return (
     <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
-      <Search size={14} className="text-slate-400" />
+      <Search size={14} className="text-slate-500" />
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-48 outline-none placeholder:text-slate-400"
+        className="w-48 outline-none placeholder:text-slate-500"
       />
     </div>
   )

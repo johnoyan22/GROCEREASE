@@ -94,7 +94,7 @@ function togglePasswordVisibility(event) {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-3 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -111,12 +111,12 @@ function togglePasswordVisibility(event) {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-3 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
 
-            <label className="mt-2 ml-2 flex items-center gap-2 text-xs font-semibold text-[#006e00]">
+            <label className="mt-2 ml-2 flex items-center gap-2 text-xs font-semibold text-primary">
               <input
                 type="checkbox"
                 checked={isChecked}
@@ -131,7 +131,7 @@ function togglePasswordVisibility(event) {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-4 disabled:opacity-60"
+            className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-4 disabled:opacity-60"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
@@ -142,7 +142,7 @@ function togglePasswordVisibility(event) {
 
           <p className="text-center text-xs text-gray-600 mt-6">
             Don't have an account?{' '}
-            <Link to="/register" className="text-[#006e00] font-bold hover:underline">
+            <Link to="/register" className="text-primary font-bold hover:underline">
               Register
             </Link>
           </p>

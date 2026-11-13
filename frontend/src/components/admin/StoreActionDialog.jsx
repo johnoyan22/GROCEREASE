@@ -88,7 +88,7 @@ export default function StoreActionDialog({ action, onClose, onSave }) {
         </>}
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
           <button type="button" onClick={onClose} disabled={saving} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm disabled:opacity-50">Cancel</button>
-          <button type="submit" disabled={saving || [401, 403, 404].includes(errorStatus)} className={`rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 ${deactivating ? 'bg-amber-700 hover:bg-amber-800' : 'bg-[#0E5C2F] hover:bg-emerald-900'}`}>{saving ? 'Saving...' : submitLabel}</button>
+          <button type="submit" disabled={saving || [401, 403, 404].includes(errorStatus)} className={`rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 ${deactivating ? 'bg-amber-700 hover:bg-amber-800' : 'bg-primary hover:bg-emerald-900'}`}>{saving ? 'Saving...' : submitLabel}</button>
         </div>
       </form>
     </dialog>

@@ -13,8 +13,8 @@ function StockProductSelection({ products, selectedIds, onToggle }) {
               return (
                 <tr key={product.id} className={isSelected ? "bg-green-50/40" : ""}>
                   <td className="px-4 py-3"><input type="checkbox" checked={isSelected} onChange={() => onToggle(product.id)} aria-label={`Select ${product.name}`} className="h-4 w-4 accent-green-700" /></td>
-                  <td className="px-4 py-3"><div className="flex items-center gap-3"><span className={`flex h-10 w-9 items-center justify-center rounded-md text-[10px] font-bold ${product.thumbnailColor}`}>{product.thumbnail}</span><div><p className="font-medium text-gray-900">{product.name}</p><p className="text-[10px] text-gray-500">{product.size}</p></div></div></td>
-                  <td className="px-4 py-3"><p className="font-medium">{product.sku}</p><p className="text-[10px] text-gray-500">{product.barcode}</p></td>
+                  <td className="px-4 py-3"><div className="flex items-center gap-3"><span className={`flex h-10 w-9 items-center justify-center rounded-md text-xs font-bold ${product.thumbnailColor}`}>{product.thumbnail}</span><div><p className="font-medium text-gray-900">{product.name}</p><p className="text-xs text-gray-500">{product.size}</p></div></div></td>
+                  <td className="px-4 py-3"><p className="font-medium">{product.sku}</p><p className="text-xs text-gray-500">{product.barcode}</p></td>
                   <td className="px-4 py-3">{product.category}</td>
                   <td className="px-4 py-3"><p className="font-semibold text-gray-900">{product.stock} units</p></td>
                   <td className={`px-4 py-3 font-medium ${status === "Critical" ? "text-red-600" : status === "Low Stock" ? "text-orange-600" : "text-green-700"}`}>{status}</td>

@@ -75,7 +75,7 @@ function ProductStatCards({ products }) {
           <div className="min-w-0">
             <p className="text-xs font-medium text-gray-500">{stat.title}</p>
             <p className="mt-1 truncate text-xl font-bold text-gray-800">{stat.value}</p>
-            <p className="mt-1 text-[11px] text-gray-400">{stat.description}</p>
+            <p className="mt-1 text-xs text-gray-500">{stat.description}</p>
           </div>
         </article>
       ))}

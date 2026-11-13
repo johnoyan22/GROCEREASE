@@ -12,7 +12,7 @@ let server, root, Login, Register, Profile, Settings, Avatar;
 before(async () => {
   server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' });
   Login = (await server.ssrLoadModule('/src/components/auth/loginForm.jsx')).default;
-  Register = (await server.ssrLoadModule('/src/components/Shoppers/registerForm.jsx')).default;
+  Register = (await server.ssrLoadModule('/src/components/auth/RegisterForm.jsx')).default;
   Profile = (await server.ssrLoadModule('/src/components/Shoppers/ShopperMyProfile.jsx')).default;
   Settings = (await server.ssrLoadModule('/src/components/Shoppers/ShopperSettings.jsx')).default;
   Avatar = (await server.ssrLoadModule('/src/components/shared/Avatar.jsx')).default;

@@ -31,7 +31,7 @@ function InventoryLayout({ children, activePage = "Dashboard" }) {
           {children}
         </main>
 
-        <footer className="flex flex-col gap-1 border-t border-gray-200 bg-white px-4 py-4 text-[11px] text-gray-400 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <footer className="flex flex-col gap-1 border-t border-gray-200 bg-white px-4 py-4 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>© 2026 GrocerEase Grocery System. All rights reserved.</p>
           <p>Version 1.0.0</p>
         </footer>

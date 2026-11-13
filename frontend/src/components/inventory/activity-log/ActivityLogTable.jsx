@@ -9,11 +9,11 @@ function ActivityLogTable({ activities }) {
           <tbody className="divide-y divide-gray-100 text-gray-700">
             {activities.map((activity) => (
               <tr key={activity.id} className="hover:bg-gray-50/70">
-                <td className="whitespace-nowrap px-4 py-3"><p>{activity.date}</p><p className="text-[10px] text-gray-500">{activity.time}</p></td>
+                <td className="whitespace-nowrap px-4 py-3"><p>{activity.date}</p><p className="text-xs text-gray-500">{activity.time}</p></td>
                 <td className={`px-4 py-3 font-medium ${activity.activityColor}`}>{activity.activity}</td>
-                <td className="max-w-xs px-4 py-3"><p>{activity.details}</p>{activity.subdetails && <p className="mt-1 text-[10px] text-gray-500">{activity.subdetails}</p>}</td>
-                <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-md px-2 py-1 text-[10px] font-medium ${activity.moduleColor}`}>{activity.module}</span></td>
-                <td className="px-4 py-3"><div className="flex items-center gap-2"><span className={`flex h-8 w-8 items-center justify-center rounded-full text-[9px] font-bold ${activity.userColor}`}>{activity.initials}</span><div><p className="font-medium text-gray-900">{activity.performedBy}</p><p className="text-[10px] text-gray-500">{activity.role}</p></div></div></td>
+                <td className="max-w-xs px-4 py-3"><p>{activity.details}</p>{activity.subdetails && <p className="mt-1 text-xs text-gray-500">{activity.subdetails}</p>}</td>
+                <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ${activity.moduleColor}`}>{activity.module}</span></td>
+                <td className="px-4 py-3"><div className="flex items-center gap-2"><span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${activity.userColor}`}>{activity.initials}</span><div><p className="font-medium text-gray-900">{activity.performedBy}</p><p className="text-xs text-gray-500">{activity.role}</p></div></div></td>
                 <td className="whitespace-nowrap px-4 py-3">{activity.ipAddress}</td>
               </tr>
             ))}

@@ -159,7 +159,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
 
 
   return (
-    <div className="flex-1 bg-white min-h-screen p-6 font-sans">
+    <div className="flex-1 bg-page min-h-full p-4 sm:p-6 font-sans">
       {/* Title Header */}
       <div className="mb-6">
         <h1 className="text-sm font-bold text-black">My Profile</h1>
@@ -186,7 +186,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
                 <h2 className="text-sm font-bold text-black">
                   {fullName || 'Shopper'}
                 </h2>
-                <p className="text-[11px] text-gray-500">Shopper</p>
+                <p className="text-xs text-gray-500">Shopper</p>
               </div>
             </div>
 
@@ -194,7 +194,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
               <button
                 type="button"
                 onClick={startEditing}
-                className="border border-green-700 text-[#006e00] text-xs font-bold px-3 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2"
+                className="border border-green-700 text-primary text-xs font-bold px-3 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2"
               >
                 <Edit3 className="w-4 h-4" />
                 Edit Profile
@@ -275,7 +275,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="rounded-lg bg-[#006e00] px-4 py-2 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-50"
+                  className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>

@@ -1,1 +1,28 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #006e00;
+  --color-primary-hover: #005400;
+  --color-brand-dark: #14532d;
+  --color-page: #f8faf9;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+}
+@layer base {
+  html { color-scheme: light; background: var(--color-page); }
+  body { margin: 0; min-width: 0; color: #1e293b; font-family: var(--font-sans); font-size: 1rem; line-height: 1.5; }
+  #root, main, section, fieldset { min-width: 0; }
+  input, select, textarea { min-width: 0; max-width: 100%; }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  button, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select { min-height: 44px; }
+  button { cursor: pointer; } button:disabled { cursor: not-allowed; }
+  :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+  img { max-width: 100%; } dialog::backdrop { background: rgb(15 23 42 / 45%); }
+  summary { cursor: pointer; } h1, h2, h3, p, dd { overflow-wrap: break-word; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+}
+@layer components {
+  .ge-card { @apply rounded-xl border border-slate-200 bg-white p-4 sm:p-5; }
+  .ge-button { @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50; }
+}

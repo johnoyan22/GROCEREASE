@@ -19,8 +19,8 @@ function NotificationList({ notifications, expandedId, onToggle }) {
                 <span className="mt-1 block text-xs text-gray-500">{notification.sender} · {notification.date}</span>
                 {expandedId === notification.id && <span className="mt-3 block rounded-lg bg-gray-50 p-3 text-xs leading-5 text-gray-600">{notification.details}</span>}
               </span>
-              <span className={`hidden rounded-md px-3 py-1 text-[10px] font-medium sm:block ${priorityStyles[notification.priority]}`}>{notification.priority}</span>
-              <span className="text-gray-400">{expandedId === notification.id ? "-" : "+"}</span>
+              <span className={`hidden rounded-md px-3 py-1 text-xs font-medium sm:block ${priorityStyles[notification.priority]}`}>{notification.priority}</span>
+              <span className="text-gray-500">{expandedId === notification.id ? "-" : "+"}</span>
             </button>
           </article>
         ))}

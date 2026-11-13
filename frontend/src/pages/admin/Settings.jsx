@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { User, Bell } from 'lucide-react';
+import { User } from 'lucide-react';
 import { changeAdminPassword } from '../../services/api';
 
 export default function Settings() {
   const { user } = useOutletContext();
   const profile = user.profile;
   const navigate = useNavigate();
-
-  const [toggles, setToggles] = useState([true, true, true, true]);
 
     const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -118,16 +116,6 @@ export default function Settings() {
     } finally {
       setIsChangingPassword(false);
     }
-  }
-
-  function toggleSwitch(index) {
-    setToggles(function (currentToggles) {
-      const updatedToggles = currentToggles.slice();
-
-      updatedToggles[index] = !updatedToggles[index];
-
-      return updatedToggles;
-    });
   }
 
   let firstName = 'Not provided';
@@ -328,7 +316,7 @@ export default function Settings() {
 
                     <button
                       type="submit"
-                      className="rounded-lg bg-[#0E5C2F] px-4 py-2 text-sm font-semibold text-white"
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
                     >
                       {isChangingPassword && <span>Saving...</span>}
                       {!isChangingPassword && <span>Save password</span>}
@@ -340,45 +328,6 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <Bell size={24} />
-              </div>
-              <h2 className="text-lg font-bold text-slate-800">Notification Preferences</h2>
-            </div>
-
-            <div className="divide-y divide-slate-100">
-              {['Order Alerts', 'Inventory Low Stock Alerts', 'COP Restriction Alerts', 'Financial Report Summaries'].map((label, i) => (
-                <div key={i} className="py-4 flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">{label}</span>
-                  <button
-                    onClick={() => toggleSwitch(i)}
-                    className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ease-in-out ${
-                      toggles[i] ? 'bg-[#0E5C2F]' : 'bg-slate-200'
-                    }`}
-                  >
-                    <div
-                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                        toggles[i] ? 'translate-x-6' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 pt-2">
-        <button className="bg-[#0E5C2F] text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-900 transition-all shadow-sm">
-          Save Changes
-        </button>
-        <button className="bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">
-          Cancel
-        </button>
       </div>
     </div>
   );

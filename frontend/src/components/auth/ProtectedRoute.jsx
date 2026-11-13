@@ -61,7 +61,7 @@ function ProtectedRoute({ allowedRoles, requireVerifiedEmail = false }) {
         <button
           type="button"
           onClick={retrySessionCheck}
-          className="mt-3 rounded-lg bg-[#006e00] px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+          className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
         >
           Retry
         </button>

@@ -8,7 +8,7 @@ function RegisterHero() {
       <div className="flex items-center gap-3">
         <img src={Logo} alt="GrocerEase Logo" className="w-14 h-14 object-contain" />
         <span className="text-3xl font-black text-black tracking-tight">
-          Grocer<span className="text-[#006e00]">Ease</span>
+          Grocer<span className="text-primary">Ease</span>
         </span>
       </div>
 

@@ -53,7 +53,7 @@ export default function AdminDashboard() {
 
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-100">
+                <tr className="text-slate-500 border-b border-slate-100">
                   <th className="pb-2 font-medium">Product</th>
                   <th className="pb-2 font-medium">Available units</th>
                   <th className="pb-2 font-medium">Status</th>
@@ -63,17 +63,17 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-slate-50">
                 {(data?.low_stock_records ?? []).map((row) => (
                   <tr key={row.store_inventory_id} className="hover:bg-slate-50/50">
-                    <td className="py-2.5 font-medium text-slate-700">{row.product_name}<span className="block text-[10px] text-slate-400">{row.store_name}</span></td>
+                    <td className="py-2.5 font-medium text-slate-700">{row.product_name}<span className="block text-xs text-slate-500">{row.store_name}</span></td>
                     <td className="py-2.5 font-bold">{row.available_stock}</td>
                     <td className="py-2.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                         row.available_stock > row.low_stock_threshold ? 'bg-emerald-50 text-emerald-700' :
                         row.available_stock > 0 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
                       }`}>
                         Low stock
                       </span>
                     </td>
-                    <td className="py-2.5 text-right text-slate-400 font-medium">{row.low_stock_threshold}</td>
+                    <td className="py-2.5 text-right text-slate-500 font-medium">{row.low_stock_threshold}</td>
                   </tr>
                 ))}
                 {data?.low_stock_records.length === 0 && <tr><td colSpan="4" className="py-4 text-slate-500">No products at or below a configured threshold.</td></tr>}
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
             </table>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>{data ? new Date(data.server_time).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : 'Awaiting data'}</span>
             <button onClick={summary.reload} className="flex items-center gap-1 text-emerald-700 font-semibold hover:underline">
               <RotateCw size={12} /> Refresh
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-800">{r.name}</p>
-                      <p className="text-[11px] text-slate-400">{r.user_count} users</p>
+                      <p className="text-xs text-slate-500">{r.user_count} users</p>
                     </div>
                   </div>
 
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Total Roles: {data?.roles.length ?? '?'} | Total Users: {data?.total_users ?? '?'}</span>
             <button onClick={() => navigate('/admin/roles')} className="text-emerald-700 font-semibold hover:underline">
               View All
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="pt-4 border-t border-slate-100 text-center">
-            <span className="text-[11px] text-slate-400">Financial allocation rules are not approved or configured.</span>
+            <span className="text-xs text-slate-500">Financial allocation rules are not approved or configured.</span>
           </div>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-100">
+              <tr className="text-slate-500 border-b border-slate-100">
                 <th className="pb-2 font-medium">Shopper</th>
                 <th className="pb-2 font-medium">Valid strikes</th>
                 <th className="pb-2 font-medium">Current restriction</th>
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
               {(data?.restricted_accounts ?? []).map((c) => (
                 <tr key={c.user_id} className="hover:bg-slate-50/50">
                   <td className="py-2.5 flex items-center gap-2.5 font-medium text-slate-700">
-                    <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center font-bold text-[10px]">
+                    <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs">
                       {c.user_id}
                     </div>
                     Shopper #{c.user_id}
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
                   <td className="py-2.5 text-right">
                     <button
                       onClick={() => navigate('/admin/cop')}
-                      className="text-red-500 bg-red-50 border border-red-200 px-3 py-1 rounded-lg text-[11px] font-semibold hover:bg-red-100"
+                      className="text-red-500 bg-red-50 border border-red-200 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-100"
                     >
                       Review
                     </button>
@@ -224,7 +224,7 @@ function StatCard({ icon: Icon, label, value, iconBg }) {
         <Icon size={18} />
       </div>
       <div>
-        <p className="text-[11px] font-medium text-slate-500">{label}</p>
+        <p className="text-xs font-medium text-slate-500">{label}</p>
         <h4 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">{value}</h4>
 
       </div>
@@ -237,7 +237,7 @@ function FinancialItem({ title, desc, btnText, onClick }) {
     <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
       <div>
         <p className="text-xs font-bold text-slate-800">{title}</p>
-        <p className="text-[10px] text-slate-400 mt-0.5">{desc}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
       </div>
       <button onClick={onClick} className="text-xs font-semibold px-3 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs">
         {btnText}

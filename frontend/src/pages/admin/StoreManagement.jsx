@@ -44,7 +44,7 @@ export default function StoreManagement() {
         <div className="flex flex-wrap gap-2">
           <Link to="/admin/staff" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium">Manage staff</Link>
           <button type="button" disabled={loading || Boolean(action)} onClick={() => { setSuccess(''); reload(); }} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium disabled:opacity-50"><RefreshCw size={16} /> Refresh</button>
-          <button type="button" disabled={loading || Boolean(error) || Boolean(action)} onClick={() => openAction('create')} className="flex items-center gap-2 rounded-xl bg-[#0E5C2F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"><Plus size={16} /> Create Store</button>
+          <button type="button" disabled={loading || Boolean(error) || Boolean(action)} onClick={() => openAction('create')} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"><Plus size={16} /> Create Store</button>
         </div>
       </div>
       {success && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{success}</p>}
@@ -65,7 +65,7 @@ export default function StoreManagement() {
               <thead><tr className="border-b border-slate-200 text-xs text-slate-500"><th scope="col" className="py-3 pr-4">Store</th><th scope="col" className="py-3 pr-4">Address</th><th scope="col" className="py-3 pr-4">Status</th><th scope="col" className="py-3 pr-4">Assigned staff</th><th scope="col" className="py-3">Pickup</th><th scope="col" className="py-3 text-right">Actions</th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((store) => <tr key={store.store_id}>
-                  <td className="py-4 pr-4"><p className="max-w-64 break-words font-semibold">{store.store_name}</p><p className="mt-1 text-xs text-slate-400">Store #{store.store_id}</p></td>
+                  <td className="py-4 pr-4"><p className="max-w-64 break-words font-semibold">{store.store_name}</p><p className="mt-1 text-xs text-slate-500">Store #{store.store_id}</p></td>
                   <td className="max-w-72 break-words py-4 pr-4 text-slate-600">{store.address}</td>
                   <td className="py-4 pr-4"><span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${store.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{store.status === 'active' ? 'Active' : 'Inactive'}</span></td>
                   <td className="py-4 pr-4 text-slate-600">{store.assigned_staff_count}</td>

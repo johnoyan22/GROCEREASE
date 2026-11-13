@@ -46,13 +46,13 @@ function ProductCard({ item, onAdd, onAlternatives }) {
       <div className="w-full">
         <h3 className="text-xs font-bold text-black truncate" title={item.name}>{item.name}</h3>
         <p className="text-xs font-black text-black mt-0.5">{formatPrice(item.selling_price)}</p>
-        {item.size && <p className="text-[10px] text-gray-500">{item.size}{item.selling_unit && ' · ' + item.selling_unit}</p>}
-        <p className="text-[10px] text-gray-500 mt-0.5 truncate" title={item.reason}>{item.reason}</p>
-        <p className="mt-1 text-[10px] text-gray-500">Available: {item.available_stock} · Limit/order: {item.max_per_order ?? 'No extra limit'}</p>
+        {item.size && <p className="text-xs text-gray-500">{item.size}{item.selling_unit && ' · ' + item.selling_unit}</p>}
+        <p className="text-xs text-gray-500 mt-0.5 truncate" title={item.reason}>{item.reason}</p>
+        <p className="mt-1 text-xs text-gray-500">Available: {item.available_stock} · Limit/order: {item.max_per_order ?? 'No extra limit'}</p>
         <button
           type="button"
           onClick={() => onAdd(item, 1)}
-          className="mt-2 w-full bg-green-100 text-[#006e00] text-[10px] font-bold py-1 rounded hover:bg-green-200 transition"
+          className="mt-2 w-full bg-green-100 text-primary text-xs font-bold py-1 rounded hover:bg-green-200 transition"
         >
           Add to Cart
         </button>
@@ -276,7 +276,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
 
   return (
     <div className="flex-1 bg-white min-h-screen flex flex-col font-sans">
-      <main className="p-6 max-w-5xl">
+      <main className="p-4 sm:p-6 max-w-5xl">
         {/* Header Title */}
         <div className="mb-4">
           <h1 className="text-sm font-bold text-black">AI Recommendations</h1>
@@ -303,7 +303,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
             >
               <MessageSquare className="w-4 h-4" />
               Ask anything
-              {activeTab === 'ask' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#006e00]"></span>}
+              {activeTab === 'ask' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></span>}
             </button>
 
             <button
@@ -313,7 +313,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
             >
               <ImageIcon className="w-4 h-4" />
               Upload image
-              {activeTab === 'upload' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#006e00]"></span>}
+              {activeTab === 'upload' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></span>}
             </button>
           </div>
 
@@ -343,7 +343,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                 </button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px]">
+              <div className="flex flex-wrap items-center gap-2 mt-4 text-xs">
                 <span className="text-gray-600 font-medium">Try asking:</span>
                 {SUGGESTIONS.map((text) => (
                   <button
@@ -358,7 +358,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                 ))}
               </div>
 
-              <p className="mt-3 text-[11px] text-gray-500">
+              <p className="mt-3 text-xs text-gray-500">
                 Tip: mention a budget or how many people, like &ldquo;pasta for 4 under 500&rdquo;.
               </p>
             </div>
@@ -366,9 +366,9 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
             <div className="border border-gray-300 rounded-lg p-4">
               {!imageFile ? (
                 <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-gray-300 p-6 text-center hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-600">
-                  <ImageIcon className="w-6 h-6 text-gray-400 mb-2" aria-hidden="true" />
+                  <ImageIcon className="w-6 h-6 text-gray-500 mb-2" aria-hidden="true" />
                   <span className="text-xs font-bold text-black">Choose a photo</span>
-                  <span className="text-[11px] text-gray-500 mt-1">
+                  <span className="text-xs text-gray-500 mt-1">
                     A dish, your ingredients, a pantry shelf or a grocery list. JPG, PNG or WebP, up to 4 MB.
                   </span>
                   <input
@@ -401,7 +401,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                         type="button"
                         onClick={submitImage}
                         disabled={asking}
-                        className="rounded bg-[#006e00] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                        className="rounded bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
                       >
                         Get recommendations
                       </button>
@@ -409,7 +409,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                         type="button"
                         onClick={clearImage}
                         disabled={asking}
-                        className="rounded border border-gray-300 px-3 py-1.5 text-[11px] font-bold text-gray-700 disabled:opacity-50"
+                        className="rounded border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 disabled:opacity-50"
                       >
                         Remove
                       </button>
@@ -419,7 +419,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
               )}
 
               <label className="mt-3 flex items-start gap-2 text-xs"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />I agree to send this photo to the configured Gemini provider.</label>
-              <p className="mt-3 text-[11px] text-gray-500">
+              <p className="mt-3 text-xs text-gray-500">
                 Your photo is sent to Google&rsquo;s Gemini AI service to find matching products. It is not saved on our server.
               </p>
             </div>
@@ -443,17 +443,17 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                   : <>Results for &ldquo;{askResult.query}&rdquo;</>}
               </h2>
               {parsed?.headcount && (
-                <span className="text-[10px] bg-white border border-green-300 text-green-900 rounded-full px-2 py-0.5">
+                <span className="text-xs bg-white border border-green-300 text-green-900 rounded-full px-2 py-0.5">
                   For {parsed.headcount} {parsed.headcount === 1 ? 'person' : 'people'}
                 </span>
               )}
               {parsed?.budget && (
-                <span className="text-[10px] bg-white border border-green-300 text-green-900 rounded-full px-2 py-0.5">
+                <span className="text-xs bg-white border border-green-300 text-green-900 rounded-full px-2 py-0.5">
                   Budget {formatPrice(parsed.budget)}
                 </span>
               )}
               {askResult.meta?.understanding?.startsWith('gemini') && (
-                <span className="text-[10px] bg-white border border-blue-300 text-blue-900 rounded-full px-2 py-0.5">
+                <span className="text-xs bg-white border border-blue-300 text-blue-900 rounded-full px-2 py-0.5">
                   Understood by AI
                 </span>
               )}
@@ -462,7 +462,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
             {askResult.meta?.understanding === 'keyword' && <p className="mb-2 text-xs text-amber-800">Local keyword/rule fallback ? Gemini was unavailable or unconfigured.</p>}
             <p className="mb-3 text-xs text-gray-600">Estimates only; review current prices and stock at Checkout. One unit per match is a starting point. Adjust quantities in My Cart; serving sizes are not guaranteed.</p>
             {detected.length > 0 && (
-              <p className="mb-2 text-[11px] text-gray-600">I can see: {detected.join(', ')}</p>
+              <p className="mb-2 text-xs text-gray-600">I can see: {detected.join(', ')}</p>
             )}
 
             {askItems.length === 0 ? (
@@ -476,7 +476,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                         <p className="text-xs font-bold text-black truncate">
                           {item.name}{item.size ? ` (${item.size})` : ''}
                         </p>
-                        <p className="text-[11px] text-gray-600">
+                        <p className="text-xs text-gray-600">
                           {item.quantity} &times; {formatPrice(item.selling_price)}
                         </p>
                       </div>
@@ -485,7 +485,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                         <button
                           type="button"
                           onClick={() => handleAdd(item, item.quantity)}
-                          className="bg-green-100 text-[#006e00] text-[10px] font-bold px-3 py-1 rounded hover:bg-green-200 transition"
+                          className="bg-green-100 text-primary text-xs font-bold px-3 py-1 rounded hover:bg-green-200 transition"
                         >
                           Add to Cart
                         </button>
@@ -511,14 +511,14 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
               <Sparkles className="w-4 h-4 text-blue-500 mt-0.5" />
               <div>
                 <h2 className="text-xs font-bold text-black">Recommendation for you</h2>
-                <p className="text-[11px] text-gray-500">Based on completed store purchases, cart context and available inventory.</p>
+                <p className="text-xs text-gray-500">Based on completed store purchases, cart context and available inventory.</p>
               </div>
             </div>
             {items.length > INITIAL_VISIBLE && (
               <button
                 type="button"
                 onClick={() => setShowAll((value) => !value)}
-                className="text-xs font-bold text-[#006e00] hover:underline flex items-center gap-0.5"
+                className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5"
               >
                 {showAll ? 'Show less' : 'View All'} <ArrowRight className="w-3 h-3" />
               </button>
@@ -538,7 +538,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                   setStatus('loading');
                   setLoadVersion((version) => version + 1);
                 }}
-                className="mt-2 rounded-lg bg-[#006e00] px-4 py-2 text-xs font-semibold text-white"
+                className="mt-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white"
               >
                 Retry
               </button>
@@ -556,7 +556,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
           )}
 
           {status === 'ready' && enabled && items.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 min-[375px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               {visibleItems.map((item) => (
                 <ProductCard key={item.product_id} item={item} onAdd={handleAdd} onAlternatives={loadAlternatives} />
               ))}

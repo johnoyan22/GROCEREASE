@@ -107,7 +107,7 @@ function RegisterForm() {
                 placeholder="First name"
                 value={formData.firstName}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -129,7 +129,7 @@ function RegisterForm() {
                 placeholder="Last name"
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -147,7 +147,7 @@ function RegisterForm() {
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -164,7 +164,7 @@ function RegisterForm() {
                 placeholder="09XXXXXXXXX"
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -172,7 +172,7 @@ function RegisterForm() {
 
           {/* Address (optional) */}
           <div>
-            <label className="block text-xs font-bold text-black mb-1.5">Address <span className="text-gray-400 font-normal">(optional)</span></label>
+            <label className="block text-xs font-bold text-black mb-1.5">Address <span className="text-gray-500 font-normal">(optional)</span></label>
             <div className="relative">
               <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
@@ -181,7 +181,7 @@ function RegisterForm() {
                 placeholder="Enter your address"
                 value={formData.address}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
               />
             </div>
           </div>
@@ -197,7 +197,7 @@ function RegisterForm() {
                 placeholder="Create your password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -214,7 +214,7 @@ function RegisterForm() {
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -231,8 +231,8 @@ function RegisterForm() {
               className="w-4 h-4 accent-[#006e00] rounded border-gray-300"
               required
             />
-            <label htmlFor="terms" className="text-[11px] text-gray-600">
-              I agree to the <a href="#" className="text-[#006e00] font-bold hover:underline">Terms of Service</a> and <a href="#" className="text-[#006e00] font-bold hover:underline">Privacy Policy</a>
+            <label htmlFor="terms" className="text-xs text-gray-600">
+              I agree to the <a href="#" className="text-primary font-bold hover:underline">Terms of Service</a> and <a href="#" className="text-primary font-bold hover:underline">Privacy Policy</a>
             </label>
           </div>
 
@@ -240,7 +240,7 @@ function RegisterForm() {
           <button
             disabled={isSubmitting}
             type="submit"
-            className="w-full bg-[#006e00] hover:bg-[#005400] text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-2 disabled:opacity-60"
+            className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 px-4 rounded-lg transition duration-150 text-xs shadow-sm mt-2 disabled:opacity-60"
           >
             {isSubmitting ? 'Creating account...' : 'Create Account'}
           </button>
@@ -251,7 +251,7 @@ function RegisterForm() {
       <div>
 
         <p className="text-center text-xs text-gray-600 mt-4">
-          Already have an account? <Link to="/login" className="text-[#006e00] font-bold hover:underline">Login</Link>
+          Already have an account? <Link to="/login" className="text-primary font-bold hover:underline">Login</Link>
         </p>
       </div>
     </div>

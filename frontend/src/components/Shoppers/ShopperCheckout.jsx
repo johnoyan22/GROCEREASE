@@ -125,8 +125,8 @@ export default function ShopperCheckout({ cart, userId, onPlaced, onClose }) {
     } finally { submitting.current = false; setPending(false); }
   }
 
-  return <dialog ref={dialog} onCancel={function (event) { event.preventDefault(); if (!pending && !uncertain) onClose(); }} className="fixed inset-0 m-auto max-h-[90vh] w-[min(95vw,640px)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-xl backdrop:bg-black/40">
-    <h2 className="text-xl font-bold">Checkout</h2>
+  return <dialog aria-labelledby="checkout-title" ref={dialog} onCancel={function (event) { event.preventDefault(); if (!pending && !uncertain) onClose(); }} className="fixed inset-0 m-auto max-h-[90vh] w-[min(95vw,640px)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-xl backdrop:bg-black/40">
+    <h2 id="checkout-title" className="text-xl font-bold">Checkout</h2>
     {order ? <div className="mt-5"><p role="status" className="rounded-lg bg-green-50 p-4 text-green-800">Order #{order.order_id} is recorded at {order.store_name}.</p><p className="mt-3 text-sm">Status: {order.status}. Payment: {order.payment_status}. Total: {money.format(order.total_centavos / 100)}.</p><p className="mt-3 text-sm">{order.reservation_status === 'active' ? (order.payment_method === 'digital' ? 'Items are reserved pending sandbox payment. Complete payment before preparation; track progress in My Orders.' : 'Items are reserved. Track preparation in My Orders. Pay the store cashier before verified physical handover.') : 'This existing order has already been completed or canceled. See My Orders for details.'}</p><OrderPayment order={order} /><button type="button" onClick={onClose} className="mt-5 rounded-lg bg-green-700 px-4 py-2 text-white">Done</button></div> : <>
       {loading && <p role="status" className="mt-4 text-sm">Checking any previous checkout attempt...</p>}
       {error && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}

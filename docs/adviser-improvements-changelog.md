@@ -107,3 +107,26 @@ After Symfony patch updates: Composer reports **no security vulnerability
 advisories**. Document, migration, sandbox-payment and pickup regressions:
 **38 tests / 862 assertions passed**; frontend adviser API tests **5 passed**;
 ESLint passed. Final full-suite comparison remains checkpoint 6.
+
+## 5. Visual consistency and responsiveness
+
+- Shared Tailwind theme tokens, sans-serif type, readable labels, contrast,
+  keyboard focus and comfortable touch controls retain the green/white identity.
+- Shopper phone drawer/header, stacked dashboard/forms, quantity controls,
+  contained order tables and native Checkout/product dialogs. Staff keep desktop
+  sidebars; Supervisor/Admin navigation remains available on smaller screens.
+- Removed sample-priced Shopper dashboard products and unsaved Admin preference
+  toggles. Dashboard catalog cards use the existing store/cart services. Role
+  Management now reads genuine role counts and provides authorized navigation;
+  disconnected role CRUD controls and invented counts are removed.
+- Responsive landing uses original local vector grocery artwork; removes fake
+  supermarket location/distance/opening claims and dead search/actions. Guest
+  and authenticated role CTAs navigate to real routes. No external brand images.
+- Shared pickup workspace extracted from Admin; separate read-only Admin and
+  editable Supervisor wrappers. Registration moved from Shopper folders to auth.
+  Exact before/after tree and viewport checklist are in `ui-responsive-checklist.md`.
+- Route-level lazy loading preserves URLs and removes the large bundle warning.
+- **124 frontend tests, ESLint and production build passed. 29 real Chrome
+  browser cases passed** across all listed phone/tablet/desktop dimensions.
+  Browser tests use labeled API fixtures; no Gemini, PayMongo or working-data
+  acceptance is inferred. Representative screenshots were visually reviewed.

@@ -1,3 +1,4 @@
+import NavigationDrawer from '../../components/shared/NavigationDrawer';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../../services/api';
@@ -70,21 +71,24 @@ export default function ShopperDashboard() {
   }
 
   if (isLoading) return <p role="status" className="p-6 text-sm text-gray-600">Loading your account...</p>;
-  if (loadError) return <div className="p-6"><p role="alert" className="text-sm text-red-600">{loadError}</p><button type="button" onClick={retryLoading} className="mt-3 rounded-lg bg-[#006e00] px-4 py-2 text-xs font-semibold text-white">Retry</button></div>;
+  if (loadError) return <div className="p-6"><p role="alert" className="text-sm text-red-600">{loadError}</p><button type="button" onClick={retryLoading} className="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white">Retry</button></div>;
   return user ? <ShopperWorkspace key={user.id} user={user} setUser={setUser} /> : null;
 }
 
 function ShopperWorkspace({ user, setUser }) {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  function navigateTab(tab) { setActiveTab(tab); setNavigationOpen(false); }
   const [search, setSearch] = useState('');
   const shopping = useShopperCart(user.id);
   const summary = useDashboardSummary('shopper', activeTab);
   function searchProducts(value) { setSearch(value); setActiveTab('Browse'); }
-  return <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-    <ShopperSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <ShopperHeader user={user} quantity={shopping.quantity} unreadCount={summary.data?.unread_notifications} onCart={() => setActiveTab('Cart')} onNotifications={() => setActiveTab('Notifications')} onProfile={() => setActiveTab('Profile')} onSearch={searchProducts} />
-      <div className="flex-1 overflow-y-auto">
+  return <div className="flex h-dvh bg-page overflow-hidden font-sans">
+    <div className="hidden h-full overflow-y-auto lg:block"><ShopperSidebar user={user} activeTab={activeTab} setActiveTab={navigateTab} /></div>
+    {navigationOpen && <NavigationDrawer onClose={() => setNavigationOpen(false)}><ShopperSidebar user={user} activeTab={activeTab} setActiveTab={navigateTab} /></NavigationDrawer>}
+    <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
+      <ShopperHeader onNavigation={() => setNavigationOpen(true)} user={user} quantity={shopping.quantity} unreadCount={summary.data?.unread_notifications} onCart={() => setActiveTab('Cart')} onNotifications={() => setActiveTab('Notifications')} onProfile={() => setActiveTab('Profile')} onSearch={searchProducts} />
+      <div className="min-w-0 flex-1 overflow-y-auto">
         {activeTab === 'Dashboard' && <ShopperMainContent setActiveTab={setActiveTab} shopping={shopping} summary={summary} />}
         {activeTab === 'Browse' && <ShopperBrowseProducts shopping={shopping} search={search} setSearch={setSearch} onViewCart={() => setActiveTab('Cart')} />}
         {activeTab === 'Cart' && <ShopperMyCart shopping={shopping} userId={user.id} onContinue={() => setActiveTab('Browse')} />}

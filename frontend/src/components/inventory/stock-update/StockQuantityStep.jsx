@@ -10,7 +10,7 @@ function StockQuantityStep({ products, quantities, onQuantityChange }) {
               const difference = Number(newQuantity) - product.stock;
               return (
                 <tr key={product.id}>
-                  <td className="px-4 py-3"><p className="font-medium text-gray-900">{product.name}</p><p className="text-[10px] text-gray-500">{product.sku}</p></td>
+                  <td className="px-4 py-3"><p className="font-medium text-gray-900">{product.name}</p><p className="text-xs text-gray-500">{product.sku}</p></td>
                   <td className="px-4 py-3">{product.stock} units</td>
                   <td className="px-4 py-3"><input required min="0" type="number" value={newQuantity} onChange={(event) => onQuantityChange(product.id, event.target.value)} className="w-32 rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100" /></td>
                   <td className={`px-4 py-3 font-semibold ${difference > 0 ? "text-green-700" : difference < 0 ? "text-red-600" : "text-gray-500"}`}>{difference > 0 ? "+" : ""}{difference}</td>

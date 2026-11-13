@@ -37,18 +37,18 @@ export function SupervisorSidebar({ hasUnreadNotifications, onNavigateMobile }) 
   const { supervisorPath } = useSupervisor()
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col justify-between border-r border-slate-200 bg-white px-3 py-4">
+    <aside className="flex min-h-full w-full lg:w-56 shrink-0 flex-col justify-between border-r border-slate-200 bg-white px-3 py-4">
       <div>
         <div className="mb-6 flex items-center gap-2 px-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-700 text-white">
             <ShoppingCart size={16} />
           </span>
-          <span className="font-serif text-lg">
+          <span className="font-sans text-lg">
             Grocer<span className="text-green-700">Ease</span>
           </span>
         </div>
 
-        <nav className="space-y-1">
+        <nav aria-label="Supervisor navigation" className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon
             return (
@@ -59,7 +59,7 @@ export function SupervisorSidebar({ hasUnreadNotifications, onNavigateMobile }) 
                     <span>
                       <span className="block leading-tight">{item.label}</span>
                       {item.hint ? (
-                        <span className={`block text-[11px] leading-tight ${isActive ? 'text-green-100' : 'text-slate-400'}`}>
+                        <span className={`block text-xs leading-tight ${isActive ? 'text-green-100' : 'text-slate-500'}`}>
                           {item.hint}
                         </span>
                       ) : null}
