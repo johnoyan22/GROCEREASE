@@ -15,7 +15,7 @@ export default function useStoreStock() {
       try {
         const options = { signal: controller.signal };
         const [items, requests, reports, history, receipts] = await Promise.all([
-          getInventoryItems(options), getStockAdjustments(options), getLowStockReports(options), getAvailabilityHistory(options),
+          getInventoryItems({ ...options, includeBatches: false }), getStockAdjustments(options), getLowStockReports(options), getAvailabilityHistory(options),
           getStockReceipts(options),
         ]);
         if (!items.store || !Array.isArray(items.inventory) || !Array.isArray(requests.adjustments)

@@ -190,8 +190,13 @@ export function getAssignedStore({ signal } = {}) {
   return sendRequest('/staff/store', { signal });
 }
 
-export function getInventoryItems({ signal } = {}) {
-  return sendRequest('/inventory/items', { signal });
+export function getInventoryItems({ signal, includeBatches = true } = {}) {
+  return sendRequest('/inventory/items' + (includeBatches ? '' : '?include_batches=0'), { signal });
+}
+
+export function getInventoryBatches(id, { page = 1, includeEmpty = false, signal } = {}) {
+  const query = new URLSearchParams({ page: String(page), include_empty: includeEmpty ? '1' : '0' });
+  return sendRequest(`/inventory/items/${encodeURIComponent(id)}/batches?${query}`, { signal, cache: 'no-store' });
 }
 
 function productDetails(details) {

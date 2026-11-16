@@ -108,8 +108,9 @@ class BatchStock
     {
         return DB::table('order_batch_allocations')->join('inventory_batches', 'inventory_batches.id', '=', 'order_batch_allocations.inventory_batch_id')
             ->where('order_item_id', $item->order_item_id)->orderByRaw('expiry_date IS NULL')->orderBy('expiry_date')->orderBy('inventory_batches.id')
-            ->get(['reference', 'quantity', 'received_date', 'expiry_date', 'inventory_batches.status', 'order_batch_allocations.status as allocation_status'])
+            ->get(['inventory_batches.id as batch_id', 'reference', 'quantity', 'received_date', 'expiry_date', 'inventory_batches.status', 'order_batch_allocations.status as allocation_status'])
             ->map(function ($row) {
+                $row->batch_no = InventoryBatch::displayNumber((int) $row->batch_id, $row->reference);
                 $row->eligible = $row->status === 'active' && (!$row->expiry_date || $row->expiry_date >= now('Asia/Manila')->format('Y-m-d'));
                 return (array) $row;
             })->all();

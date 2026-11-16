@@ -20,6 +20,7 @@ try {
   browser = await chromium.launch({ headless: true, channel: process.env.QA_BROWSER_CHANNEL || 'msedge' });
   for (const width of [1440, 390, 320]) {
     let role = 'inventory_worker', products = [coke, water], receipts = [receipt], loseResponse = false;
+    let failBatchNext = false, delayBatch = null;
     const calls = [];
     const context = await browser.newContext({ viewport: { width, height: 900 }, timezoneId: 'America/New_York' });
     await context.addCookies([{ name: 'XSRF-TOKEN', value: 'qa-token', url: origin }]);
@@ -28,10 +29,29 @@ try {
       const headers = { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Credentials': 'true', 'Access-Control-Allow-Headers': 'Accept, Content-Type, X-XSRF-TOKEN', 'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS' };
       const respond = (data, status = 200) => route.fulfill({ status, headers, contentType: 'application/json', body: JSON.stringify(data) });
       if (method === 'OPTIONS') return respond({});
-      const body = request.postDataJSON(); calls.push({ path, method, body });
+      const body = request.postDataJSON(); calls.push({ path, method, body, query: url.search });
       if (path === '/sanctum/csrf-cookie') return respond({});
       if (path === '/api/user') return respond({ id: 3, role: { slug: role }, profile: { first_name: 'QA', last_name: 'Staff' } });
-      if (path === '/api/inventory/items' && method === 'GET') return respond({ store, inventory: products });
+      if (path === '/api/inventory/items' && method === 'GET') return respond({ store, inventory: products.map((product) => {
+        if (url.searchParams.get('include_batches') !== '0') return product;
+        const { batches, ...summary } = product;
+        return { ...summary, expiry_received_dates: [...new Set(batches.filter((batch) => batch.status === 'active' && batch.remaining_quantity > 0 && batch.expiry_date === product.nearest_expiry).map((batch) => batch.received_date))] };
+      }) });
+      const batchMatch = path.match(/^\/api\/inventory\/items\/(\d+)\/batches$/);
+      if (batchMatch) {
+        const product = products.find((entry) => entry.store_inventory_id === Number(batchMatch[1]));
+        const rows = product.batches.filter((batch) => url.searchParams.get('include_empty') === '1' || batch.remaining_quantity > 0)
+          .sort((a, b) => (a.expiry_date || '9999-12-31').localeCompare(b.expiry_date || '9999-12-31') || a.id - b.id);
+        const lastPage = Math.max(1, Math.ceil(rows.length / 5));
+        const currentPage = Math.min(Number(url.searchParams.get('page') || 1), lastPage);
+        const result = { store, store_inventory_id: product.store_inventory_id,
+          batches: rows.slice((currentPage - 1) * 5, currentPage * 5).map((batch) => ({ ...batch, batch_no: 'B-'+String(batch.id).padStart(6, '0') })),
+          pagination: { current_page: currentPage, last_page: lastPage, total: rows.length, per_page: 5,
+            from: rows.length ? (currentPage - 1) * 5 + 1 : null, to: rows.length ? Math.min(currentPage * 5, rows.length) : null } };
+        if (failBatchNext) { failBatchNext = false; return respond({ message: 'QA batch read failed' }, 503); }
+        if (delayBatch) { const gate = delayBatch; delayBatch = null; gate.arrived(); await gate.wait; }
+        return respond(result);
+      }
       if (path === '/api/inventory/items' && method === 'POST') {
         assert.equal(body.sku, undefined);
         const product = { ...coke, ...body, store_inventory_id: 3, product_id: 3, sku: 'GE-S1-QANEW', size: body.size_amount+' '+body.size_unit, hard_stock_qty: 0, available_stock: 0, batches: [] };
@@ -56,6 +76,7 @@ try {
     async function readableDialog() {
       const box = await page.getByRole('dialog').boundingBox();
       assert.ok(box.x >= 0 && box.x+box.width <= width+1, 'Dialog stays within viewport');
+      assert.ok(box.height <= 811, 'Dialog is no taller than 90% of the viewport');
       assert.equal(await page.locator('body').evaluate((body) => body.scrollWidth <= window.innerWidth), true, 'Page has no horizontal overflow');
     }
     await page.goto(origin+'/inventory/products');
@@ -112,11 +133,83 @@ try {
     assert.equal(retries.length, 3);
     assert.deepEqual(retries[1].body, retries[2].body, 'Uncertain retry preserves operation identity and payload');
     await page.getByRole('button', { name: 'View Details', exact: true }).first().click();
-    await page.getByText('Receipt details', { exact: true }).first().click();
+    await page.getByText('Batch details', { exact: true }).first().click();
     await readableDialog(); await screenshot('details');
     await page.getByRole('button', { name: 'Close', exact: true }).click();
     assert.equal(await page.getByRole('columnheader').count(), 8);
     await screenshot('table');
+    const hundred = Array.from({ length: 102 }, (_, index) => ({
+      id: 1000+index, reference: 'GE-B-PERMANENT-'+index, quantity_received: 1, remaining_quantity: index < 100 ? 1 : 0,
+      received_date: index === 99 ? null : '2026-01-01', expiry_date: index === 99 ? null : index === 0 ? '2020-02-01' : index >= 100 ? '2030-12-31' : '2027-12-31',
+      status: index >= 100 ? 'depleted' : index === 0 ? 'expired' : index === 1 ? 'on_hold' : 'active', description: 'QA delivery '+index,
+    }));
+    products = [{ ...coke, hard_stock_qty: 100, available_stock: 98, batches: hundred }, water];
+    await page.goto(origin+'/inventory/stock');
+    const openCoke = () => page.getByRole('button', { name: 'View Details', exact: true }).first();
+    await openCoke().click();
+    const modal = page.getByRole('dialog');
+    await modal.getByText('Page 1 of 20', { exact: true }).waitFor();
+    assert.equal(await modal.getByRole('button', { name: 'Close', exact: true }).evaluate((el) => el === document.activeElement), true);
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await modal.getByRole('button', { name: 'Next', exact: true }).evaluate((el) => el === document.activeElement), true);
+    await page.keyboard.press('Tab');
+    assert.equal(await modal.getByRole('button', { name: 'Close', exact: true }).evaluate((el) => el === document.activeElement), true);
+    assert.match(await modal.textContent(), /Expired/); assert.match(await modal.textContent(), /On hold/);
+    await readableDialog(); await screenshot('batch-pagination');
+    const seen = new Set();
+    for (let number = 1; number <= 20; number++) {
+      await modal.getByText(`Page ${number} of 20`, { exact: true }).waitFor();
+      assert.equal(await modal.locator('tbody tr').count(), 5);
+      const labels = await modal.locator('tbody tr td:first-child > span').allTextContents();
+      for (const label of labels) { assert.ok(!seen.has(label)); seen.add(label); }
+      assert.match(await modal.textContent(), /Physical: 100/); assert.match(await modal.textContent(), /Available: 98/);
+      if (number < 20) await modal.getByRole('button', { name: 'Next', exact: true }).click();
+    }
+    assert.equal(seen.size, 100);
+    assert.match(await modal.textContent(), /Unknown \/ not applicable/);
+    assert.equal(await modal.getByRole('button', { name: 'Next', exact: true }).isDisabled(), true);
+    await screenshot('batch-pagination-last');
+    // A changed stock count on the final page is clamped by the read endpoint.
+    products[0] = { ...products[0], batches: hundred.map((batch, index) => ({ ...batch, remaining_quantity: index < 3 ? 1 : 0 })) };
+    await modal.getByRole('button', { name: 'Previous', exact: true }).click();
+    await modal.getByText('Page 1 of 1', { exact: true }).waitFor();
+    assert.equal(await modal.locator('tbody tr').count(), 3);
+    await page.keyboard.press('Escape');
+    assert.equal(await openCoke().evaluate((el) => el === document.activeElement), true);
+    products[0] = { ...products[0], batches: hundred };
+    await openCoke().click();
+    await modal.getByText('Page 1 of 20', { exact: true }).waitFor();
+    failBatchNext = true;
+    await modal.getByRole('button', { name: 'Next', exact: true }).click();
+    await modal.getByRole('alert').waitFor();
+    assert.equal(await modal.locator('tbody tr').count(), 0);
+    await modal.getByRole('button', { name: 'Retry batches', exact: true }).click();
+    await modal.getByText('Page 2 of 20', { exact: true }).waitFor();
+    let arrived, release;
+    const observed = new Promise((resolve) => { arrived = resolve; });
+    const wait = new Promise((resolve) => { release = resolve; });
+    delayBatch = { arrived, wait };
+    await modal.getByRole('button', { name: 'Next', exact: true }).click();
+    await observed;
+    assert.equal(await modal.getByRole('button', { name: 'Previous', exact: true }).isDisabled(), true);
+    assert.equal(await modal.getByRole('button', { name: 'Next', exact: true }).isDisabled(), true);
+    await modal.getByLabel('Include empty batches').check();
+    await modal.getByText('Page 1 of 21', { exact: true }).waitFor();
+    release(); await page.waitForTimeout(100);
+    assert.match(await modal.textContent(), /Page 1 of 21/);
+    products[0] = { ...products[0], batches: hundred.map((batch) => ({ ...batch, remaining_quantity: 0, status: 'depleted' })) };
+    await modal.getByLabel('Include empty batches').uncheck();
+    await modal.getByText('Page 1 of 1', { exact: true }).waitFor();
+    assert.match(await modal.textContent(), /Showing 0 of 0 batches/);
+    assert.equal(await modal.getByRole('button', { name: 'Next', exact: true }).isDisabled(), true);
+    await readableDialog(); await screenshot('batch-pagination-empty');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'View Details', exact: true }).nth(1).click();
+    await modal.getByText('Page 1 of 1', { exact: true }).waitFor();
+    assert.equal(await modal.getByLabel('Include empty batches').isChecked(), false);
+    assert.match(await modal.textContent(), /Nature Spring/);
+    await page.keyboard.press('Escape');
+    assert.ok(calls.filter((call) => call.path === '/api/inventory/items' && call.method === 'GET').every((call) => call.query === '?include_batches=0'));
     role = 'supervisor';
     await page.goto(origin+'/supervisor/inventory');
     await page.getByRole('button', { name: 'View Details', exact: true }).first().click();
@@ -132,7 +225,7 @@ try {
     await page.getByRole('button', { name: 'Approve addition of 100 bottles', exact: true }).click();
     await page.getByRole('button', { name: 'Stock additions (0 pending)', exact: true }).waitFor();
     await context.close();
-    console.log(`PASS ${width}px: product units/SKU, receiving/double-click/retry identity, batch details, table, Supervisor policy and approval.`);
+    console.log(`PASS ${width}px: 100 batches/20 pages, filters/reset, count changes, failure/retry/stale responses, focus/Escape, receiving and policy regressions.`);
   }
   assert.deepEqual(failures, []);
 } finally { await browser?.close(); await server.close(); }

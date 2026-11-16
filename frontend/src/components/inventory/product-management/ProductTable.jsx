@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { sellingUnits } from '../../../services/product-units';
-import { StockPolicyForm } from '../stock-management/StockForms';
-
-const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+import ProductDetailsModal from './ProductDetailsModal';
 
 export default function ProductTable({ products, onEdit, showReceivedDate = false, onReload, supervisor = false }) {
   const [details, setDetails] = useState(null);
@@ -10,6 +8,8 @@ export default function ProductTable({ products, onEdit, showReceivedDate = fals
   function saved(message) { setNotice(message); setDetails(null); onReload?.(); }
 
   function receivedDates(product) {
+    if (Array.isArray(product.expiry_received_dates)) return product.expiry_received_dates.length
+      ? product.expiry_received_dates.map((date) => date || 'Unknown').join(', ') : product.has_unknown_expiry ? 'Unknown' : '—';
     const batches = (product.batches ?? []).filter((batch) => batch.remaining_quantity > 0 && batch.status === 'active'
       && (product.nearest_expiry ? batch.expiry_date === product.nearest_expiry : !batch.expiry_date));
     const dates = [...new Set(batches.map((batch) => batch.received_date || 'Unknown'))].sort();
@@ -37,17 +37,6 @@ export default function ProductTable({ products, onEdit, showReceivedDate = fals
       {products.length === 0 && <p className="p-8 text-center text-sm text-gray-600">No matching store products.</p>}
       <p className="border-t px-4 py-3 text-xs text-gray-500">Showing {products.length} store product{products.length === 1 ? '' : 's'}</p>
     </section>
-    {details && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3" onKeyDown={(event) => { if (event.key === 'Escape') setDetails(null); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="product-details-title" className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
-        <div className="flex items-start justify-between gap-3"><div><h2 id="product-details-title" className="text-lg font-bold">{details.product_name} · {details.size || 'No configured size'}</h2><p className="mt-1 break-all text-xs text-gray-500">{details.sku}</p></div><button type="button" onClick={() => setDetails(null)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div>
-        <p className="mt-4 text-sm">{details.category} · {money.format(details.selling_price)} per {details.selling_unit || 'legacy selling unit (unconfigured)'}</p>
-        <p className="mt-2 text-sm">Reserved: {details.soft_stock_qty} · Maximum per order: {details.max_per_order ?? 'Not configured'} · Manufacturer barcode: {details.barcode || 'Not recorded'}</p>
-        <p className="mt-2 text-xs text-gray-600">Unknown expiry is recorded explicitly and remains eligible. Expired and on-hold batches are excluded from sale and handover.</p>
-        <h3 className="mb-2 mt-5 font-semibold">Batches</h3>
-        <div className="overflow-x-auto"><table className="w-full min-w-[590px] text-left text-xs"><thead className="bg-gray-50"><tr>{['Batch Reference', 'Remaining Quantity', 'Date Received', 'Expiry Date', 'Status'].map((label) => <th key={label} className="p-2">{label}</th>)}</tr></thead><tbody>{(details.batches ?? []).map((batch) => <tr key={batch.id} className="border-t align-top"><td className="p-2"><span className="break-all">{batch.reference}</span><details className="mt-2"><summary className="cursor-pointer">Receipt details</summary><p className="mt-1">Original: {batch.quantity_received} {sellingUnits(details, batch.quantity_received)}</p><p className="mt-1 whitespace-pre-wrap break-words">{batch.description || 'No description recorded'}</p></details></td><td className="p-2">{batch.remaining_quantity} {sellingUnits(details, batch.remaining_quantity)}</td><td className="p-2">{batch.received_date || 'Unknown'}</td><td className="p-2">{batch.expiry_date || 'Unknown / not applicable'}</td><td className={'p-2 capitalize ' + (batch.status === 'expired' ? 'text-red-700' : '')}>{batch.status}</td></tr>)}</tbody></table></div>
-        {!details.batches?.length && <p className="mt-3 text-sm text-gray-600">{details.hard_stock_qty ? 'Historical stock; dates unknown. Batch tracking initializes on its next stock operation.' : 'No batches received yet.'}</p>}
-        {supervisor && <StockPolicyForm item={details} onSaved={saved} onFailure={() => {}} />}
-      </section>
-    </div>}
+    {details && <ProductDetailsModal key={details.store_inventory_id} product={details} supervisor={supervisor} onClose={() => setDetails(null)} onSaved={saved} />}
   </>;
 }

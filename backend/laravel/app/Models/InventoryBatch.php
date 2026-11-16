@@ -22,7 +22,15 @@ class InventoryBatch extends Model
     public function publicData(): array
     {
         return [...$this->only(['id', 'reference', 'quantity_received', 'remaining_quantity', 'description', 'source']),
+            'batch_no' => self::displayNumber($this->id, $this->reference),
             'received_date' => $this->received_date?->format('Y-m-d'), 'expiry_date' => $this->expiry_date?->format('Y-m-d'),
             'status' => $this->remaining_quantity === 0 ? 'depleted' : (!$this->eligible() && $this->status === 'active' ? 'expired' : $this->status)];
+    }
+
+    public static function displayNumber(int $id, ?string $reference): string
+    {
+        // Preserve saved references. Format opaque references using a permanent ID alias.
+        return $reference && preg_match('/^B-\d+$/D', $reference)
+            ? $reference : 'B-'.str_pad((string) $id, 6, '0', STR_PAD_LEFT);
     }
 }

@@ -23,15 +23,39 @@ class StoreInventoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         return $this->withAssignedStore($request, function (Store $store) use ($request) {
-            $request->validate($this->protectedFields());
+            $request->validate([...$this->protectedFields(), 'include_batches' => ['sometimes', 'boolean']]);
             $inventory = $this->ownedInventory($store)->with('product')
                 ->orderBy('store_inventory_id')->get()
-                ->map(fn (StoreInventory $item): array => $this->itemData($item));
+                ->map(fn (StoreInventory $item): array => $this->itemData($item, $request->boolean('include_batches', true)));
 
             return response()->json([
                 'store' => $this->storeData($store),
                 'inventory' => $inventory,
             ]);
+        }, true);
+    }
+
+    public function batches(Request $request, int $item): JsonResponse
+    {
+        return $this->withAssignedStore($request, function (Store $store) use ($request, $item) {
+            $validated = $request->validate([...$this->protectedFields(),
+                'page' => ['sometimes', 'integer', 'min:1', 'max:2147483647'],
+                'include_empty' => ['sometimes', 'boolean'], 'per_page' => ['prohibited'],
+            ]);
+            $inventory = $this->ownedInventory($store)->whereKey($item)->firstOrFail();
+            $query = $inventory->batches();
+            if (!$request->boolean('include_empty')) $query->where('remaining_quantity', '>', 0);
+            $total = (clone $query)->count();
+            $lastPage = max(1, (int) ceil($total / 5));
+            $page = min((int) ($validated['page'] ?? 1), $lastPage);
+            $batches = $query->orderByRaw('expiry_date IS NULL')->orderBy('expiry_date')->orderBy('id')
+                ->offset(($page - 1) * 5)->limit(5)->get()->map->publicData();
+
+            return response()->json(['store' => $this->storeData($store),
+                'store_inventory_id' => $inventory->store_inventory_id, 'batches' => $batches,
+                'pagination' => ['current_page' => $page, 'last_page' => $lastPage, 'per_page' => 5, 'total' => $total,
+                    'from' => $total ? ($page - 1) * 5 + 1 : null, 'to' => $total ? min($page * 5, $total) : null],
+            ])->header('Cache-Control', 'no-store, private');
         }, true);
     }
 
@@ -219,8 +243,12 @@ class StoreInventoryController extends Controller
         return $store->only(['store_id', 'store_name', 'address', 'status']);
     }
 
-    private function itemData(StoreInventory $item): array
+    private function itemData(StoreInventory $item, bool $includeBatches = true): array
     {
+        $eligible = $item->batches()->where('remaining_quantity', '>', 0)->where('status', 'active');
+        $nearestExpiry = (clone $eligible)->where('expiry_date', '>=', now('Asia/Manila')->format('Y-m-d'))->min('expiry_date');
+        $receiptDates = (clone $eligible)->where('expiry_date', $nearestExpiry)->distinct()->orderBy('received_date')
+            ->pluck('received_date')->map(fn ($date) => $date?->format('Y-m-d'));
         return array_merge($item->product->only([
             'product_id', 'product_name', 'sku', 'barcode', 'size', 'category', 'size_amount', 'size_unit', 'selling_unit',
         ]), [
@@ -234,11 +262,11 @@ class StoreInventoryController extends Controller
             'low_stock_threshold' => $item->low_stock_threshold,
             'is_low_stock' => $item->isLowStock(),
             'stock_version' => $item->stock_version,
-            'nearest_expiry' => $item->batches()->where('remaining_quantity', '>', 0)->where('status', 'active')
-                ->where('expiry_date', '>=', now('Asia/Manila')->format('Y-m-d'))->min('expiry_date'),
+            'nearest_expiry' => $nearestExpiry,
+            'expiry_received_dates' => $receiptDates,
             'has_unknown_expiry' => $item->batches()->where('remaining_quantity', '>', 0)->whereNull('expiry_date')->exists() || (!$item->batches_initialized && $item->hard_stock_qty > 0),
             'expired_quantity' => (int) $item->batches()->where('expiry_date', '<', now('Asia/Manila')->format('Y-m-d'))->sum('remaining_quantity'),
-            'batches' => $item->batches()->orderByRaw('expiry_date IS NULL')->orderBy('expiry_date')->orderBy('id')->get()->map->publicData(),
+            ...($includeBatches ? ['batches' => $item->batches()->orderByRaw('expiry_date IS NULL')->orderBy('expiry_date')->orderBy('id')->get()->map->publicData()] : []),
             'status' => $item->status,
             'updated_at' => $item->updated_at?->toIso8601String(),
         ]);

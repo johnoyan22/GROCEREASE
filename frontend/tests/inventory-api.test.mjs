@@ -4,6 +4,7 @@ import {
   createStoreProduct,
   getAssignedStore,
   getInventoryItems,
+  getInventoryBatches,
   updateStoreProduct,
 } from '../src/services/api.js';
 
@@ -25,6 +26,26 @@ function json(data, status = 200) {
     status, headers: { 'Content-Type': 'application/json' },
   });
 }
+
+test('batch pages request only one product and fixed display filters with abort and no cache', async (t) => {
+  const signal = new AbortController().signal;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(url, 'http://localhost:8000/api/inventory/items/7/batches?page=20&include_empty=1');
+    assert.equal(options.signal, signal);
+    assert.equal(options.credentials, 'include');
+    assert.equal(options.cache, 'no-store');
+    return json({ batches: [], pagination: { current_page: 20 } });
+  });
+  await getInventoryBatches(7, { page: 20, includeEmpty: true, signal });
+});
+
+test('inventory UI opts out of full batch arrays without changing default operational reads', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    assert.equal(url, 'http://localhost:8000/api/inventory/items?include_batches=0');
+    return json({ store: { store_id: 1 }, inventory: [] });
+  });
+  await getInventoryItems({ includeBatches: false });
+});
 
 test('inventory reads include the authenticated session and cancellation signal', async (t) => {
   const controller = new AbortController();

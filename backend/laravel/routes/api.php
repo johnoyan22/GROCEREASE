@@ -176,6 +176,8 @@ Route::middleware(['auth:sanctum', 'role:inventory_worker'])->group(function () 
 Route::get('/inventory/items', [StoreInventoryController::class, 'index'])
     ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])
     ->name('inventory.items.index');
+Route::get('/inventory/items/{item}/batches', [StoreInventoryController::class, 'batches'])
+    ->whereNumber('item')->middleware(['auth:sanctum', 'role:inventory_worker,supervisor']);
 
 Route::middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])->group(function () {
     Route::get('/inventory/low-stock-reports', [StockReportingController::class, 'index'])
