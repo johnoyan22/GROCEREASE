@@ -157,7 +157,7 @@ Expect one row, the authorized store, and Supervisor's user ID as actor for a ne
 assignment. Another store's failed claim must not alter the row. Admin approval
 metadata remains separate from the Supervisor's assignment actor.
 
-## Handoff and debugging
+## Debugging
 
 SupervisorStoreWorkers -> assignSupervisorStaff -> session/CSRF request ->
 Supervisor-only route -> StaffStoreAssignmentController::supervisorAssign ->

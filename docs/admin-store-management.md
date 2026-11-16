@@ -176,7 +176,7 @@ FROM store_inventory WHERE store_id = 3;
 Only the store's status/updated_at should change during deactivate/reactivate.
 Related product, inventory and assignment rows/values/timestamps stay unchanged.
 
-## Execution flow and team handoff
+## Execution flow
 
 Create Store -> StoreManagement/StoreActionDialog -> createAdminStore -> Sanctum
 CSRF cookie and POST /api/admin/stores -> Admin middleware -> AdminStoreController

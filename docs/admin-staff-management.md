@@ -150,7 +150,7 @@ After a transfer, the assignment_id should stay the same while store_id changes.
 Approval and assignment actor IDs should identify the Admin who performed each
 action. Do not query or copy password hashes for this verification.
 
-## Debugging and handoff notes
+## Debugging notes
 
 React form -> shared API service -> Admin-only Laravel route -> existing
 AdminStaffController or StaffStoreAssignmentController -> User/Profile or

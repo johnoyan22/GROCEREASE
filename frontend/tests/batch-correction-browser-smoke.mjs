@@ -75,6 +75,7 @@ try {
     assert.equal(await table().locator('tbody tr').count(), 10);
     assert.equal(await page.getByRole('button', { name: /Stock additions/ }).count(), 0);
     assert.equal(calls.some((c) => c.path === '/api/inventory/items'), false, 'No all-inventory batch preload');
+    assert.equal(await page.getByRole('link', { name: 'My requests', exact: true }).count(), 0);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await ready('Showing 11–20 of 25 batches · Page 2 of 3');
     for (const value of ['Water', 'WATER-QA', 'B-000024']) {
@@ -130,7 +131,7 @@ try {
     await dialog.getByRole('button', { name: 'Retry Submission' }).waitFor();
     assert.equal(await page.getByLabel('Actual Remaining Count').isDisabled(), true);
     await dialog.getByRole('button', { name: 'Retry Submission' }).dblclick();
-    await ready('Batch count submitted for Supervisor approval. Stock is unchanged.');
+    await ready('Correction submitted. Track it in Stock Request.');
     await page.getByText('Correction pending', { exact: true }).waitFor();
     assert.equal(await search.inputValue(), 'B-000024');
     assert.equal(await page.getByRole('button', { name: 'Update Count B-000024' }).isDisabled(), true);
@@ -156,6 +157,11 @@ try {
     await ready('Showing 1–1 of 1 batches · Page 1 of 1');
     await search.fill('No match'); await page.getByText('No matching recorded batches.', { exact: true }).waitFor();
     await ready('Showing 0–0 of 0 batches · Page 1 of 1');
+    await page.goto(origin + '/inventory/verifications?section=correction');
+    await page.getByRole('heading', { name: 'Stock Request', exact: true }).waitFor();
+    await page.getByText('Reason: Recount confirmed', { exact: true }).waitFor();
+    await page.getByText('B-000024 · expired', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: /^Approve count/ }).count(), 0);
     // Supervisor reviews use the existing Corrections tab, retaining historical labeling.
     role = 'supervisor';
     await page.goto(origin + '/supervisor/stock-approvals');

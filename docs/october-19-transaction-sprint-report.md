@@ -123,13 +123,6 @@ Passing tests, routes, tables and screens are not additional points.
 transaction-sprint-study-guide.md explains the main React/API/controller/model relationships,
 authorization and execution flow, with five essential code excerpts and five defense Q&As per major feature.
 
-## F. Team handoff
-
-transaction-sprint-handoff.md records the shared contracts, ownership boundaries, actual test evidence,
-applied migration verification and remaining integration gaps. No teammate branch was merged or overwritten.
-The Oyan stock reference was inspected without its obsolete SuperAdmin/unscoped writes.
-The fetched Espinosa reference 4a5ee18 was frontend-only; the new shared order API preserves our current auth/store architecture.
-
 ## Endpoints
 
 Every path below starts with /api. Existing authentication, profile, Admin store/staff and store-product endpoints are preserved.
@@ -244,7 +237,6 @@ Every path below starts with /api. Existing authentication, profile, Admin store
 - docs/module-progress-audit.md
 - docs/october-19-transaction-sprint-report.md
 - docs/pending-transaction-migrations.md
-- docs/transaction-sprint-handoff.md
 - docs/transaction-sprint-study-guide.md
 - frontend/package-lock.json
 - frontend/package.json

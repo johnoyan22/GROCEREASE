@@ -1,21 +1,22 @@
 import logo from "../../../assets/images/Logo.png";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Bell } from 'lucide-react';
 import { logout } from '../../../services/api';
 
 const navigationItems = [
   { label: "Dashboard", href: "/inventory/dashboard", icon: "dashboard" },
   { label: "Product Management", href: "/inventory/products", icon: "products" },
   { label: "Stock Management", href: "/inventory/stock", icon: "stock" },
-  { label: "Store Orders", href: "/inventory/orders", icon: "clipboard" },
   { label: "Stock Verification Requests", href: "/inventory/verifications", icon: "clipboard" },
   { label: "Low Stock Monitoring", href: "/inventory/low-stock", icon: "warning" },
   { label: "Submit Stock Update", href: "/inventory/stock-update", icon: "upload" },
-  { label: "Supervisor Notification", href: "/inventory/notifications", icon: "user" },
   { label: "Activity Log", href: "/inventory/activity", icon: "activity" },
+  { label: "Notification", href: "/inventory/notifications", icon: "bell" },
   { label: "Profile", href: "/inventory/profile", icon: "user" },
 ];
 
 function NavIcon({ name }) {
+  if (name === 'bell') return <Bell className="h-5 w-5 shrink-0" aria-hidden="true" />;
   const commonProps = {
     className: "h-5 w-5 shrink-0",
     viewBox: "0 0 24 24",
@@ -101,7 +102,7 @@ function NavIcon({ name }) {
   );
 }
 
-function Sidebar({ activePage, isOpen, onClose }) {
+function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -142,14 +143,13 @@ function Sidebar({ activePage, isOpen, onClose }) {
 
         <nav aria-label="Inventory navigation" className="space-y-1 p-3 text-sm font-medium">
           {navigationItems.map((item) => {
-            const isActive = activePage === item.label;
-
             return (
-              <a
+              <NavLink
                 key={item.label}
-                href={item.href}
+                to={item.href}
+                end
                 onClick={onClose}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+                className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
                   isActive
                     ? "bg-green-700 font-semibold text-white"
                     : "text-gray-700 hover:bg-gray-100"
@@ -157,7 +157,7 @@ function Sidebar({ activePage, isOpen, onClose }) {
               >
                 <NavIcon name={item.icon} />
                 <span>{item.label}</span>
-              </a>
+              </NavLink>
             );
           })}
         </nav>

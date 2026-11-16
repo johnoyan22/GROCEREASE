@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getCorrectionBatches } from '../../../services/api';
 import { sellingUnits } from '../../../services/product-units';
 import StoreSelector from '../layout/StoreSelector';
@@ -48,7 +47,7 @@ export default function BatchCorrections() {
   const inputClass = 'rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm';
   return <div>
     <div className="mb-5 flex flex-col justify-between gap-4 md:flex-row"><div><h1 className="text-2xl font-bold text-gray-900">Stock Corrections</h1><p className="mt-1 text-sm text-gray-600">Record an actual batch remaining count for Supervisor approval.</p></div><StoreSelector store={response.data?.store ?? null} loading={loading} error={response.error} /></div>
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><Link to="/inventory/verifications" className="text-sm font-medium text-green-800 underline">My requests</Link><button type="button" onClick={() => setRevision((n) => n + 1)} className={inputClass}>Refresh</button></div>
+    <div className="mb-4 flex justify-end"><button type="button" onClick={() => setRevision((n) => n + 1)} className={inputClass}>Refresh</button></div>
     {notice && <p role="status" className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
     <div className="mb-4 flex flex-wrap items-center gap-3">
       <input aria-label="Search batches" type="search" maxLength="100" value={query.search} onChange={(e) => filter('search', e.target.value)} placeholder="Search product, SKU or Batch No." className={inputClass + ' min-w-0 flex-1 basis-64'} />
@@ -65,6 +64,6 @@ export default function BatchCorrections() {
       </table>{data.batches.length === 0 && <p className="p-6 text-sm text-gray-600">No matching recorded batches.</p>}</div>
       <div ref={pager} tabIndex={-1} className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 text-sm"><p>Showing {meta.from ?? 0}–{meta.to ?? 0} of {meta.total} batches · Page {meta.current_page} of {meta.last_page}</p><div className="flex gap-2"><button disabled={meta.current_page <= 1} onClick={() => navigate(meta.current_page - 1)} className={inputClass + ' disabled:opacity-40'}>Previous</button><button disabled={meta.current_page >= meta.last_page} onClick={() => navigate(meta.current_page + 1)} className={inputClass + ' disabled:opacity-40'}>Next</button></div></div>
     </div>}
-    {selected && <BatchCountModal key={selected.id} batch={selected} onClose={() => setSelected(null)} onSaved={(message) => { setSelected(null); setNotice(message); setRevision((n) => n + 1); }} />}
+    {selected && <BatchCountModal key={selected.id} batch={selected} onClose={() => setSelected(null)} onSaved={() => { setSelected(null); setNotice('Correction submitted. Track it in Stock Request.'); setRevision((n) => n + 1); }} />}
   </div>;
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import useStoreStock from '../../../hooks/useStoreStock';
 import StoreSelector from '../layout/StoreSelector';
 import ProductTable from '../product-management/ProductTable';
@@ -12,11 +13,26 @@ function recordedAt(value) {
   return new Date(value).toLocaleString('en-PH');
 }
 
-export default function StockWorkspace({ title, initialView, supervisor = false }) {
+export default function StockWorkspace({ title, initialView, supervisor = false, requestSection, onRequestSectionChange }) {
   const stock = useStoreStock();
-  const [view, setView] = useState(initialView);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const location = useLocation();
+  const [localView, setView] = useState(initialView);
+  const tracking = !supervisor && ['addition', 'correction'].includes(requestSection);
+  const view = tracking ? (requestSection === 'addition' ? 'receipts' : 'requests') : localView;
+  // URL navigation (including Back) starts a fresh filter scope for the tracker.
+  // Supervisor and other shared screens retain their existing local filter state.
+  const filterKey = tracking ? location.key + ':' + requestSection : 'workspace';
+  const [filters, setFilters] = useState({ key: filterKey, search: '', status: '' });
+  const search = filters.key === filterKey ? filters.search : '';
+  const status = filters.key === filterKey ? filters.status : '';
+  function setFilter(name, value) {
+    setFilters({ key: filterKey, search, status, [name]: value });
+  }
+  function selectRequestSection(section) {
+    if (section === requestSection) return;
+    setFilters({ key: '', search: '', status: '' });
+    onRequestSectionChange(section);
+  }
   const [policyItemId, setPolicyItemId] = useState('');
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
@@ -44,7 +60,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
   return (
     <div>
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">{title}</h1><p className="mt-1 text-sm text-gray-600">Physical stock includes reservations. Available stock excludes reservations, expired and on-hold batches.</p></div>
+        <div><h1 className="text-2xl font-bold text-gray-900">{title}</h1><p className="mt-1 text-sm text-gray-600">{tracking ? 'Track stock additions and batch count corrections for your assigned store.' : 'Physical stock includes reservations. Available stock excludes reservations, expired and on-hold batches.'}</p></div>
         <StoreSelector store={stock.store} loading={stock.loading} error={stock.error} />
       </div>
       {notice && <p role={noticeIsError ? 'alert' : 'status'} className={'mb-4 rounded-lg border p-3 text-sm ' + (noticeIsError ? 'border-red-200 bg-red-50 text-red-800' : 'border-green-200 bg-green-50 text-green-800')}>{notice}</p>}
@@ -52,6 +68,9 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
       {!stock.loading && !stock.error && stock.store && (
         <>
           <div className="mb-5 flex flex-wrap gap-3">
+            {tracking ? <div role="group" aria-label="Stock request sections" className="flex gap-2">
+              {[['addition', 'Stock Addition', 'stock-addition-panel'], ['correction', 'Stock Correction', 'stock-correction-panel']].map(([section, label, panel]) => <button key={section} type="button" aria-pressed={requestSection === section} aria-controls={panel} onClick={() => selectRequestSection(section)} className={'rounded-lg border px-4 py-2 text-sm font-medium ' + (requestSection === section ? 'border-green-700 bg-green-700 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50')}>{label}</button>)}
+            </div> : <>
             <button type="button" aria-pressed={view === 'receipts'} onClick={() => setView('receipts')} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Stock additions ({stock.receipts.filter((row) => row.status === 'pending').length} pending)</button>
             {supervisor && <>
               <button type="button" aria-pressed={view === 'requests'} onClick={function () { setView('requests'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Corrections ({stock.adjustments.filter(function (row) { return row.status === 'pending'; }).length} pending)</button>
@@ -59,15 +78,16 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
               <button type="button" aria-pressed={view === 'policies'} onClick={function () { setView('policies'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Re-order Levels & order limits</button>
               <button type="button" aria-pressed={view === 'activity'} onClick={function () { setView('activity'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Availability history</button>
             </>}
+            </>}
             <button type="button" onClick={stock.reload} className="rounded-lg border border-green-700 bg-white px-4 py-2 text-sm text-green-800">Refresh</button>
           </div>
-          {view === 'receipts' && <StockReceipts receipts={stock.receipts} supervisor={supervisor} onSaved={saved} onFailure={failed} />}
+          {view === 'receipts' && <div id="stock-addition-panel"><StockReceipts receipts={stock.receipts} supervisor={supervisor} onSaved={saved} onFailure={failed} /></div>}
           {(view === 'requests' || view === 'submit') && (
-            <section className="mt-5 space-y-4" aria-label="Stock correction requests">
+            <section id="stock-correction-panel" className="mt-5 space-y-4" aria-label="Stock correction requests">
               <h2 className="text-lg font-semibold">Correction requests and decisions</h2>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <input type="search" aria-label="Search correction requests" value={search} onChange={function (event) { setSearch(event.target.value); }} placeholder="Search product, requester, or reason..." className="flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm" />
-                <select aria-label="Correction status" value={status} onChange={function (event) { setStatus(event.target.value); }} className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"><option value="">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+                <input type="search" aria-label="Search correction requests" value={search} onChange={function (event) { setFilter('search', event.target.value); }} placeholder="Search product, batch, requester, or reason..." className="flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm" />
+                <select aria-label="Correction status" value={status} onChange={function (event) { setFilter('status', event.target.value); }} className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"><option value="">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
               </div>
               {adjustments.length === 0 && <p className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">No matching correction requests.</p>}
               {adjustments.map(function (row) {

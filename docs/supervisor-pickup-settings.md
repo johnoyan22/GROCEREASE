@@ -92,7 +92,7 @@ Commands from frontend:
     node --test tests/admin-staff-api.test.mjs tests/admin-stores-api.test.mjs tests/inventory-api.test.mjs tests/supervisor-staff-api.test.mjs tests/stock-api.test.mjs tests/shopper-cart.test.mjs tests/checkout-orders.test.mjs tests/store-workers.test.mjs tests/pickup-api.test.mjs tests/transaction-workflow-api.test.mjs tests/pickup-scheduling.test.mjs
     node node_modules/vite/bin/vite.js build
 
-ESLint was run against all changed frontend source/test files. git diff --check and untracked-file whitespace checks were also run before handoff.
+ESLint was run against all changed frontend source/test files. git diff --check and untracked-file whitespace checks were also run before delivery.
 
 ## Manual browser acceptance, migration now applied
 
@@ -151,7 +151,6 @@ The complete local revision manifest follows.
 - docs/october-19-transaction-sprint-report.md
 - docs/pending-transaction-migrations.md
 - docs/supervisor-pickup-settings.md
-- docs/transaction-sprint-handoff.md
 - docs/transaction-sprint-study-guide.md
 - frontend/src/components/Shoppers/ShopperCheckout.jsx
 - frontend/src/components/Supervisor/SupervisorContext.jsx

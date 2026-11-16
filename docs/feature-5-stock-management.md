@@ -1,8 +1,7 @@
 # Feature 5: Store stock corrections, reporting, and policies
 
-November 17 update: the correction API and worker form described below are historical.
-The [batch-count correction handoff](batch-count-corrections.md) defines the current batch-only
-contract, migration, safety rules, verification and manual checks. Policies/reporting remain unchanged.
+November 17 update: new corrections target a selected recorded batch. The whole-product correction
+API and worker form described below are historical. Policies/reporting remain unchanged.
 
 Implemented October 19, 2026 on `feature/multi-store-foundation`.
 Automated readiness and browser acceptance are separate. Browser acceptance is pending.

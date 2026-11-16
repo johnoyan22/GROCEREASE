@@ -73,13 +73,13 @@ export function SupervisorSidebar({ hasUnreadNotifications, onNavigateMobile }) 
       </div>
 
       <div className="space-y-1 border-t border-slate-100 pt-3">
-        <NavLink to={supervisorPath('profile')} onClick={onNavigateMobile} className={navClass}>
-          <User size={16} /> Profile
-        </NavLink>
         <NavLink to={supervisorPath('notifications')} onClick={onNavigateMobile} className={navClass}>
           <Bell size={16} />
           Notification
           {hasUnreadNotifications ? <span className="ml-1 h-2 w-2 rounded-full bg-red-500" /> : null}
+        </NavLink>
+        <NavLink to={supervisorPath('profile')} onClick={onNavigateMobile} className={navClass}>
+          <User size={16} /> Profile
         </NavLink>
         <NavLink
           to={supervisorPath('logout')}

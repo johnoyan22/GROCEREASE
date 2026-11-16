@@ -15,6 +15,7 @@
     "test:stock": "node --test tests/stock-api.test.mjs",
     "test:stock-browser": "node tests/stock-browser-smoke.mjs",
     "test:corrections-browser": "node tests/batch-correction-browser-smoke.mjs",
+    "test:inventory-ui-browser": "node tests/inventory-ui-browser-smoke.mjs",
     "test:shopper": "node --test tests/shopper-cart.test.mjs",
     "test:checkout": "node --test tests/checkout-orders.test.mjs",
     "test:workers": "node --test tests/store-workers.test.mjs",
