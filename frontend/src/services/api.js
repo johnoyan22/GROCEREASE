@@ -197,9 +197,11 @@ export function getInventoryItems({ signal } = {}) {
 function productDetails(details) {
   return {
     product_name: details.product_name,
-    sku: details.sku,
     barcode: details.barcode,
     size: details.size,
+    size_amount: details.size_amount,
+    size_unit: details.size_unit,
+    selling_unit: details.selling_unit,
     category: details.category,
     selling_price: details.selling_price,
     status: details.status,
@@ -310,6 +312,26 @@ export async function assignSupervisorStaff(id) {
 
 export function getStockAdjustments({ signal } = {}) {
   return sendRequest('/inventory/stock-adjustments', { signal });
+}
+
+export function getStockReceipts({ signal } = {}) {
+  return sendRequest('/inventory/stock-receipts', { signal });
+}
+
+export async function submitStockReceipt(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/inventory/items/${encodeURIComponent(id)}/stock-receipts`, {
+    method: 'POST', headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ operation_id: details.operation_id, quantity: details.quantity,
+      received_date: details.received_date, expiry_date: details.expiry_date, description: details.description }),
+  });
+}
+
+export async function decideStockReceipt(id, decision, note) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/stock-receipts/${encodeURIComponent(id)}/decision`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify({ decision, decision_note: note }),
+  });
 }
 
 export function getLowStockReports({ signal } = {}) {

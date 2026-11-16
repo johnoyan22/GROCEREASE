@@ -31,7 +31,7 @@ class RecommendationEngine
                     $q->whereNotIn('category', $settings->excluded_categories);
                 }
             })->with('product')->orderBy('store_inventory_id')->get()
-            ->map(fn ($p) => $this->present($p));
+            ->filter(fn ($p) => $p->availableStock() > 0)->values()->map(fn ($p) => $this->present($p));
     }
 
     public function recommend(int $userId, array $cartIds, AiRecommendationSetting $settings): array

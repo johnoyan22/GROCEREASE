@@ -4,6 +4,7 @@ import StoreSelector from '../layout/StoreSelector';
 import ProductTable from '../product-management/ProductTable';
 import InventoryLoadState from '../shared/InventoryLoadState';
 import { LowStockReportForm, StockAdjustmentForm, StockDecisionForm, StockPolicyForm } from './StockForms';
+import StockReceipts from './StockReceipts';
 
 function recordedAt(value) {
   if (!value) return '—';
@@ -42,7 +43,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
   return (
     <div>
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">{title}</h1><p className="mt-1 text-sm text-gray-600">Physical stock includes reservations. Available stock = physical stock − reserved stock.</p></div>
+        <div><h1 className="text-2xl font-bold text-gray-900">{title}</h1><p className="mt-1 text-sm text-gray-600">Physical stock includes reservations. Available stock excludes reservations, expired and on-hold batches.</p></div>
         <StoreSelector store={stock.store} loading={stock.loading} error={stock.error} />
       </div>
       {notice && <p role={noticeIsError ? 'alert' : 'status'} className={'mb-4 rounded-lg border p-3 text-sm ' + (noticeIsError ? 'border-red-200 bg-red-50 text-red-800' : 'border-green-200 bg-green-50 text-green-800')}>{notice}</p>}
@@ -50,15 +51,17 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
       {!stock.loading && !stock.error && stock.store && (
         <>
           <div className="mb-5 flex flex-wrap gap-3">
+            <button type="button" aria-pressed={view === 'receipts'} onClick={() => setView('receipts')} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Stock additions ({stock.receipts.filter((row) => row.status === 'pending').length} pending)</button>
             {supervisor && <>
               <button type="button" aria-pressed={view === 'requests'} onClick={function () { setView('requests'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Corrections ({stock.adjustments.filter(function (row) { return row.status === 'pending'; }).length} pending)</button>
               <button type="button" aria-pressed={view === 'low'} onClick={function () { setView('low'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Low stock ({lowStock.length})</button>
-              <button type="button" aria-pressed={view === 'policies'} onClick={function () { setView('policies'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Quantity limits & thresholds</button>
+              <button type="button" aria-pressed={view === 'policies'} onClick={function () { setView('policies'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Re-order Levels & order limits</button>
               <button type="button" aria-pressed={view === 'activity'} onClick={function () { setView('activity'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Availability history</button>
             </>}
             <button type="button" onClick={stock.reload} className="rounded-lg border border-green-700 bg-white px-4 py-2 text-sm text-green-800">Refresh</button>
           </div>
           {view === 'submit' && <StockAdjustmentForm inventory={stock.inventory} onSaved={saved} onFailure={failed} />}
+          {view === 'receipts' && <StockReceipts receipts={stock.receipts} supervisor={supervisor} onSaved={saved} onFailure={failed} />}
           {(view === 'requests' || view === 'submit') && (
             <section className="mt-5 space-y-4" aria-label="Stock correction requests">
               <h2 className="text-lg font-semibold">Correction requests and decisions</h2>
@@ -83,7 +86,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false 
           )}
           {view === 'low' && (
             <section className="space-y-5">
-              <div><h2 className="mb-2 text-lg font-semibold">Products at or below their low-stock threshold</h2><p className="mb-3 text-sm text-gray-600">Products without a configured threshold are not flagged. Your Supervisor manages these thresholds.</p><ProductTable products={lowStock} /></div>
+              <div><h2 className="mb-2 text-lg font-semibold">Products at or below their Re-order Level</h2><p className="mb-3 text-sm text-gray-600">Products without a configured Re-order Level are not flagged. Your Supervisor manages Re-order Levels.</p><ProductTable products={lowStock} /></div>
               {!supervisor && <LowStockReportForm inventory={stock.inventory} onSaved={saved} onFailure={failed} />}
               <h2 className="text-lg font-semibold">Low-stock report history ({stock.reports.length})</h2>
               {stock.reports.length === 0 && <p className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">No low-stock reports recorded for this store.</p>}

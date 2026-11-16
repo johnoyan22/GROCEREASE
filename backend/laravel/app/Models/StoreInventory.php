@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class StoreInventory extends Model
 {
@@ -38,12 +39,26 @@ class StoreInventory extends Model
             'stock_version' => 'integer',
             'max_per_order' => 'integer',
             'low_stock_threshold' => 'integer',
+            'batches_initialized' => 'boolean',
         ];
     }
 
     public function availableStock(): int
     {
-        return $this->hard_stock_qty - $this->soft_stock_qty;
+        if (!$this->batches_initialized) return max(0, $this->hard_stock_qty - $this->soft_stock_qty);
+        $eligible = (int) $this->batches()->where('status', 'active')
+            ->where(fn ($q) => $q->whereNull('expiry_date')->orWhere('expiry_date', '>=', now('Asia/Manila')->format('Y-m-d')))->sum('remaining_quantity');
+        $allocated = (int) DB::table('order_batch_allocations')->join('inventory_batches', 'inventory_batches.id', '=', 'inventory_batch_id')
+            ->where('store_inventory_id', $this->store_inventory_id)->where('order_batch_allocations.status', 'reserved')->sum('quantity');
+        $eligibleReserved = (int) DB::table('order_batch_allocations')->join('inventory_batches', 'inventory_batches.id', '=', 'inventory_batch_id')
+            ->where('store_inventory_id', $this->store_inventory_id)->where('order_batch_allocations.status', 'reserved')
+            ->where('inventory_batches.status', 'active')->where(fn ($q) => $q->whereNull('expiry_date')->orWhere('expiry_date', '>=', now('Asia/Manila')->format('Y-m-d')))->sum('quantity');
+        return max(0, min($this->hard_stock_qty - $this->soft_stock_qty, $eligible - $eligibleReserved - max(0, $this->soft_stock_qty - $allocated)));
+    }
+
+    public function batches(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(InventoryBatch::class, 'store_inventory_id', 'store_inventory_id');
     }
 
     public function isLowStock(): bool

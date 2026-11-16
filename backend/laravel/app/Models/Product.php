@@ -19,7 +19,24 @@ class Product extends Model
         'barcode',
         'size',
         'category',
+        'size_amount', 'size_unit', 'selling_unit',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Product $product) {
+            if (!$product->sku) {
+                do {
+                    $sequence = \Illuminate\Support\Facades\DB::table('product_sku_sequences')->insertGetId([]);
+                    $sku = sprintf('GE-S%03d-P%06d', $product->store_id, $sequence);
+                } while (static::where('store_id', $product->store_id)->where('sku', $sku)->exists());
+                $product->sku = $sku;
+            }
+        });
+        static::updating(function (Product $product) {
+            if ($product->isDirty('sku')) throw new \LogicException('Product SKU is immutable.');
+        });
+    }
 
     protected function sku(): Attribute
     {

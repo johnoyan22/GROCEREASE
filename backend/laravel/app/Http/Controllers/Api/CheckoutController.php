@@ -102,13 +102,16 @@ class CheckoutController extends Controller
             ]);
             foreach ($resolved['lines'] as $line) {
                 $inventory = $line['inventory'];
-                OrderItem::create([
+                app(\App\Services\BatchStock::class)->initialize($inventory);
+                $orderItem = OrderItem::create([
                     'order_id' => $order->order_id, 'store_id' => $store->store_id,
                     'store_inventory_id' => $inventory->store_inventory_id,
                     'product_name' => $line['product_name'], 'sku' => $line['sku'], 'size' => $line['size'],
+                    'selling_unit' => $line['selling_unit'],
                     'quantity' => $line['quantity'], 'unit_price_centavos' => $line['unit_price_centavos'],
                     'line_total_centavos' => $line['line_total_centavos'],
                 ]);
+                app(\App\Services\BatchStock::class)->reserve($inventory, $orderItem);
                 $inventory->soft_stock_qty = $inventory->soft_stock_qty + $line['quantity'];
                 $inventory->stock_version = $inventory->stock_version + 1;
                 $inventory->save();

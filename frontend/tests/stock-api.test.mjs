@@ -3,6 +3,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import {
   getStockAdjustments, getLowStockReports, getAvailabilityHistory,
   submitStockAdjustment, submitLowStockReport, decideStockAdjustment, updateInventoryPolicy,
+  getStockReceipts, submitStockReceipt, decideStockReceipt,
 } from '../src/services/api.js';
 
 let previousDocument;
@@ -32,11 +33,37 @@ test('all stock reads use session authentication, explicit endpoints, and abort 
   await getStockAdjustments({ signal });
   await getLowStockReports({ signal });
   await getAvailabilityHistory({ signal });
+  await getStockReceipts({ signal });
   assert.deepEqual(paths, [
     'http://localhost:8000/api/inventory/stock-adjustments',
     'http://localhost:8000/api/inventory/low-stock-reports',
     'http://localhost:8000/api/inventory/availability-history',
+    'http://localhost:8000/api/inventory/stock-receipts',
   ]);
+});
+
+test('receipts preserve one operation identity, direct quantity, date-only values and description without overrides', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 });
+    assert.equal(url, 'http://localhost:8000/api/inventory/items/7/stock-receipts');
+    assert.equal(options.method, 'POST');
+    assert.equal(options.headers['X-XSRF-TOKEN'], 'secure=token');
+    assert.deepEqual(JSON.parse(options.body), { operation_id: 'same-retry-key', quantity: 100, received_date: '2026-11-16', expiry_date: null, description: 'Delivery from supplier.' });
+    return json({ message: 'Pending' }, 201);
+  });
+  await submitStockReceipt(7, { operation_id: 'same-retry-key', quantity: 100, received_date: '2026-11-16', expiry_date: null, description: 'Delivery from supplier.',
+    hard_stock_qty: 1000, status: 'approved', store_id: 999, batch_reference: 'FORGED', reason: 'Not receiving', units_per_carton: 12 });
+});
+
+test('receipt decisions send only decision and rejection reason with CSRF', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 });
+    assert.equal(url, 'http://localhost:8000/api/supervisor/stock-receipts/9/decision');
+    assert.equal(options.method, 'PUT');
+    assert.deepEqual(JSON.parse(options.body), { decision: 'rejected', decision_note: 'Wrong delivery' });
+    return json({ message: 'Rejected' });
+  });
+  await decideStockReceipt(9, 'rejected', 'Wrong delivery');
 });
 
 test('count requests send desired count and optimistic version, excluding trusted snapshot fields', async function (t) {

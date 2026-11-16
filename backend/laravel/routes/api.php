@@ -192,6 +192,12 @@ Route::post('/inventory/items/{item}/low-stock-reports', [StockReportingControll
 Route::get('/inventory/stock-adjustments', [StockAdjustmentController::class, 'index'])
     ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])
     ->name('inventory.stock-adjustments.index');
+Route::get('/inventory/stock-receipts', [\App\Http\Controllers\Api\StockReceiptController::class, 'index'])
+    ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor']);
+Route::post('/inventory/items/{item}/stock-receipts', [\App\Http\Controllers\Api\StockReceiptController::class, 'store'])
+    ->whereNumber('item')->middleware(['auth:sanctum', 'role:inventory_worker', 'throttle:30,1,stock-receipt-create:']);
+Route::put('/supervisor/stock-receipts/{receipt}/decision', [\App\Http\Controllers\Api\StockReceiptController::class, 'decide'])
+    ->whereNumber('receipt')->middleware(['auth:sanctum', 'role:supervisor', 'throttle:30,1,stock-receipt-decision:']);
 Route::post('/inventory/items/{item}/stock-adjustments', [StockAdjustmentController::class, 'store'])
     ->whereNumber('item')
     ->middleware(['auth:sanctum', 'role:inventory_worker', 'throttle:20,1,stock-adjustment-create:'])

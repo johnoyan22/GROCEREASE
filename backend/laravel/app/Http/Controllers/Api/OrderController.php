@@ -112,6 +112,7 @@ class OrderController extends Controller
                 if ($inventory->soft_stock_qty < $item->quantity) {
                     abort(409, 'The reserved stock needs reconciliation. Contact your store Supervisor.');
                 }
+                app(\App\Services\BatchStock::class)->release($inventory, $item);
                 // Waiting orders have not entered preparation. No automatic release for prepared/no-show goods.
                 $inventory->soft_stock_qty = $inventory->soft_stock_qty - $item->quantity;
                 $inventory->stock_version = $inventory->stock_version + 1;

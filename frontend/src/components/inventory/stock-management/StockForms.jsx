@@ -172,7 +172,7 @@ export function StockPolicyForm({ item, onSaved, onFailure }) {
       {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
       <fieldset disabled={pending} className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="text-sm">Maximum units per order<input type="number" min="1" max="2147483647" step="1" value={limit} onChange={function (event) { setLimit(event.target.value); }} className={inputClass} /></label>
-        <label className="text-sm">Low-stock threshold<input type="number" min="0" max="2147483647" step="1" value={threshold} onChange={function (event) { setThreshold(event.target.value); }} className={inputClass} /></label>
+        <label className="text-sm">Re-order Level ({item.selling_unit ? item.selling_unit + 's' : 'selling units'})<input type="number" min="0" max="2147483647" step="1" value={threshold} onChange={function (event) { setThreshold(event.target.value); }} className={inputClass} /></label>
         <div><button disabled={pending} className={buttonClass}>{pending ? 'Saving...' : 'Save product policy'}</button></div>
       </fieldset>
     </form>

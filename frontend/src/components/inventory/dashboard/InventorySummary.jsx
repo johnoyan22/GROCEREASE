@@ -51,7 +51,7 @@ function InventorySummary({ data }) {
 
             </div>
 
-            <p className="mt-4 text-xs text-gray-600">Physical: {data.physical_units} - Reserved: {data.reserved_units} - Available: {data.available_units}. Low stock uses each product's configured threshold.</p>
+            <p className="mt-4 text-xs text-gray-600">Physical: {data.physical_units} - Reserved: {data.reserved_units} - Available: {data.available_units}. Low stock uses each product's configured Re-order Level.</p>
             <div className="mt-5 flex items-start gap-3 rounded-lg bg-green-50 p-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
                     <InventoryTip />

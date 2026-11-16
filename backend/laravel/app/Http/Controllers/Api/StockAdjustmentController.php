@@ -111,6 +111,7 @@ class StockAdjustmentController extends Controller
                 if ($record->requested_hard_stock_qty < $inventory->soft_stock_qty) {
                     abort(409, 'The physical count cannot be below reserved units. Reconciliation is required.');
                 }
+                app(\App\Services\BatchStock::class)->correct($inventory, $record->requested_hard_stock_qty, $record->id, $context['user']->id);
                 $inventory->hard_stock_qty = $record->requested_hard_stock_qty;
                 $inventory->stock_version = $inventory->stock_version + 1;
                 $inventory->save();
@@ -163,7 +164,7 @@ class StockAdjustmentController extends Controller
                 $inventory->save();
             }
 
-            return response()->json(['message' => 'Product quantity limit and low-stock threshold saved.']);
+            return response()->json(['message' => 'Product quantity limit and Re-order Level saved.']);
         }, 3);
     }
 

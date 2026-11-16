@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getInventoryItems, getStockAdjustments, getLowStockReports, getAvailabilityHistory } from '../services/api';
+import { getInventoryItems, getStockAdjustments, getLowStockReports, getAvailabilityHistory, getStockReceipts } from '../services/api';
 
-const emptyState = { store: null, inventory: [], adjustments: [], reports: [], history: [], loading: true, error: '' };
+const emptyState = { store: null, inventory: [], adjustments: [], receipts: [], reports: [], history: [], loading: true, error: '' };
 
 export default function useStoreStock() {
   const [state, setState] = useState(emptyState);
@@ -14,20 +14,21 @@ export default function useStoreStock() {
     async function loadStock() {
       try {
         const options = { signal: controller.signal };
-        const [items, requests, reports, history] = await Promise.all([
+        const [items, requests, reports, history, receipts] = await Promise.all([
           getInventoryItems(options), getStockAdjustments(options), getLowStockReports(options), getAvailabilityHistory(options),
+          getStockReceipts(options),
         ]);
         if (!items.store || !Array.isArray(items.inventory) || !Array.isArray(requests.adjustments)
-          || !Array.isArray(reports.reports) || !Array.isArray(history.history)) {
+          || !Array.isArray(reports.reports) || !Array.isArray(history.history) || !Array.isArray(receipts.receipts)) {
           throw new Error('Unexpected stock response.');
         }
         // An Admin may transfer a staff member while these requests are in flight.
         if (items.store.store_id !== requests.store?.store_id || items.store.store_id !== reports.store?.store_id
-          || items.store.store_id !== history.store?.store_id) {
+          || items.store.store_id !== history.store?.store_id || items.store.store_id !== receipts.store?.store_id) {
           throw new Error('Your store assignment changed. Refresh this page.');
         }
         if (active) {
-          setState({ store: items.store, inventory: items.inventory, adjustments: requests.adjustments,
+          setState({ store: items.store, inventory: items.inventory, adjustments: requests.adjustments, receipts: receipts.receipts,
             reports: reports.reports, history: history.history, loading: false, error: '' });
         }
       } catch (error) {

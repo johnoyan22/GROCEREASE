@@ -25,7 +25,7 @@ export function SupervisorInventory() {
             <input aria-label="Search store products" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search your store products..." className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm" />
             <button type="button" onClick={reload} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm">Refresh</button>
           </div>
-          <ProductTable products={filtered} />
+          <ProductTable products={filtered} supervisor onReload={reload} />
         </>
       )}
     </div>

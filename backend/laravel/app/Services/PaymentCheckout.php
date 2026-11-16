@@ -137,6 +137,7 @@ class PaymentCheckout
         foreach ($order->items()->orderBy('store_inventory_id')->get() as $item) {
             $inventory = StoreInventory::forStore($order->store_id)->whereKey($item->store_inventory_id)->lockForUpdate()->firstOrFail();
             abort_if($inventory->soft_stock_qty < $item->quantity, 409, 'Reserved stock requires reconciliation.');
+            app(BatchStock::class)->release($inventory, $item);
             $inventory->soft_stock_qty -= $item->quantity; $inventory->stock_version++; $inventory->save();
         }
         $attempt->status = $expired ? 'expired' : 'canceled'; $attempt->expired_at = now(); $attempt->save();
