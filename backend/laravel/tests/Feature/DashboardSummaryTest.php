@@ -45,7 +45,7 @@ class DashboardSummaryTest extends TransactionTestCase
         $this->inventory->forceFill(['low_stock_threshold' => 99])->save();
         $this->assignWorker();
         $this->signIn($this->inventoryWorker)->postJson('/api/inventory/items/'.$this->inventory->store_inventory_id.'/stock-adjustments', [
-            'requested_hard_stock_qty' => 105, 'expected_stock_version' => $this->inventory->fresh()->stock_version, 'reason' => 'Count',
+            'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(), 'requested_remaining_quantity' => 105, 'expected_stock_version' => $this->inventory->fresh()->stock_version, 'reason' => 'Count',
         ])->assertCreated();
         foreach ([$this->inventoryWorker, $this->supervisor] as $user) {
             $this->signIn($user)->getJson($this->endpoint)->assertOk()->assertJsonPath('store.store_id', $this->store->store_id)

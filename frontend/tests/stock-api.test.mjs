@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import {
-  getStockAdjustments, getLowStockReports, getAvailabilityHistory,
+  getCorrectionBatches, getStockAdjustments, getLowStockReports, getAvailabilityHistory,
   submitStockAdjustment, submitLowStockReport, decideStockAdjustment, updateInventoryPolicy,
   getStockReceipts, submitStockReceipt, decideStockReceipt,
 } from '../src/services/api.js';
@@ -73,11 +73,11 @@ test('count requests send desired count and optimistic version, excluding truste
     assert.equal(url, 'http://localhost:8000/api/inventory/items/7/stock-adjustments');
     assert.equal(options.method, 'POST');
     assert.equal(options.headers['X-XSRF-TOKEN'], 'secure=token');
-    assert.deepEqual(JSON.parse(options.body), { requested_hard_stock_qty: '92', expected_stock_version: 2, reason: 'Physical count' });
+    assert.deepEqual(JSON.parse(options.body), { inventory_batch_id: 12, operation_id: 'stable-retry-key', requested_remaining_quantity: '92', expected_stock_version: 2, reason: 'Physical count' });
     return json({ adjustment: { status: 'pending' } }, 201);
   });
   const result = await submitStockAdjustment(7, {
-    requested_hard_stock_qty: '92', expected_stock_version: 2, reason: 'Physical count',
+    inventory_batch_id: 12, operation_id: 'stable-retry-key', requested_remaining_quantity: '92', expected_stock_version: 2, reason: 'Physical count',
     store_id: 999, requested_by_user_id: 999, status: 'approved', observed_hard_stock_qty: 999,
   });
   assert.equal(result.adjustment.status, 'pending');
@@ -162,4 +162,19 @@ test('unauthorized and missing-schema responses never become successful empty li
     await assert.rejects(getStockAdjustments(), function (error) { return error.status === status; });
     await assert.rejects(getLowStockReports(), function (error) { return error.status === status; });
   }
+});
+
+
+test('correction table reads carry validated server filters, pagination, abort and no cache', async (t) => {
+  const signal = new AbortController().signal;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    const target = new URL(url);
+    assert.equal(target.pathname, '/api/inventory/correction-batches');
+    assert.deepEqual(Object.fromEntries(target.searchParams), { page: '3', search: 'B-000012', product: '7', condition: 'expired', include_empty: '1' });
+    assert.equal(options.signal, signal);
+    assert.equal(options.cache, 'no-store');
+    assert.equal(options.credentials, 'include');
+    return json({ batches: [] });
+  });
+  await getCorrectionBatches({ page: 3, search: 'B-000012', product: '7', condition: 'expired', includeEmpty: true, signal });
 });

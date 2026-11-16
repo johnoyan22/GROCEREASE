@@ -315,6 +315,11 @@ export async function assignSupervisorStaff(id) {
   });
 }
 
+export function getCorrectionBatches({ page = 1, search = '', product = '', condition = '', includeEmpty = false, signal } = {}) {
+  const query = new URLSearchParams({ page: String(page), search, product: String(product), condition, include_empty: includeEmpty ? '1' : '0' });
+  return sendRequest('/inventory/correction-batches?' + query, { signal, cache: 'no-store' });
+}
+
 export function getStockAdjustments({ signal } = {}) {
   return sendRequest('/inventory/stock-adjustments', { signal });
 }
@@ -353,7 +358,9 @@ export async function submitStockAdjustment(id, details) {
     method: 'POST',
     headers: { 'X-XSRF-TOKEN': xsrfToken },
     body: JSON.stringify({
-      requested_hard_stock_qty: details.requested_hard_stock_qty,
+      inventory_batch_id: details.inventory_batch_id,
+      operation_id: details.operation_id,
+      requested_remaining_quantity: details.requested_remaining_quantity,
       expected_stock_version: details.expected_stock_version,
       reason: details.reason,
     }),

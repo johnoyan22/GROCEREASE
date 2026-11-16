@@ -81,27 +81,25 @@ class BatchStock
         DB::table('order_batch_allocations')->where('order_item_id', $item->order_item_id)->where('status', 'reserved')->update(['status' => 'released', 'updated_at' => now()]);
     }
 
-    public function correct(StoreInventory $inventory, int $newTotal, int $adjustmentId, int $actorId): void
+    public function correctBatch(StoreInventory $inventory, InventoryBatch $batch, int $actual, int $adjustmentId): void
     {
-        $this->initialize($inventory);
-        $delta = $newTotal - $inventory->hard_stock_qty;
-        if ($delta > 0) {
-            // A count correction supplies no evidence of a receipt or expiry date.
-            $batch = $this->create($inventory, $delta, ['source' => 'correction', 'description' => 'Count correction #'.$adjustmentId.'; dates unknown.', 'created_by_user_id' => $actorId]);
-            $this->correctionLog($adjustmentId, $batch->id, $delta);
-        } elseif ($delta < 0) {
-            $needed = -$delta;
-            foreach ($this->ordered($inventory)->lockForUpdate()->get() as $batch) {
-                $take = min($needed, max(0, $batch->remaining_quantity - $this->reserved($batch->id)));
-                if ($take === 0) continue;
-                $batch->remaining_quantity -= $take;
-                $batch->save();
-                $this->correctionLog($adjustmentId, $batch->id, -$take);
-                $needed -= $take;
-                if ($needed === 0) break;
-            }
-            abort_if($needed > 0, 409, 'The correction would consume allocated stock. Reconcile the reservations first.');
-        }
+        // Caller holds store -> inventory -> selected batch -> request -> allocation locks.
+        abort_unless($batch->store_inventory_id === $inventory->store_inventory_id, 409, 'Batch ownership changed.');
+        $allocated = DB::table('order_batch_allocations')->where('inventory_batch_id', $batch->id)
+            ->where('status', 'reserved')->orderBy('id')->lockForUpdate()->get();
+        $delta = $actual - $batch->remaining_quantity;
+        $total = $inventory->hard_stock_qty + $delta;
+        abort_if($actual < (int) $allocated->sum('quantity') || $total < $inventory->soft_stock_qty,
+            409, 'Reconciliation required: the count conflicts with reserved stock. Reservations and orders were not changed.');
+        abort_if($total < 0 || $total > 2147483647, 409, 'The corrected product total is outside the supported range.');
+        abort_unless((int) $inventory->batches()->sum('remaining_quantity') === $inventory->hard_stock_qty,
+            409, 'Reconciliation required: batch and product physical totals disagree.');
+        $batch->remaining_quantity = $actual;
+        $batch->save();
+        $this->correctionLog($adjustmentId, $batch->id, $delta);
+        $inventory->hard_stock_qty = $total;
+        $inventory->stock_version++;
+        $inventory->save();
     }
 
     public function pickingData(OrderItem $item): array

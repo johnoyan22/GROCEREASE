@@ -22,7 +22,7 @@ class ReceivingMigrationTest extends TestCase
         $this->assertSame('sqlite', config('database.default'));
         $this->assertSame(':memory:', DB::connection()->getDatabaseName());
         $new = '2026_11_16_000001_add_product_receiving_and_batches.php';
-        $paths = array_values(array_map(fn ($path) => 'database/migrations/'.basename($path), array_filter(glob(database_path('migrations/*.php')), fn ($path) => basename($path) !== $new)));
+        $paths = array_values(array_map(fn ($path) => 'database/migrations/'.basename($path), array_filter(glob(database_path('migrations/*.php')), fn ($path) => basename($path) < $new)));
         $this->artisan('migrate', ['--path' => $paths, '--force' => true])->assertExitCode(0);
         $this->seed(RoleSeeder::class);
         $shopper = User::factory()->create(['role_id' => Role::where('slug', 'shopper')->value('role_id')]);

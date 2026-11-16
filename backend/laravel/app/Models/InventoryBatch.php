@@ -33,4 +33,9 @@ class InventoryBatch extends Model
         return $reference && preg_match('/^B-\d+$/D', $reference)
             ? $reference : 'B-'.str_pad((string) $id, 6, '0', STR_PAD_LEFT);
     }
+
+    public function inventory(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(StoreInventory::class, 'store_inventory_id', 'store_inventory_id');
+    }
 }

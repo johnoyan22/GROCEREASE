@@ -53,6 +53,7 @@ class StockAdjustmentTest extends TestCase
             'store_id' => $this->first->store_id, 'product_id' => $product->product_id,
             'selling_price' => '50.00', 'hard_stock_qty' => 100, 'soft_stock_qty' => 15, 'status' => 'active',
         ])->refresh();
+        app(\App\Services\BatchStock::class)->initialize($this->inventory);
     }
 
     private function account(string $role, ?Store $store = null): User
@@ -80,7 +81,8 @@ class StockAdjustmentTest extends TestCase
     private function submit(array $overrides = []): int
     {
         return $this->signIn($this->worker)->postJson($this->submissionPath(), array_merge([
-            'requested_hard_stock_qty' => 92, 'expected_stock_version' => $this->inventory->fresh()->stock_version,
+            'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(),
+            'requested_remaining_quantity' => 92, 'expected_stock_version' => $this->inventory->fresh()->stock_version,
             'reason' => 'Physical count confirmed on shelf and in storage.',
         ], $overrides))->assertCreated()->json('adjustment.id');
     }
@@ -168,26 +170,31 @@ class StockAdjustmentTest extends TestCase
         $this->putJson($this->decisionPath($id), ['decision' => 'rejected', 'decision_note' => 'Stock changed; please reconcile.'])->assertOk();
     }
 
-    public function test_two_requests_from_same_snapshot_cannot_both_overwrite_stock(): void
+    public function test_two_pending_requests_cannot_target_the_same_batch(): void
     {
         $first = $this->submit();
-        $second = $this->submit(['requested_hard_stock_qty' => 94]);
+        $this->signIn($this->worker)->postJson($this->submissionPath(), [
+            'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(),
+            'requested_remaining_quantity' => 94, 'expected_stock_version' => 0, 'reason' => 'Another count',
+        ])->assertConflict();
+        $this->assertDatabaseCount('stock_adjustments', 1);
         $this->signIn($this->supervisor)->putJson($this->decisionPath($first), ['decision' => 'approved'])->assertOk();
-        $this->putJson($this->decisionPath($second), ['decision' => 'approved'])->assertConflict();
         $this->assertSame(92, $this->inventory->fresh()->hard_stock_qty);
     }
 
-    public function test_count_cannot_be_below_reservations_and_stale_submission_is_rejected(): void
+    public function test_count_below_reservations_preserves_evidence_but_blocks_approval_and_stale_submission(): void
     {
-        $this->signIn($this->worker)->postJson($this->submissionPath(), [
-            'requested_hard_stock_qty' => 14, 'expected_stock_version' => 0, 'reason' => 'Reserved items missing',
-        ])->assertUnprocessable()->assertJsonValidationErrors('requested_hard_stock_qty');
+        $id = $this->submit(['requested_remaining_quantity' => 14]);
+        $this->assertSame(100, $this->inventory->fresh()->hard_stock_qty);
+        $this->signIn($this->supervisor)->putJson($this->decisionPath($id), ['decision' => 'approved'])->assertConflict();
+        $this->putJson($this->decisionPath($id), ['decision' => 'rejected', 'decision_note' => 'Reconcile reservations'])->assertOk();
         $this->inventory->stock_version = 1;
         $this->inventory->save();
-        $this->postJson($this->submissionPath(), [
-            'requested_hard_stock_qty' => 92, 'expected_stock_version' => 0, 'reason' => 'Old screen',
+        $this->signIn($this->worker)->postJson($this->submissionPath(), [
+            'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(),
+            'requested_remaining_quantity' => 92, 'expected_stock_version' => 0, 'reason' => 'Old screen',
         ])->assertConflict();
-        $this->assertDatabaseCount('stock_adjustments', 0);
+        $this->assertDatabaseCount('stock_adjustments', 1);
     }
 
     public function test_foreign_supervisor_cannot_read_or_decide_another_stores_request(): void
@@ -205,17 +212,20 @@ class StockAdjustmentTest extends TestCase
     {
         $this->worker->staffStoreAssignment()->update(['store_id' => $this->second->store_id]);
         $this->signIn($this->worker)->postJson($this->submissionPath(), [
-            'requested_hard_stock_qty' => 92, 'expected_stock_version' => 0, 'reason' => 'Foreign item',
+            'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(),
+            'requested_remaining_quantity' => 92, 'expected_stock_version' => 0, 'reason' => 'Foreign item',
         ])->assertNotFound();
     }
 
     public function test_role_and_guest_restrictions_cover_all_new_operations(): void
     {
+        $this->getJson('/api/inventory/correction-batches')->assertUnauthorized();
         $this->getJson('/api/inventory/stock-adjustments')->assertUnauthorized();
         $this->postJson($this->submissionPath(), [])->assertUnauthorized();
         $this->putJson($this->decisionPath(1), [])->assertUnauthorized();
         $this->putJson($this->policyPath(), [])->assertUnauthorized();
         foreach ([$this->admin, $this->account('shopper')] as $user) {
+            $this->signIn($user)->getJson('/api/inventory/correction-batches')->assertForbidden();
             $this->signIn($user)->getJson('/api/inventory/stock-adjustments')->assertForbidden();
             $this->postJson($this->submissionPath(), [])->assertForbidden();
             $this->putJson($this->decisionPath(1), [])->assertForbidden();
@@ -244,6 +254,7 @@ class StockAdjustmentTest extends TestCase
             $this->first->update(['status' => 'inactive']);
         }
         $this->signIn($this->supervisor)->putJson($this->decisionPath($id), ['decision' => 'approved'])->assertForbidden();
+        $this->getJson('/api/inventory/correction-batches')->assertForbidden();
         $this->getJson('/api/inventory/stock-adjustments')->assertForbidden();
         $this->putJson($this->policyPath(), ['max_per_order' => 3, 'low_stock_threshold' => 20])->assertForbidden();
         $this->assertSame(100, $this->inventory->fresh()->hard_stock_qty);
@@ -282,6 +293,8 @@ class StockAdjustmentTest extends TestCase
         }
         $this->assertSame($before, $this->inventory->fresh()->getAttributes());
         $this->assertSame('pending', StockAdjustment::findOrFail($id)->status);
+        $this->assertSame(100, $this->inventory->batches()->firstOrFail()->remaining_quantity);
+        $this->assertDatabaseCount('batch_correction_logs', 0);
     }
 
     public function test_supervisor_sets_policy_and_low_stock_uses_available_quantity(): void
@@ -309,11 +322,12 @@ class StockAdjustmentTest extends TestCase
         $this->signIn($this->worker);
         foreach ([-1, 1.5, 2147483648, 'invalid'] as $quantity) {
             $this->postJson($this->submissionPath(), [
-                'requested_hard_stock_qty' => $quantity, 'expected_stock_version' => 0, 'reason' => 'Invalid',
-            ])->assertUnprocessable()->assertJsonValidationErrors('requested_hard_stock_qty');
+                'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(),
+                'requested_remaining_quantity' => $quantity, 'expected_stock_version' => 0, 'reason' => 'Invalid',
+            ])->assertUnprocessable()->assertJsonValidationErrors('requested_remaining_quantity');
         }
         $this->postJson($this->submissionPath(), [])->assertUnprocessable()
-            ->assertJsonValidationErrors(['reason', 'requested_hard_stock_qty', 'expected_stock_version']);
+            ->assertJsonValidationErrors(['reason', 'requested_remaining_quantity', 'expected_stock_version']);
         $this->signIn($this->supervisor);
         foreach ([['max_per_order' => 0], ['max_per_order' => 1.5], ['low_stock_threshold' => -1]] as $invalid) {
             $this->putJson($this->policyPath(), array_merge(['max_per_order' => 2, 'low_stock_threshold' => 10], $invalid))
@@ -334,12 +348,13 @@ class StockAdjustmentTest extends TestCase
             'status' => 'approved', 'decided_at' => '2020-01-01',
         ];
         $this->signIn($this->worker)->postJson($this->submissionPath(), array_merge([
-            'requested_hard_stock_qty' => 92, 'expected_stock_version' => 0, 'reason' => 'Override',
+            'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(),
+            'requested_remaining_quantity' => 92, 'expected_stock_version' => 0, 'reason' => 'Override',
         ], $fields))->assertUnprocessable()->assertJsonValidationErrors(array_keys($fields));
         $id = $this->submit();
         $this->signIn($this->supervisor)->putJson($this->decisionPath($id), array_merge([
-            'decision' => 'approved', 'requested_hard_stock_qty' => 999,
-        ], $fields))->assertUnprocessable()->assertJsonValidationErrors(array_merge(array_keys($fields), ['requested_hard_stock_qty']));
+            'decision' => 'approved', 'requested_remaining_quantity' => 999,
+        ], $fields))->assertUnprocessable()->assertJsonValidationErrors(array_merge(array_keys($fields), ['requested_remaining_quantity']));
         $this->getJson('/api/inventory/stock-adjustments?store_id='.$this->second->store_id)->assertUnprocessable();
         $this->assertSame(100, $this->inventory->fresh()->hard_stock_qty);
     }

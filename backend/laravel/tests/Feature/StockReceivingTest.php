@@ -292,19 +292,22 @@ class StockReceivingTest extends TransactionTestCase
     {
         $product = $this->product(); $id = $product['store_inventory_id'];
         $this->approve($this->receipt($id));
+        $receivingEvidence = DB::table('stock_receipts')->orderBy('id')->get()->toArray();
         $order = $this->orderFor($id, 10);
         $this->signIn($this->shopper)->putJson('/api/shopper/orders/'.$order.'/cancellation', ['reason' => 'Changed plans'])->assertOk();
         $this->assertSame(0, DB::table('order_batch_allocations')->where('status', 'reserved')->sum('quantity'));
         foreach ([90, 105] as $total) {
             $item = StoreInventory::findOrFail($id);
             $request = $this->signIn($this->inventoryWorker)->postJson('/api/inventory/items/'.$id.'/stock-adjustments', [
-                'requested_hard_stock_qty' => $total, 'expected_stock_version' => $item->stock_version, 'reason' => 'Actual count.',
+                'inventory_batch_id' => $item->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(), 'requested_remaining_quantity' => $total, 'expected_stock_version' => $item->stock_version, 'reason' => 'Actual count.',
             ])->assertCreated()->json('adjustment.id');
             $this->signIn($this->supervisor)->putJson('/api/supervisor/stock-adjustments/'.$request.'/decision', ['decision' => 'approved'])->assertOk();
             $this->assertSame($total, (int) InventoryBatch::where('store_inventory_id', $id)->sum('remaining_quantity'));
             $this->assertSame($total, StoreInventory::findOrFail($id)->hard_stock_qty);
         }
         $this->assertDatabaseCount('batch_correction_logs', 2);
-        $this->assertNull(InventoryBatch::where('source', 'correction')->firstOrFail()->received_date);
+        $this->assertEquals($receivingEvidence, DB::table('stock_receipts')->orderBy('id')->get()->toArray());
+        $this->assertSame(0, InventoryBatch::where('source', 'correction')->count());
+        $this->assertSame(100, InventoryBatch::where('store_inventory_id', $id)->firstOrFail()->quantity_received);
     }
 }

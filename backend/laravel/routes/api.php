@@ -191,6 +191,9 @@ Route::post('/inventory/items/{item}/low-stock-reports', [StockReportingControll
     ->middleware(['auth:sanctum', 'role:inventory_worker', 'throttle:20,1,low-stock-report:'])
     ->name('inventory.low-stock-reports.store');
 
+Route::get('/inventory/correction-batches', [StockAdjustmentController::class, 'batches'])
+    ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])
+    ->name('inventory.correction-batches.index');
 Route::get('/inventory/stock-adjustments', [StockAdjustmentController::class, 'index'])
     ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])
     ->name('inventory.stock-adjustments.index');

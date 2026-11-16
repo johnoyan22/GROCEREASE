@@ -1,5 +1,9 @@
 # Product registration and receiving handoff
 
+November 17 update: the receiving migration is now applied in the working database. The
+[batch-count correction handoff](batch-count-corrections.md) supersedes the original whole-product
+correction behavior and supplies the additional pending migration and current manual checks.
+
 Implemented on `feature/implementing-changes`. The repository was clean at inspection; no applicable AGENTS.md was found. The working database was inspected with `migrate:status` only. Its earlier migrations are applied; the receiving migration below is pending. No working data was reseeded or reset, and no branch was merged or pushed.
 
 ## Workflow
@@ -9,7 +13,7 @@ Implemented on `feature/implementing-changes`. The repository was clean at inspe
 3. **ADD STOCK** is in the Stock Management filter toolbar beside Refresh, in the former Export position. Product Management keeps its Add New Product action. Choose an existing product, enter additional whole selling units, receipt date, optional expiry and Description, then Submit for Approval. Receipt date defaults to today's Asia/Manila date. One submission covers one receipt/expiry group.
 4. Supervisor opens the existing **Stock Approvals → Stock additions** tab. Pending/rejected additions leave stock unchanged. Approval atomically creates one referenced batch and adds the quantity once. Request identity, locked store/receipt/inventory rows and a unique receipt/batch relationship protect retries and duplicate decisions. Rejections retain their reason and actor/time.
 5. Product rows show physical/eligible available stock, Re-order Level, **Expiry** (the nearest eligible expiry) and status. Stock Management also shows **Date Received**, using the receipt date(s) of the batch(es) matching that displayed expiry. Unknown dates stay explicit. **View Details** holds the compact batch list, original quantities and descriptions. Supervisor can edit the existing policy from details or the existing policy tab. Inventory Workers can view it. Blank and zero remain distinct; the maximum-per-order field remains separate.
-6. Checkout reserves concrete batches in earliest-known-expiry order, followed by unknown-expiry stock. Preparation shows the allocated references and quantities. Picking does not deduct physical stock. Verified, paid handover rechecks eligibility and deducts physical/batch balances once. Cancellation and existing reservation-release paths release allocations. Count corrections retain their existing approval/staleness/audit workflow and now adjust unreserved batch balances with correction logs.
+6. Checkout reserves concrete batches in earliest-known-expiry order, followed by unknown-expiry stock. Preparation shows the allocated references and quantities. Picking does not deduct physical stock. Verified, paid handover rechecks eligibility and deducts physical/batch balances once. Cancellation and existing reservation-release paths release allocations. Count corrections retain their approval/staleness/audit workflow and now update one explicitly selected batch with correction logs.
 
 ## Preservation and explicit date policy
 
@@ -17,7 +21,7 @@ Implemented on `feature/implementing-changes`. The repository was clean at inspe
 - Existing quantities become historical batches with **null** receipt/expiry dates. No receipt, expiry or manufacture dates are invented. Existing prices, timestamps, IDs, order snapshots and reservations are preserved. New order lines also snapshot their selling unit.
 - Unknown expiry remains explicitly eligible, after dated eligible batches. Known expiry is valid through its Asia/Manila calendar date. Expired/on-hold batches remain physical stock but are excluded from available stock, checkout, picking and handover.
 - If an allocated batch expires or is put on hold after checkout, preparation/release fails safely and its reservation stays recorded for reconciliation. This feature does not add a batch-reassignment or hold-management workspace.
-- Positive count corrections have unknown dates, rather than pretending to be deliveries. Negative corrections consume unreserved balances in expiry order and record the affected batches.
+- Count corrections now target one recorded batch for either sign of change. They retain its dates, original received quantity and condition; they never create undated stock or choose other batches by expiry. See the batch-count correction handoff above.
 
 ## Non-destructive setup
 
