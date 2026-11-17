@@ -198,7 +198,7 @@ export default function AdminDashboard() {
                     Shopper #{c.user_id}
                   </td>
                   <td className="py-2.5 text-slate-500">{c.strike_count} valid strikes</td>
-                  <td className="py-2.5 text-red-500 font-semibold">{c.strike_count >= 3 ? 'Permanent' : '30-day suspension'}</td>
+                  <td className="py-2.5 text-red-500 font-semibold">{c.restriction === 'temporary' ? 'Temporary' : 'Until restored'}</td>
                   <td className="py-2.5 text-right">
                     <button
                       onClick={() => navigate('/admin/cop')}

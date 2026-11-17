@@ -18,7 +18,7 @@ export default function useOrders(role) {
         let notifications = [];
         if (role === 'shopper') {
           const responses = await Promise.all([getShopperOrders({ signal: controller.signal }), getCopStatus({ signal: controller.signal }), getOrderNotifications({ signal: controller.signal })]);
-          result = responses[0]; cop = responses[1].cop; notifications = responses[2].notifications;
+          result = responses[0]; cop = { ...responses[1].cop, history: responses[1].history ?? [] }; notifications = responses[2].notifications;
         } else if (role === 'supervisor') {
           const responses = await Promise.all([getStaffOrders({ signal: controller.signal }), getStoreWorkers({ signal: controller.signal })]);
           result = responses[0];

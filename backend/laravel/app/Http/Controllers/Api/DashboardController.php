@@ -78,9 +78,9 @@ class DashboardController extends Controller
 
     private function admin(CarbonImmutable $start, CarbonImmutable $end): array
     {
-        $restricted = DB::table('cop_strikes')->whereNull('voided_at')->groupBy('shopper_user_id')
-            ->selectRaw('shopper_user_id, COUNT(*) as strikes, MAX(issued_at) as latest_strike')->get()
-            ->filter(fn ($row) => $row->strikes >= 3 || ($row->strikes == 2 && CarbonImmutable::parse($row->latest_strike, 'UTC')->addDays(30)->isFuture()));
+        $ids = DB::table('users')->join('roles', 'roles.role_id', '=', 'users.role_id')->where('roles.slug', 'shopper')->pluck('users.id')->all();
+        $restricted = collect(app(\App\Services\CopRestrictions::class)->statuses($ids, CarbonImmutable::now('UTC')))
+            ->filter(fn ($status) => $status['individual_restricted']);
         // Gross verified supermarket payments confirmed in this Manila day; subscription revenue is separate.
         $payments = DB::table('order_payments')->where('confirmed_at', '>=', $start)->where('confirmed_at', '<', $end)->get();
         $orders = Order::whereIn('order_id', $payments->pluck('order_id'))->get()->keyBy('order_id');
@@ -100,7 +100,7 @@ class DashboardController extends Controller
                 'store_inventory_id' => $row->store_inventory_id, 'store_name' => $row->store->store_name,
                 'product_name' => $row->product->product_name, 'physical_stock' => $row->hard_stock_qty, 'available_stock' => $row->availableStock(), 'low_stock_threshold' => $row->low_stock_threshold,
             ]),
-            'restricted_accounts' => $restricted->take(5)->map(fn ($row) => ['user_id' => $row->shopper_user_id, 'strike_count' => (int) $row->strikes])->values(),
+            'restricted_accounts' => $restricted->take(5)->map(fn ($status, $id) => ['user_id' => $id, 'strike_count' => $status['strike_count'], 'restriction' => $status['individual_access'], 'disabled_until' => $status['disabled_until']])->values(),
         ];
     }
 }

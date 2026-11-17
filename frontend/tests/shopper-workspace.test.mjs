@@ -72,7 +72,7 @@ beforeEach(t => {
     if (url.includes('/pickup-hours')) return json({ store_id: Number(url.match(/stores\/(\d+)/)[1]), hours: { date: new URL(url, 'http://localhost:5173').searchParams.get('date') || schedule.pickup_date, today: schedule.pickup_date, opens_at: '10:00', closes_at: '18:00', store_opens_at: '09:00', store_closes_at: '21:00', earliest_start_at: '10:00', windows: [{ pickup_start: '10:00', pickup_end: '11:00' }, { pickup_start: '11:00', pickup_end: '12:00' }] } });
     if (url.endsWith('/shopper/checkout/quote')) {
       const cart = JSON.parse(options.body);
-      return json({ quote: { store: { store_name: 'Store A', address: 'A' }, items: [{ store_inventory_id: 7, product_name: 'Rice', quantity: 2, unit_price_centavos: 6725, line_total_centavos: 13450 }], subtotal_centavos: 13450, total_centavos: 13450, service_fee_centavos: 0, pickup_window_start_at: '2026-10-21T02:00:00Z', pickup_window_end_at: '2026-10-21T03:00:00Z', cop_claim_deadline_at: '2026-10-21T13:00:00Z', payment_method: cart.payment_method }, quote_token: 'review-token' });
+      return json({ quote: { cop_policy: { maximum_centavos: 250000 }, store: { store_name: 'Store A', address: 'A' }, items: [{ store_inventory_id: 7, product_name: 'Rice', quantity: 2, unit_price_centavos: 6725, line_total_centavos: 13450 }], subtotal_centavos: 13450, total_centavos: 13450, service_fee_centavos: 0, pickup_window_start_at: '2026-10-21T02:00:00Z', pickup_window_end_at: '2026-10-21T03:00:00Z', cop_claim_deadline_at: '2026-10-21T13:00:00Z', payment_method: cart.payment_method }, quote_token: 'review-token' });
     }
     if (url.endsWith('/shopper/orders') && options.method === 'POST') {
       const cart = JSON.parse(options.body);

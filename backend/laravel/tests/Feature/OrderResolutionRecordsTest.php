@@ -57,10 +57,10 @@ class OrderResolutionRecordsTest extends TransactionTestCase
         $strike = DB::table('cop_strikes')->first();
         $path = '/api/admin/cop-strikes/'.$strike->id.'/correction';
         $this->signIn($this->supervisor)->putJson($path, ['reason' => 'Store power outage'])->assertForbidden();
-        $this->signIn($this->admin)->getJson('/api/admin/cop-strikes')->assertOk()->assertJsonPath('accounts.0.cop.strike_count', 1);
-        $this->signIn($this->admin)->putJson($path, ['reason' => 'Documented unexpected store closure'])->assertOk()->assertJsonPath('cop.strike_count', 0);
-        $this->getJson('/api/admin/cop-strikes')->assertOk()->assertJsonPath('accounts.0.cop.strike_count', 0);
-        $this->putJson($path, ['reason' => 'Duplicate'])->assertConflict();
+        $this->signIn($this->admin)->getJson('/api/admin/cop-strikes')->assertOk()->assertJsonPath('accounts.data.0.cop.strike_count', 1);
+        $this->signIn($this->admin)->putJson($path, ['reason' => 'Documented unexpected store closure', 'expected_version' => 1, 'confirmed' => true])->assertOk()->assertJsonPath('cop.strike_count', 0);
+        $this->getJson('/api/admin/cop-strikes')->assertOk()->assertJsonPath('accounts.data.0.cop.strike_count', 0);
+        $this->putJson($path, ['reason' => 'Duplicate', 'expected_version' => 2, 'confirmed' => true])->assertConflict();
         $this->assertDatabaseCount('cop_strikes', 1);
         $this->assertDatabaseHas('cop_strikes', ['id' => $strike->id, 'voided_by_user_id' => $this->admin->id]);
         $this->assertTrue(app(CopRestrictions::class)->status($this->shopper->id)['allowed']);
@@ -75,7 +75,7 @@ class OrderResolutionRecordsTest extends TransactionTestCase
         $this->artisan('orders:process-deadlines')->assertExitCode(0);
         $this->signIn($this->supervisor)->putJson($this->path('refund-review'), ['reason' => 'Customer contacted store; review refund policy and held goods'])->assertOk()
             ->assertJsonPath('order.refund_status', 'pending')->assertJsonPath('order.payment_status', 'paid');
-        $this->putJson($this->path('refund-review'), ['reason' => 'Duplicate'])->assertConflict();
+        $this->putJson($this->path('refund-review'), ['reason' => 'Duplicate', 'expected_version' => 2, 'confirmed' => true])->assertConflict();
         $this->putJson($this->path('resale-disposition'), ['all_items_suitable_for_resale' => true, 'reason' => 'Must not release prepaid goods'])->assertConflict();
         $this->assertSame(2, $this->inventory->fresh()->soft_stock_qty);
         $this->assertDatabaseCount('order_payments', 1);

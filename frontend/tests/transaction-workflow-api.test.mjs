@@ -57,9 +57,9 @@ test('reschedule and resale send only the approved schedule and explicit disposi
 
 test('refund review never sends a successful-refund claim and strike correction preserves an audit reason', async function (t) {
   const writes = recordWrites(t);
-  await requestOrderRefundReview(3, 'Review required'); await correctCopStrike(4, 'Documented closure');
+  await requestOrderRefundReview(3, 'Review required'); await correctCopStrike(4, { reason: 'Documented closure', expected_version: 2, confirmed: true });
   assert.deepEqual(writes, [{ path: '/supervisor/orders/3/refund-review', method: 'PUT', body: { reason: 'Review required' } },
-    { path: '/admin/cop-strikes/4/correction', method: 'PUT', body: { reason: 'Documented closure' } }]);
+    { path: '/admin/cop-strikes/4/correction', method: 'PUT', body: { reason: 'Documented closure', expected_version: 2, confirmed: true } }]);
 });
 
 test('receipts and transaction records use explicit role endpoints and do not cache receipt responses', async function (t) {

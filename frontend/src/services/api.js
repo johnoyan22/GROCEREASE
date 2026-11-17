@@ -558,11 +558,23 @@ export function confirmOrderResale(id, reason) {
 export function requestOrderRefundReview(id, reason) {
   return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/refund-review`, 'PUT', { reason });
 }
-export function getCopStatus({ signal } = {}) { return sendRequest('/shopper/cop-status', { signal }); }
+export function getCopStatus({ signal } = {}) { return sendRequest('/shopper/cop-status', { signal, cache: 'no-store' }); }
 export function getOrderNotifications({ signal } = {}) { return sendRequest('/shopper/order-notifications', { signal }); }
 export function readOrderNotification(id) { return writeAction(`/shopper/order-notifications/${encodeURIComponent(id)}/read`, 'PUT', {}); }
 export function getCopStrikes({ signal } = {}) { return sendRequest('/admin/cop-strikes', { signal }); }
-export function correctCopStrike(id, reason) { return writeAction(`/admin/cop-strikes/${encodeURIComponent(id)}/correction`, 'PUT', { reason }); }
+export function correctCopStrike(id, payload) { return writeAction(`/admin/cop-strikes/${encodeURIComponent(id)}/correction`, 'PUT', payload); }
+function copQuery(path, filters = {}, { signal } = {}) {
+  const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== '' && value != null));
+  return sendRequest(`/admin/cop/${path}${query.size ? '?' + query : ''}`, { signal, cache: 'no-store' });
+}
+export function getCopPolicy(page = 1, options) { return copQuery('policy', { page }, options); }
+export function saveCopPolicy(payload) { return writeAction('/admin/cop/policy', 'PUT', payload); }
+export function getCopFailedClaims(filters, options) { return copQuery('failed-claims', filters, options); }
+export function getCopFailedClaim(id, page = 1, options) { return copQuery(`failed-claims/${encodeURIComponent(id)}`, { page }, options); }
+export function getCopAccounts(filters, options) { return copQuery('accounts', filters, options); }
+export function getCopAccount(id, page = 1, options) { return copQuery(`accounts/${encodeURIComponent(id)}`, { page }, options); }
+export function restrictCopAccess(id, payload) { return writeAction(`/admin/cop/accounts/${encodeURIComponent(id)}/restriction`, 'PUT', payload); }
+export function restoreCopAccess(id, payload) { return writeAction(`/admin/cop/accounts/${encodeURIComponent(id)}/restoration`, 'PUT', payload); }
 export function getTransactionRecords(role, { signal } = {}) {
   const prefix = role === 'admin' ? 'admin' : 'supervisor';
   return sendRequest(`/${prefix}/transactions`, { signal });

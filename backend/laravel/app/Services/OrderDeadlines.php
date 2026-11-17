@@ -19,6 +19,7 @@ class OrderDeadlines
                 foreach ($orders as $candidate) {
                     DB::transaction(function () use ($candidate, &$result, $dryRun) {
                         User::whereKey($candidate->shopper_user_id)->lockForUpdate()->firstOrFail();
+                        app(CopPolicy::class)->current(true);
                         $store = Store::whereKey($candidate->store_id)->lockForUpdate()->firstOrFail();
                         $order = Order::whereKey($candidate->order_id)->lockForUpdate()->firstOrFail();
                         if ($order->status !== 'ready_for_pickup' || $order->claim_status !== 'claimable' || $order->reservation_status !== 'active' || !$order->claim_expires_at || !$order->ready_at) return;
@@ -44,17 +45,7 @@ class OrderDeadlines
                             if (DB::table('pickup_verifications')->where('order_id', $order->order_id)->lockForUpdate()->first()) return;
                             if (DB::table('order_payments')->where('order_id', $order->order_id)->lockForUpdate()->first()) return;
                             if ($dryRun) { $result['classified']++; return; }
-                            $existing = DB::table('cop_strikes')->where('order_id', $order->order_id)->lockForUpdate()->first();
-                            if (!$existing) {
-                                $status = app(CopRestrictions::class)->status($order->shopper_user_id);
-                                $number = $status['strike_count'] + 1;
-                                DB::table('cop_strikes')->insert(['order_id' => $order->order_id, 'shopper_user_id' => $order->shopper_user_id,
-                                    'store_id' => $store->store_id, 'strike_number_at_issue' => $number, 'issued_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
-                                $message = 'COP No-Show recorded: warning '.$number.'.';
-                                if ($number === 2) $message .= ' Cash on Pickup is disabled for 30 days.';
-                                if ($number >= 3) $message .= ' Cash on Pickup is permanently disabled; your Shopper account remains active.';
-                                app(OrderNotifications::class)->notify($order, 'cop_no_show', $message);
-                            }
+                            app(CopRestrictions::class)->issue($order);
                             $order->claim_status = 'no_show';
                             $order->unclaimed_reason = 'Ready COP order remained unclaimed at the scheduled store closing deadline. Stock disposition requires Supervisor review.';
                         } else {
@@ -70,6 +61,11 @@ class OrderDeadlines
                         }
                         $order->unclaimed_at = now();
                         $order->save();
+                        DB::table('cop_failed_claims')->insertOrIgnore(['order_id' => $order->order_id,
+                            'classification' => $order->claim_status === 'no_show' ? 'no_show' : 'paid_unclaimed',
+                            'payment_method' => $order->payment_method, 'payment_state' => $order->payment_status,
+                            'claim_deadline_at' => $order->claim_expires_at, 'incident_at' => $order->unclaimed_at,
+                            'reason' => $order->unclaimed_reason, 'evidence_source' => 'deadline_processing']);
                         PickupCredential::where('order_id', $order->order_id)->whereNull('consumed_at')->whereNull('revoked_at')
                             ->update(['revoked_at' => now(), 'revocation_reason' => 'Claim deadline expired', 'updated_at' => now()]);
                         // No stock release here: only a physical disposition review can establish suitability for resale.

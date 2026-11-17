@@ -29,6 +29,7 @@ class CheckoutPricing
             'provider_reference' => ['prohibited'], 'provider' => ['prohibited'], 'amount' => ['prohibited'],
             'status' => ['prohibited'], 'reservation_status' => ['prohibited'],
             ...array_fill_keys(['pickup_preparation_minutes', 'pickup_window_minutes', 'window_duration', 'validation_context', 'context', 'window_label', 'window_id', 'role_id'], ['prohibited']),
+            'cop_policy_version_id' => ['prohibited'], 'cop_policy_snapshot' => ['prohibited'], 'cop' => ['prohibited'], 'cop_policy' => ['prohibited'],
         ]);
         $items = [];
         foreach ($validated['items'] as $item) {
@@ -49,8 +50,9 @@ class CheckoutPricing
     }
 
     // Caller holds a database transaction. All stock writers lock the store before its inventory.
-    public function resolve(array $cart): array
+    public function resolve(array $cart, ?array $copPolicy = null): array
     {
+        $copPolicy ??= app(CopPolicy::class)->current(true);
         $store = Store::query()->where('status', Store::STATUS_ACTIVE)->lockForUpdate()->findOrFail($cart['store_id']);
         $schedule = app(PickupScheduling::class)->resolveCheckout($store, $cart);
         $digital = ($cart['payment_method'] ?? 'cash_on_pickup') === 'digital';
@@ -64,7 +66,8 @@ class CheckoutPricing
         if (config('checkout.service_fee.enabled') !== false) {
             abort(503, 'Service-fee approval and implementation are pending. No charge has been activated.');
         }
-        $maximum = $digital ? 4294967295 : (int) config('checkout.cop_max_centavos'); // Existing unsigned centavo columns.
+        $maximum = $digital ? 4294967295 : $copPolicy['maximum_centavos'];
+        $ceilingMessage = 'Cash on Pickup orders cannot exceed PHP '.number_format($maximum / 100, 2, '.', ',').'.';
         $subtotal = 0;
         $lines = [];
         foreach ($cart['items'] as $index => $requested) {
@@ -89,12 +92,12 @@ class CheckoutPricing
             $unitPrice = ((int) $parts[0] * 100) + (int) $parts[1];
             // Check the COP ceiling before multiplication, including extremely large quantities.
             if ($unitPrice > 0 && $quantity > intdiv($maximum, $unitPrice)) {
-                $this->invalid($index, $digital ? 'This order exceeds the supported centavo range.' : 'Cash on Pickup orders cannot exceed PHP 1,500.00.');
+                $this->invalid($index, $digital ? 'This order exceeds the supported centavo range.' : $ceilingMessage);
             }
             $lineTotal = $unitPrice * $quantity;
             $subtotal = $subtotal + $lineTotal;
             if ($subtotal > $maximum) {
-                $this->invalid($index, $digital ? 'This order exceeds the supported centavo range.' : 'Cash on Pickup orders cannot exceed PHP 1,500.00.');
+                $this->invalid($index, $digital ? 'This order exceeds the supported centavo range.' : $ceilingMessage);
             }
             $lines[] = [
                 'inventory' => $inventory, 'quantity' => $quantity,
@@ -110,6 +113,7 @@ class CheckoutPricing
             'service_fee_policy' => 'pending_partner_approval_no_charge',
             'schedule' => $schedule,
             'payment_method' => $cart['payment_method'] ?? 'cash_on_pickup', 'payment_channel' => $cart['payment_channel'] ?? null,
+            'cop_policy' => $copPolicy,
         ];
     }
 
@@ -135,6 +139,7 @@ class CheckoutPricing
             'pickup_window_end_at' => $pricing['schedule']['pickup_window_end_at']->toIso8601String(),
             'cop_claim_deadline_at' => $pricing['schedule']['scheduled_store_closes_at']->toIso8601String(),
             'timezone' => PickupScheduling::TIMEZONE,
+            'cop_policy' => $pricing['cop_policy'],
         ];
     }
 

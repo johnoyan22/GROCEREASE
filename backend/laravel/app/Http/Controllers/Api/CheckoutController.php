@@ -39,8 +39,9 @@ class CheckoutController extends Controller
             $user = $this->shopper($request);
             $data->requireSchema();
             app(PickupScheduling::class)->requireSchema();
-            if ($cart['payment_method'] === 'cash_on_pickup') app(CopRestrictions::class)->requireAllowed($user->id);
-            $resolved = $pricing->resolve($cart);
+            $policy = app(\App\Services\CopPolicy::class)->current(true);
+            if ($cart['payment_method'] === 'cash_on_pickup') app(CopRestrictions::class)->requireAllowed($user->id, $policy);
+            $resolved = $pricing->resolve($cart, $policy);
             $expiresAt = now()->addSeconds((int) config('checkout.quote_lifetime_seconds'));
             $token = Crypt::encryptString(json_encode([
                 'shopper_user_id' => $user->id, 'cart_hash' => $pricing->cartHash($cart),
@@ -80,8 +81,9 @@ class CheckoutController extends Controller
             if (($quote['expires_at'] ?? 0) <= now()->timestamp) {
                 abort(409, 'Your checkout review expired. Review the current prices again.');
             }
-            $resolved = $pricing->resolve($cart);
-            if ($cart['payment_method'] === 'cash_on_pickup') app(CopRestrictions::class)->requireAllowed($user->id);
+            $policy = app(\App\Services\CopPolicy::class)->current(true);
+            if ($cart['payment_method'] === 'cash_on_pickup') app(CopRestrictions::class)->requireAllowed($user->id, $policy);
+            $resolved = $pricing->resolve($cart, $policy);
             if (($quote['price_hash'] ?? '') !== $pricing->priceHash($resolved)) {
                 abort(409, 'Store details or prices changed. Review the updated checkout before placing your order.');
             }
@@ -99,6 +101,7 @@ class CheckoutController extends Controller
                 'subtotal_centavos' => $resolved['subtotal_centavos'], 'service_fee_centavos' => $resolved['service_fee_centavos'],
                 'total_centavos' => $resolved['total_centavos'], 'service_fee_policy' => $resolved['service_fee_policy'],
                 'idempotency_key' => $key, 'request_hash' => $hash,
+                'cop_policy_version_id' => $policy['version'], 'cop_policy_snapshot' => $policy,
             ]);
             foreach ($resolved['lines'] as $line) {
                 $inventory = $line['inventory'];

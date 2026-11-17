@@ -46,9 +46,10 @@ beforeEach((t) => {
     calls.push({ url, options });
     if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 });
     if (url.includes('/pickup-hours')) return availability(new URL(url, 'http://localhost:5173'), options);
+    if (url.endsWith('/cop-status')) return json({ cop: { allowed: true, policy: { maximum_centavos: 250000 } } });
     if (url.includes('/payment-options')) return json({ available: false, channels: [] });
     if (url.includes('/checkout-attempts/')) return attemptMode === 'found' ? json({ order: order() }) : json({ message: 'Not found' }, 404);
-    if (url.endsWith('/checkout/quote')) return json({ quote_token: 'reviewed-token', quote: { store: { store_name: 'QA Store', address: 'A' }, items: [], subtotal_centavos: 10000, total_centavos: 10000, service_fee_centavos: 0, payment_method: 'cash_on_pickup', pickup_window_start_at: day + 'T04:00:00Z', pickup_window_end_at: day + 'T05:00:00Z', cop_claim_deadline_at: day + 'T10:00:00Z' } });
+    if (url.endsWith('/checkout/quote')) return json({ quote_token: 'reviewed-token', quote: { cop_policy: { maximum_centavos: 250000 }, store: { store_name: 'QA Store', address: 'A' }, items: [], subtotal_centavos: 10000, total_centavos: 10000, service_fee_centavos: 0, payment_method: 'cash_on_pickup', pickup_window_start_at: day + 'T04:00:00Z', pickup_window_end_at: day + 'T05:00:00Z', cop_claim_deadline_at: day + 'T10:00:00Z' } });
     if (url.endsWith('/shopper/orders')) {
       if (placeMode === 'deferred') return new Promise((resolve) => { finishPlacement = resolve; });
       if (placeMode === 'network') throw new TypeError('Connection lost after sending');
@@ -64,6 +65,7 @@ after(async () => { await server.close(); dom.window.close(); });
 test('server date and options drive the dropdown and each choice sends an exact paired schedule', async () => {
   await mount();
   assert.equal(dateInput().value, day); assert.equal(hourCalls().length, 1);
+  assert.match(document.body.textContent, /Maximum .*2,500/);
   assert.equal(document.querySelectorAll('input[type="time"]').length, 0);
   assert.equal(dropdown().value, ''); assert.match(dropdown().textContent, /12:00 PM – 1:00 PM/);
   assert.equal(button('Review current prices and pickup schedule').disabled, true);

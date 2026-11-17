@@ -98,8 +98,16 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::put('/admin/accounts/{user}/status', [AdminAccountController::class, 'update'])->whereNumber('user')->middleware('throttle:20,1,account-status:');
     Route::get('/admin/transactions', [TransactionRecordsController::class, 'adminIndex']);
     Route::get('/admin/orders/{order}/receipt', [TransactionRecordsController::class, 'receipt'])->whereNumber('order');
-    Route::get('/admin/cop-strikes', [CopMonitoringController::class, 'adminIndex']);
-    Route::put('/admin/cop-strikes/{strike}/correction', [CopMonitoringController::class, 'correct'])->whereNumber('strike')->middleware('throttle:20,1,cop-correction:');
+    Route::get('/admin/cop/policy', [\App\Http\Controllers\Api\CopManagementController::class, 'policy'])->middleware('throttle:60,1,cop-read:');
+    Route::put('/admin/cop/policy', [\App\Http\Controllers\Api\CopManagementController::class, 'savePolicy'])->middleware('throttle:20,1,cop-policy:');
+    Route::get('/admin/cop/failed-claims', [\App\Http\Controllers\Api\CopManagementController::class, 'failedClaims'])->middleware('throttle:60,1,cop-read:');
+    Route::get('/admin/cop/failed-claims/{incident}', [\App\Http\Controllers\Api\CopManagementController::class, 'failedClaimDetails'])->whereNumber('incident')->middleware('throttle:60,1,cop-read:');
+    Route::get('/admin/cop/accounts', [\App\Http\Controllers\Api\CopManagementController::class, 'accounts'])->middleware('throttle:60,1,cop-read:');
+    Route::get('/admin/cop/accounts/{user}', [\App\Http\Controllers\Api\CopManagementController::class, 'accountDetails'])->whereNumber('user')->middleware('throttle:60,1,cop-read:');
+    Route::put('/admin/cop/accounts/{user}/restriction', [\App\Http\Controllers\Api\CopManagementController::class, 'restrict'])->whereNumber('user')->middleware('throttle:20,1,cop-access:');
+    Route::put('/admin/cop/accounts/{user}/restoration', [\App\Http\Controllers\Api\CopManagementController::class, 'restore'])->whereNumber('user')->middleware('throttle:20,1,cop-access:');
+    Route::get('/admin/cop-strikes', [\App\Http\Controllers\Api\CopManagementController::class, 'accounts'])->middleware('throttle:60,1,cop-read:');
+    Route::put('/admin/cop-strikes/{strike}/correction', [\App\Http\Controllers\Api\CopManagementController::class, 'correct'])->whereNumber('strike')->middleware('throttle:20,1,cop-correction:');
     Route::get('/admin/stores/{store}/pickup-settings', [StorePickupSettingsController::class, 'show'])->whereNumber('store');
     Route::get('/admin/stores', [AdminStoreController::class, 'index'])
         ->name('admin.stores.index');

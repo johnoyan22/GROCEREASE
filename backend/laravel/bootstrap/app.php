@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Pickup secrets and order documents must not be cached, including failures.
         $exceptions->respond(function ($response) {
-            if (request()->is('api/reports', 'api/reports/*', 'api/supervisor/pickup/*', 'api/supervisor/orders/*/claim', 'api/*/orders/*/summary', 'api/*/orders/*/receipt', 'api/supervisor/order-reference')) {
+            if (request()->is('api/admin/cop/*', 'api/admin/cop-strikes*', 'api/admin/cop-strikes/*', 'api/shopper/cop-status', 'api/reports', 'api/reports/*', 'api/supervisor/pickup/*', 'api/supervisor/orders/*/claim', 'api/*/orders/*/summary', 'api/*/orders/*/receipt', 'api/supervisor/order-reference')) {
                 $response->headers->set('Cache-Control', 'no-store, private');
                 $response->headers->set('Pragma', 'no-cache');
             }

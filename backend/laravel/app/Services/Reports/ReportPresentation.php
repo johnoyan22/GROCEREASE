@@ -39,8 +39,10 @@ class ReportPresentation
             'events' => ['Order events', 'Completion / cancellation / no-show / handover date'],
             'inventory' => ['Current stock counts', 'As of generation time'],
             'strikes' => ['No-show strikes', 'Issue date. Current valid/voided status.'],
+            'restriction_sources' => ['Restriction sources', 'Current distinct customers; each counted once.'],
+            'cop_decisions' => ['Access decisions and expiry', 'Recorded decision / saved expiry date. Global actions for the selected customer cohort.'],
             'restrictions' => ['Current COP restrictions', $report['filters']['store_id']
-                ? 'Global restrictions for customers with strikes at this store.' : 'Current customer counts across stores.'],
+                ? 'Global access for customers with orders or strikes at this store.' : 'Current customer counts across stores.'],
         ];
         $hasRows = array_sum(array_column($report['sections'], 'row_count')) > 0;
         foreach ($report['sections'] as $index => &$section) {

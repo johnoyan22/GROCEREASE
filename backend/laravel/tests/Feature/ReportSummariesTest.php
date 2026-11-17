@@ -211,7 +211,7 @@ class ReportSummariesTest extends TransactionTestCase
             'strike_number_at_issue' => $i+1, 'issued_at' => now(), 'voided_at' => $i === 2 ? now() : null, 'created_at' => now(), 'updated_at' => now()]);
         $r = $this->signIn($this->admin)->report('cop', $this->period())->assertCreated()->json('report');
         $this->assertSame(['store' => 'Store A', 'issued' => 3, 'valid' => 2, 'voided' => 1], $r['sections'][0]['rows'][0]);
-        $this->assertSame(['temporary' => 1, 'permanent' => 0], $r['sections'][1]['rows'][0]);
+        $this->assertSame(['temporary' => 1, 'permanent' => 0, 'until_restored' => 0], $r['sections'][1]['rows'][0]);
     }
 
     public function test_pagination_and_pdf_use_original_snapshot_after_stock_changes(): void

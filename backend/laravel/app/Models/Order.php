@@ -22,6 +22,7 @@ class Order extends Model
         'service_fee_centavos', 'total_centavos', 'service_fee_policy', 'currency',
         'idempotency_key', 'request_hash', 'canceled_at', 'completed_at',
         'pickup_window_start_at', 'pickup_window_end_at', 'scheduled_store_closes_at',
+        'cop_policy_version_id', 'cop_policy_snapshot',
     ];
 
     protected function casts(): array
@@ -32,6 +33,7 @@ class Order extends Model
             'pickup_window_start_at' => 'datetime', 'pickup_window_end_at' => 'datetime', 'scheduled_store_closes_at' => 'datetime',
             'ready_at' => 'datetime', 'claim_expires_at' => 'datetime', 'unclaimed_at' => 'datetime',
             'pickup_schedule_review_required' => 'boolean',
+            'cop_policy_snapshot' => 'array', 'cop_policy_version_id' => 'integer',
         ];
     }
 

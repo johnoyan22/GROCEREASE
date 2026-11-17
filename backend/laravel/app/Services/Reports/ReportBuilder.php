@@ -327,13 +327,36 @@ class ReportBuilder
         $this->metric('No-show strikes issued in period', $records->count());
         $this->section('strikes', 'No-show strikes by store', 'Strike issued_at in selected Manila dates; valid/voided is CURRENT as of generation. No Shopper details are included.',
             $this->columns(['store' => 'Store', 'issued' => 'Issued', 'valid' => 'Currently valid', 'voided' => 'Currently voided']), array_values($groups));
-        // Restrictions are global per Shopper. For a selected store, use distinct Shoppers with a strike at that store,
-        // then evaluate ALL their valid strikes so the existing restriction rule is not changed.
-        $cohort = $this->scope(DB::table('cop_strikes'))->select('shopper_user_id');
-        $all = $this->rows(DB::table('cop_strikes')->whereIn('shopper_user_id', $cohort)->whereNull('voided_at')->orderBy('issued_at')->orderBy('id'))->groupBy('shopper_user_id');
-        $permanent = $temporary = 0;
-        foreach ($all as $strikes) { if ($strikes->count() >= 3) $permanent++; elseif ($strikes->count() === 2 && CarbonImmutable::parse($strikes[1]->issued_at, 'UTC')->addDays(30)->isAfter($this->now)) $temporary++; }
-        $this->section('restrictions', 'Current COP restrictions', 'CURRENT as of generation; global distinct Shopper counts, not additive per-store counts. With a store filter, the cohort is Shoppers with any strike at that store; restrictions use all their valid strikes across stores. Existing two-strike 30-day / three-strike permanent rule is read only.',
-            $this->columns(['temporary' => 'Temporarily restricted', 'permanent' => 'Permanently restricted']), [['temporary' => $temporary, 'permanent' => $permanent]]);
+        // Global view includes every Shopper, including manually restricted users without orders/strikes.
+        // A store filter defines an all-time activity cohort; eligibility remains global.
+        $cohort = DB::table('users as u')->join('roles as r', 'r.role_id', '=', 'u.role_id')->where('r.slug', 'shopper');
+        if ($this->filters['store_id'] !== null) $cohort->where(function ($q) {
+            $q->whereExists(fn ($x) => $x->selectRaw('1')->from('orders as o')->whereColumn('o.shopper_user_id', 'u.id')->where('o.store_id', $this->filters['store_id']))
+                ->orWhereExists(fn ($x) => $x->selectRaw('1')->from('cop_strikes as cs')->whereColumn('cs.shopper_user_id', 'u.id')->where('cs.store_id', $this->filters['store_id']));
+        });
+        $ids = $this->rows($cohort->select('u.id'))->pluck('id')->all();
+        $evaluatedRows = 0;
+        $statuses = app(\App\Services\CopRestrictions::class)->statuses($ids, $this->now, maxRows: config('reports.max_source_rows') - $this->sourceRows, sourceRows: $evaluatedRows);
+        $this->sourceRows += $evaluatedRows;
+        $counts = ['temporary' => 0, 'permanent' => 0, 'until_restored' => 0];
+        $sources = ['automatic_only' => 0, 'manual_only' => 0, 'both' => 0];
+        foreach ($statuses as $status) {
+            if (!$status['individual_restricted']) continue;
+            $counts[$status['individual_access']]++;
+            $sources[count($status['sources']) > 1 ? 'both' : ($status['sources'][0] === 'manual' ? 'manual_only' : 'automatic_only')]++;
+        }
+        $this->section('restrictions', 'Current COP restrictions', 'CURRENT distinct Shoppers at generation. Categories are mutually exclusive; permanent/until-restored takes priority over temporary. Global policy disable is separate. A store filter selects Shoppers with any order or strike at that store; access is evaluated globally.',
+            $this->columns(['temporary' => 'Temporary', 'permanent' => 'Automatic permanent', 'until_restored' => 'Manual until restored']), [$counts]);
+        $this->section('restriction_sources', 'Current restriction sources', 'CURRENT distinct Shoppers in the same activity cohort. Each appears once; manual plus automatic is its own category.',
+            $this->columns(['automatic_only' => 'Automatic only', 'manual_only' => 'Manual only', 'both' => 'Manual + automatic']), [$sources]);
+        $events = $this->rows($this->period(DB::table('cop_access_events')->whereIn('shopper_user_id', $ids), 'occurred_at'));
+        $decisions = ['restricted' => 0, 'restored' => 0, 'strike_corrected' => 0];
+        foreach ($events as $event) if (isset($decisions[$event->action])) $decisions[$event->action]++;
+        $decisions['strike_corrected'] = $this->rows($this->period(DB::table('cop_strikes')->whereIn('shopper_user_id', $ids)->whereNotNull('voided_at'), 'voided_at'))->count();
+        $expired = $this->rows($this->period(DB::table('cop_restrictions')->whereIn('shopper_user_id', $ids)->whereNull('ended_at')
+            ->where('effective_kind', 'temporary')->where('effective_expires_at', '<=', $this->now), 'effective_expires_at'))->count();
+        $this->section('cop_decisions', 'COP access decisions and expiry', 'Decisions by occurred_at; corrections by voided_at; expirations by saved effective expiry in the selected Manila dates. Counts are events/outcomes, not distinct current restricted accounts. Manual decisions are GLOBAL; a store filter limits the Shopper activity cohort, not the decision location.',
+            $this->columns(['restricted' => 'Manual decisions', 'restored' => 'Restorations', 'strike_corrected' => 'Corrections', 'expired' => 'Expired outcomes']), [$decisions + ['expired' => $expired]]);
+        $this->metric('COP globally enabled at generation', app(\App\Services\CopPolicy::class)->current()['enabled'] ? 1 : 0);
     }
 }
