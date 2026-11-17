@@ -36,7 +36,7 @@ class ProductFoundationTest extends TestCase
 
     private function product(array $overrides = []): Product
     {
-        return Product::create(array_replace([
+        return \Tests\Support\CategoryFixture::product(array_replace([
             'store_id' => $this->store->store_id,
             'product_name' => 'Test Jasmine Rice',
             'sku' => 'TEST-RICE-1KG',

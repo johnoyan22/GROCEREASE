@@ -43,7 +43,7 @@ class ShopperCatalogTest extends TestCase
 
     private function inventory(Store $store, string $name): StoreInventory
     {
-        $product = Product::create(['store_id' => $store->store_id, 'product_name' => $name, 'sku' => 'RICE', 'category' => 'Staples']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => $name, 'sku' => 'RICE', 'category' => 'Staples']);
         $inventory = StoreInventory::create([
             'store_id' => $store->store_id, 'product_id' => $product->product_id,
             'selling_price' => '67.25', 'hard_stock_qty' => 100, 'soft_stock_qty' => 15, 'status' => 'active',
@@ -75,7 +75,7 @@ class ShopperCatalogTest extends TestCase
             ->assertJsonCount(1, 'products')->assertJsonPath('products.0.product_name', 'Store A Rice')
             ->assertJsonPath('products.0.selling_price', '67.25')
             ->assertJsonPath('products.0.available_stock', 85)->assertJsonPath('products.0.max_per_order', 4)
-            ->assertJsonPath('products.0.is_low_stock', true)->assertJsonMissing(['product_name' => 'Store B Rice'])
+            ->assertJsonPath('products.0.is_low_stock', false)->assertJsonMissing(['product_name' => 'Store B Rice'])
             ->assertJsonMissingPath('products.0.hard_stock_qty')->assertJsonMissingPath('products.0.soft_stock_qty');
         $this->getJson('/api/shopper/stores/'.$this->second->store_id.'/products')->assertOk()
             ->assertJsonPath('products.0.product_name', 'Store B Rice')->assertJsonMissing(['product_name' => 'Store A Rice']);

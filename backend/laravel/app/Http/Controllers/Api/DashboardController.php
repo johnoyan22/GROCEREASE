@@ -63,8 +63,8 @@ class DashboardController extends Controller
                 'low_stock_products' => $active->filter(fn ($row) => $row->isLowStock())->count(),
                 'stock_statuses' => [
                     'in_stock' => $active->filter(fn ($row) => $row->availableStock() > 0 && !$row->isLowStock())->count(),
-                    'low_stock' => $active->filter(fn ($row) => $row->availableStock() > 0 && $row->isLowStock())->count(),
-                    'out_of_stock' => $active->filter(fn ($row) => $row->availableStock() === 0)->count(),
+                    'low_stock' => $active->filter(fn ($row) => $row->isLowStock())->count(),
+                    'out_of_stock' => $active->filter(fn ($row) => $row->availableStock() === 0 && !$row->isLowStock())->count(),
                     'inactive' => $inventory->where('status', 'inactive')->count(),
                 ],
                 'pending_stock_approvals' => (clone $adjustments)->where('status', 'pending')->count(),
@@ -98,7 +98,7 @@ class DashboardController extends Controller
                 ->groupBy('roles.role_id', 'roles.name', 'roles.slug')->selectRaw('roles.name, roles.slug, COUNT(users.id) as user_count')->get(),
             'low_stock_records' => $low->take(5)->values()->map(fn ($row) => [
                 'store_inventory_id' => $row->store_inventory_id, 'store_name' => $row->store->store_name,
-                'product_name' => $row->product->product_name, 'available_stock' => $row->availableStock(), 'low_stock_threshold' => $row->low_stock_threshold,
+                'product_name' => $row->product->product_name, 'physical_stock' => $row->hard_stock_qty, 'available_stock' => $row->availableStock(), 'low_stock_threshold' => $row->low_stock_threshold,
             ]),
             'restricted_accounts' => $restricted->take(5)->map(fn ($row) => ['user_id' => $row->shopper_user_id, 'strike_count' => (int) $row->strikes])->values(),
         ];

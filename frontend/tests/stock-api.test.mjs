@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import {
   getCorrectionBatches, getStockAdjustments, getLowStockReports, getAvailabilityHistory,
-  submitStockAdjustment, submitLowStockReport, decideStockAdjustment, updateInventoryPolicy,
+  submitStockAdjustment, readLowStockNotification, decideStockAdjustment, updateInventoryPolicy,
   getStockReceipts, submitStockReceipt, decideStockReceipt,
 } from '../src/services/api.js';
 
@@ -83,16 +83,16 @@ test('count requests send desired count and optimistic version, excluding truste
   assert.equal(result.adjustment.status, 'pending');
 });
 
-test('low-stock reports send only a note with CSRF protection', async function (t) {
+test('per-user low-stock acknowledgement sends no stock or episode claims with CSRF protection', async function (t) {
   t.mock.method(globalThis, 'fetch', async function (url, options) {
     if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 });
-    assert.equal(url, 'http://localhost:8000/api/inventory/items/7/low-stock-reports');
-    assert.equal(options.method, 'POST');
+    assert.equal(url, 'http://localhost:8000/api/staff/low-stock-notifications/7/read');
+    assert.equal(options.method, 'PUT');
     assert.equal(options.headers['X-XSRF-TOKEN'], 'secure=token');
-    assert.deepEqual(JSON.parse(options.body), { note: 'Nearly empty shelf' });
+    assert.deepEqual(JSON.parse(options.body), {});
     return json({ message: 'Recorded' }, 201);
   });
-  await submitLowStockReport(7, 'Nearly empty shelf');
+  await readLowStockNotification(7);
 });
 
 test('decisions send no actor, store, or quantity override', async function (t) {
@@ -149,7 +149,7 @@ test('failed CSRF setup prevents all stock writes', async function (t) {
     return new Response(null, { status: 503 });
   });
   await assert.rejects(submitStockAdjustment(7, {}), /secure session/);
-  await assert.rejects(submitLowStockReport(7, 'Low'), /secure session/);
+  await assert.rejects(readLowStockNotification(7), /secure session/);
   await assert.rejects(decideStockAdjustment(4, 'approved', ''), /secure session/);
   await assert.rejects(updateInventoryPolicy(7, {}), /secure session/);
   assert.equal(fetch.mock.callCount(), 4);

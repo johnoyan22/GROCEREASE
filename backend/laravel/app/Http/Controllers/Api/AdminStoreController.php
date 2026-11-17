@@ -100,6 +100,7 @@ class AdminStoreController extends Controller
 
             if ($current->isDirty()) {
                 $current->save();
+                if (array_key_exists('status', $changes)) app(\App\Services\LowStockMonitor::class)->evaluateStore($current, 'store_status');
             }
 
             return $current->loadCount(['staffStoreAssignments as assigned_staff_count']);

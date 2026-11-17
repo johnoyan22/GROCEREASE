@@ -198,7 +198,7 @@ class StockAdjustmentController extends Controller
                 abort_if($record->requested_by_user_id === $context['user']->id, 403, 'You cannot approve your own stock correction.');
                 abort_unless($batch, 409, 'Historical whole-product request: reject it and ask for a batch-specific count.');
                 abort_if($this->isStale($record), 409, 'Stock changed after this request. Reject it and request a fresh batch count.');
-                app(\App\Services\BatchStock::class)->correctBatch($inventory, $batch, $record->requested_remaining_quantity, $record->id);
+                app(\App\Services\BatchStock::class)->correctBatch($inventory, $batch, $record->requested_remaining_quantity, $record->id, $context['store']);
             }
             $record->status = $validated['decision'];
             $record->pending_batch_id = null;
@@ -249,6 +249,7 @@ class StockAdjustmentController extends Controller
                 $inventory->max_per_order = $limit;
                 $inventory->low_stock_threshold = $threshold;
                 $inventory->save();
+                app(\App\Services\LowStockMonitor::class)->evaluate($inventory, $context['store'], 'policy_change');
             }
 
             return response()->json(['message' => 'Product quantity limit and Re-order Level saved.']);

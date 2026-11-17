@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import useStoreStock from '../../../hooks/useStoreStock';
 import StoreSelector from '../layout/StoreSelector';
-import ProductTable from '../product-management/ProductTable';
 import InventoryLoadState from '../shared/InventoryLoadState';
-import { LowStockReportForm, StockDecisionForm, StockPolicyForm } from './StockForms';
+import { StockDecisionForm, StockPolicyForm } from './StockForms';
 import StockReceipts from './StockReceipts';
 import { sellingUnits } from '../../../services/product-units';
 
@@ -37,7 +36,6 @@ export default function StockWorkspace({ title, initialView, supervisor = false,
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
   const policyItem = stock.inventory.find(function (item) { return String(item.store_inventory_id) === policyItemId; });
-  const lowStock = stock.inventory.filter(function (item) { return item.is_low_stock; });
   const adjustments = stock.adjustments.filter(function (row) {
     const text = [row.id, row.batch_no, row.product_name, row.sku, row.reason, row.requested_by_name].join(' ').toLowerCase();
     return text.includes(search.toLowerCase()) && (!status || row.status === status);
@@ -74,7 +72,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false,
             <button type="button" aria-pressed={view === 'receipts'} onClick={() => setView('receipts')} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Stock additions ({stock.receipts.filter((row) => row.status === 'pending').length} pending)</button>
             {supervisor && <>
               <button type="button" aria-pressed={view === 'requests'} onClick={function () { setView('requests'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Corrections ({stock.adjustments.filter(function (row) { return row.status === 'pending'; }).length} pending)</button>
-              <button type="button" aria-pressed={view === 'low'} onClick={function () { setView('low'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Low stock ({lowStock.length})</button>
+              <Link to="/supervisor/low-stock" className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Low Stock Monitoring</Link>
               <button type="button" aria-pressed={view === 'policies'} onClick={function () { setView('policies'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Re-order Levels & order limits</button>
               <button type="button" aria-pressed={view === 'activity'} onClick={function () { setView('activity'); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm">Availability history</button>
             </>}
@@ -112,17 +110,6 @@ export default function StockWorkspace({ title, initialView, supervisor = false,
               })}
             </section>
           )}
-          {view === 'low' && (
-            <section className="space-y-5">
-              <div><h2 className="mb-2 text-lg font-semibold">Products at or below their Re-order Level</h2><p className="mb-3 text-sm text-gray-600">Products without a configured Re-order Level are not flagged. Your Supervisor manages Re-order Levels.</p><ProductTable products={lowStock} /></div>
-              {!supervisor && <LowStockReportForm inventory={stock.inventory} onSaved={saved} onFailure={failed} />}
-              <h2 className="text-lg font-semibold">Low-stock report history ({stock.reports.length})</h2>
-              {stock.reports.length === 0 && <p className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">No low-stock reports recorded for this store.</p>}
-              {stock.reports.map(function (row) {
-                return <article key={row.id} className="rounded-xl border border-gray-200 bg-white p-5"><h3 className="font-semibold">#{row.id} · {row.product_name} ({row.sku})</h3><p className="mt-2 whitespace-pre-wrap break-words text-sm">{row.note}</p><p className="mt-3 text-sm text-gray-600">Physical at report: {row.observed_hard_stock_qty} · Reserved at report: {row.observed_soft_stock_qty} · Available at report: {row.observed_hard_stock_qty - row.observed_soft_stock_qty}</p><p className="mt-2 text-xs text-gray-500">{row.reported_by_name} · {recordedAt(row.created_at)}</p></article>;
-              })}
-            </section>
-          )}
           {view === 'policies' && supervisor && (
             <section>
               <h2 className="text-lg font-semibold">Store product policies</h2>
@@ -132,6 +119,7 @@ export default function StockWorkspace({ title, initialView, supervisor = false,
           )}
           {view === 'activity' && (
             <section>
+              <details className="mb-5 rounded-xl border bg-white p-4"><summary className="cursor-pointer font-semibold">Historical manual low-stock reports ({stock.reports.length})</summary><p className="mt-2 text-sm text-gray-600">Read-only evidence from the former manual reporting process.</p>{stock.reports.map((row) => <article key={row.id} className="mt-3 border-t pt-3 text-sm"><h3 className="font-semibold">#{row.id} {row.product_name} ({row.sku})</h3><p className="whitespace-pre-wrap break-words">{row.note}</p><p>Physical at report: {row.observed_hard_stock_qty}; Reserved: {row.observed_soft_stock_qty}</p><p className="text-xs text-gray-500">{row.reported_by_name} {recordedAt(row.created_at)}</p></article>)}{stock.reports.length === 0 && <p className="mt-3 text-sm">No historical manual reports.</p>}</details>
               <h2 className="mb-3 text-lg font-semibold">Availability changes ({stock.history.length})</h2>
               <p className="mb-4 text-sm text-gray-600">This history starts when stock auditing is enabled. Correction requests and decisions are recorded separately.</p>
               <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white"><table className="w-full min-w-[700px] text-left text-sm"><thead className="bg-gray-50"><tr>{['When', 'Product', 'Previous status', 'New status', 'Changed by'].map(function (label) { return <th key={label} scope="col" className="p-3">{label}</th>; })}</tr></thead><tbody>{stock.history.map(function (row) { return <tr key={row.id} className="border-t border-gray-100"><td className="p-3">{recordedAt(row.created_at)}</td><td className="p-3">{row.product_name} · {row.sku}</td><td className="p-3">{row.previous_status ?? 'New product'}</td><td className="p-3">{row.new_status}</td><td className="p-3">{row.changed_by_name}</td></tr>; })}</tbody></table>{stock.history.length === 0 && <p className="p-5 text-sm text-gray-600">No availability changes recorded yet.</p>}</div>

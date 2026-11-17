@@ -12,7 +12,7 @@ await server.listen();
 const origin = server.resolvedUrls.local[0].replace(/\/$/, '');
 let browser;
 const store = { store_id: 1, store_name: 'QA Store', address: 'QA only', status: 'active' };
-const coke = { store_id: 1, product_id: 1, store_inventory_id: 1, product_name: 'Coke', size: '1.5 L', size_amount: '1.5000', size_unit: 'L', selling_unit: 'bottle', sku: 'GE-S1-QACOKE', category: 'Drinks', selling_price: '25.00', hard_stock_qty: 150, soft_stock_qty: 0, available_stock: 150, low_stock_threshold: 20, max_per_order: 50, nearest_expiry: '2027-12-31', status: 'active', batches: [{ id: 1, reference: 'GE-B-QA-FIRST', quantity_received: 100, remaining_quantity: 100, received_date: '2026-11-15', expiry_date: '2027-12-31', status: 'active', description: 'Delivery from supplier.' }, { id: 2, reference: 'GE-B-QA-LATER', quantity_received: 50, remaining_quantity: 50, received_date: '2026-11-16', expiry_date: '2028-12-31', status: 'active', description: 'Later delivery.' }] };
+const coke = { store_id: 1, product_id: 1, store_inventory_id: 1, product_name: 'Coke', size: '1.5 L', size_amount: '1.5000', size_unit: 'L', selling_unit: 'bottle', sku: 'GE-S1-QACOKE', category: 'Drinks', category_id: 1, category_status: 'active', selling_price: '25.00', hard_stock_qty: 150, soft_stock_qty: 0, available_stock: 150, low_stock_threshold: 20, max_per_order: 50, nearest_expiry: '2027-12-31', status: 'active', batches: [{ id: 1, reference: 'GE-B-QA-FIRST', quantity_received: 100, remaining_quantity: 100, received_date: '2026-11-15', expiry_date: '2027-12-31', status: 'active', description: 'Delivery from supplier.' }, { id: 2, reference: 'GE-B-QA-LATER', quantity_received: 50, remaining_quantity: 50, received_date: '2026-11-16', expiry_date: '2028-12-31', status: 'active', description: 'Later delivery.' }] };
 const water = { ...coke, product_id: 2, store_inventory_id: 2, product_name: 'Nature Spring', sku: 'GE-S1-QAWATER', size: '500 mL', size_amount: '500.0000', size_unit: 'mL', hard_stock_qty: 100, available_stock: 100, low_stock_threshold: null, nearest_expiry: '2028-12-31', batches: [] };
 const receipt = { id: 1, store_inventory_id: 1, product_name: 'Coke', sku: coke.sku, size: coke.size, selling_unit: 'bottle', quantity: 100, received_date: '2026-11-16', expiry_date: '2027-12-31', description: 'Delivery from supplier.', requested_by_user_id: 3, created_at: '2026-11-16T01:00:00Z', status: 'pending' };
 const failures = [];
@@ -32,6 +32,7 @@ try {
       const body = request.postDataJSON(); calls.push({ path, method, body, query: url.search });
       if (path === '/sanctum/csrf-cookie') return respond({});
       if (path === '/api/user') return respond({ id: 3, role: { slug: role }, profile: { first_name: 'QA', last_name: 'Staff' } });
+      if (path === '/api/staff/category-options') return respond({ store, categories: [{ id: 1, name: 'Drinks', status: 'active' }, { id: 2, name: 'Staples', status: 'active' }] });
       if (path === '/api/inventory/items' && method === 'GET') return respond({ store, inventory: products.map((product) => {
         if (url.searchParams.get('include_batches') !== '0') return product;
         const { batches, ...summary } = product;
@@ -88,7 +89,7 @@ try {
     await page.getByLabel('Size amount').fill('500');
     await page.getByLabel('Unit of Measure').selectOption('g');
     await page.getByLabel('Sold as').selectOption('pack');
-    await page.getByLabel('Category', { exact: true }).fill('Staples');
+    await page.getByLabel('Category', { exact: true }).selectOption('2');
     await page.getByLabel('Selling price (PHP)').fill('30.00');
     await readableDialog(); await screenshot('product');
     await page.getByRole('button', { name: 'Add Product', exact: true }).click();

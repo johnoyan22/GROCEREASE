@@ -37,7 +37,7 @@ function StockManagement() {
       {!loading && !error && store && (
         <>
           <StockStatCards items={inventory} />
-          <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Available stock excludes reservations, expired and on-hold batches. <Link to="/inventory/stock-update" className="font-semibold underline">Request a physical-count correction</Link> for Supervisor approval. <Link to="/inventory/low-stock" className="font-semibold underline">Report low stock</Link> without changing quantities.</p>
+          <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Available stock excludes reservations, expired and on-hold batches. <Link to="/inventory/stock-update" className="font-semibold underline">Request a physical-count correction</Link> for Supervisor approval. <Link to="/inventory/low-stock" className="font-semibold underline">View automatic low-stock monitoring</Link>.</p>
           <section aria-label="Stock filters" className="my-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1.6fr)_repeat(2,minmax(130px,1fr))_auto]">
               <input aria-label="Search stock" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search product name, SKU, or barcode..." className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs" />

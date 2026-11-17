@@ -69,7 +69,7 @@ class CheckoutOrderTest extends TestCase
 
     private function inventory(Store $store): StoreInventory
     {
-        $product = Product::create(['store_id' => $store->store_id, 'product_name' => $store->store_name.' Rice', 'sku' => 'RICE', 'category' => 'Staples']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => $store->store_name.' Rice', 'sku' => 'RICE', 'category' => 'Staples']);
         $inventory = StoreInventory::create([
             'store_id' => $store->store_id, 'product_id' => $product->product_id,
             'selling_price' => '67.25', 'hard_stock_qty' => 100, 'soft_stock_qty' => 15, 'status' => 'active',

@@ -37,7 +37,7 @@ export default function AdminDashboard() {
         <StatCard icon={Coins} label="Service Charge Pool" value="Not configured" iconBg="bg-emerald-50 text-emerald-600" />
       </div>
 
-      <p className="text-xs text-slate-500">Today's sales: gross verified supermarket payments confirmed today in Asia/Manila, excluding completed refunds. SaaS subscription revenue: Not available. Low stock uses available units and each configured threshold.</p>
+      <p className="text-xs text-slate-500">Today's sales: gross verified supermarket payments confirmed today in Asia/Manila, excluding completed refunds. SaaS subscription revenue: Not available. Low stock uses physical units at or below each configured threshold.</p>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between shadow-sm">
           <div>
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
               <thead>
                 <tr className="text-slate-400 border-b border-slate-100">
                   <th className="pb-2 font-medium">Product</th>
-                  <th className="pb-2 font-medium">Available units</th>
+                  <th className="pb-2 font-medium">Physical units</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium text-right">Threshold</th>
                 </tr>
@@ -64,11 +64,11 @@ export default function AdminDashboard() {
                 {(data?.low_stock_records ?? []).map((row) => (
                   <tr key={row.store_inventory_id} className="hover:bg-slate-50/50">
                     <td className="py-2.5 font-medium text-slate-700">{row.product_name}<span className="block text-[10px] text-slate-400">{row.store_name}</span></td>
-                    <td className="py-2.5 font-bold">{row.available_stock}</td>
+                    <td className="py-2.5 font-bold">{row.physical_stock}</td>
                     <td className="py-2.5">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        row.available_stock > row.low_stock_threshold ? 'bg-emerald-50 text-emerald-700' :
-                        row.available_stock > 0 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
+                        row.physical_stock > row.low_stock_threshold ? 'bg-emerald-50 text-emerald-700' :
+                        row.physical_stock > 0 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
                       }`}>
                         Low stock
                       </span>

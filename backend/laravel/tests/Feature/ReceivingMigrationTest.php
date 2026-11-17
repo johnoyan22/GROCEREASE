@@ -27,7 +27,7 @@ class ReceivingMigrationTest extends TestCase
         $this->seed(RoleSeeder::class);
         $shopper = User::factory()->create(['role_id' => Role::where('slug', 'shopper')->value('role_id')]);
         $store = Store::create(['store_name' => 'Historical store', 'address' => 'Historical address']);
-        $product = Product::create(['store_id' => $store->store_id, 'product_name' => 'Legacy', 'sku' => 'PRESERVED-001', 'size' => '1 1/2 litres?', 'category' => 'Legacy']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => 'Legacy', 'sku' => 'PRESERVED-001', 'size' => '1 1/2 litres?', 'category' => 'Legacy']);
         $inventory = StoreInventory::create(['store_id' => $store->store_id, 'product_id' => $product->product_id, 'selling_price' => '45.50', 'hard_stock_qty' => 17, 'soft_stock_qty' => 3, 'status' => 'active']);
         $order = Order::create(['store_id' => $store->store_id, 'shopper_user_id' => $shopper->id, 'store_name' => 'Historical name', 'store_address' => 'Old address', 'shopper_name' => 'Historical shopper',
             'subtotal_centavos' => 13650, 'total_centavos' => 13650, 'service_fee_policy' => 'historical', 'idempotency_key' => (string) Str::uuid(), 'request_hash' => str_repeat('a', 64)]);

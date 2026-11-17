@@ -51,7 +51,7 @@ abstract class TransactionTestCase extends TestCase
         $this->supervisor = $this->account('supervisor', $this->store, $this->admin);
         $this->foreign = $this->account('supervisor', $this->otherStore, $this->admin);
         $this->inventoryWorker = $this->account('inventory_worker', $this->store, $this->admin);
-        $product = Product::create(['store_id' => $this->store->store_id, 'product_name' => 'Rice', 'sku' => 'RICE', 'category' => 'Staples']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $this->store->store_id, 'product_name' => 'Rice', 'sku' => 'RICE', 'category' => 'Staples']);
         $this->inventory = StoreInventory::create(['store_id' => $this->store->store_id, 'product_id' => $product->product_id,
             'selling_price' => '67.00', 'hard_stock_qty' => 100, 'soft_stock_qty' => 0, 'status' => 'active']);
         $this->orderId = $this->placeOrder();

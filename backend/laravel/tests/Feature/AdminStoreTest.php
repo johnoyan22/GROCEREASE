@@ -223,7 +223,7 @@ class AdminStoreTest extends TestCase
         $unassigned = $this->account('inventory_worker');
         $assignment = $this->assign($worker, $store);
         $this->assign($supervisor, $store);
-        $product = Product::create(['store_id' => $store->store_id, 'product_name' => 'Rice', 'sku' => 'RICE-1KG', 'category' => 'Staples']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => 'Rice', 'sku' => 'RICE-1KG', 'category' => 'Staples']);
         $inventory = StoreInventory::create(['store_id' => $store->store_id, 'product_id' => $product->product_id,
             'selling_price' => '67.00', 'hard_stock_qty' => 12, 'soft_stock_qty' => 2, 'status' => 'active']);
         $inventoryBefore = $inventory->fresh()->getAttributes();

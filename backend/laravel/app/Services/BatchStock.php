@@ -81,7 +81,7 @@ class BatchStock
         DB::table('order_batch_allocations')->where('order_item_id', $item->order_item_id)->where('status', 'reserved')->update(['status' => 'released', 'updated_at' => now()]);
     }
 
-    public function correctBatch(StoreInventory $inventory, InventoryBatch $batch, int $actual, int $adjustmentId): void
+    public function correctBatch(StoreInventory $inventory, InventoryBatch $batch, int $actual, int $adjustmentId, \App\Models\Store $store): void
     {
         // Caller holds store -> inventory -> selected batch -> request -> allocation locks.
         abort_unless($batch->store_inventory_id === $inventory->store_inventory_id, 409, 'Batch ownership changed.');
@@ -100,6 +100,7 @@ class BatchStock
         $inventory->hard_stock_qty = $total;
         $inventory->stock_version++;
         $inventory->save();
+        app(LowStockMonitor::class)->evaluate($inventory, $store, 'batch_correction');
     }
 
     public function pickingData(OrderItem $item): array

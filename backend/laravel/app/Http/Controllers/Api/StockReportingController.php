@@ -47,23 +47,9 @@ class StockReportingController extends Controller
             $context = $this->access->resolve($request->user(), ['inventory_worker']);
             $store = $context['store'];
             $inventory = $this->access->inventory($store, $item);
-            $rules = $this->protectedFields();
-            $rules['note'] = ['required', 'string', 'max:1000'];
-            $validated = $request->validate($rules);
+            $request->validate($this->protectedFields());
             $this->requireReportingSchema();
-            $report = LowStockReport::create([
-                'store_id' => $store->store_id,
-                'store_inventory_id' => $inventory->store_inventory_id,
-                'reported_by_user_id' => $context['user']->id,
-                'note' => $validated['note'],
-                'observed_hard_stock_qty' => $inventory->hard_stock_qty,
-                'observed_soft_stock_qty' => $inventory->soft_stock_qty,
-            ]);
-
-            return response()->json([
-                'message' => 'Low-stock report recorded. Inventory quantities are unchanged.',
-                'report' => $this->reportData($report->load(['inventory.product', 'reportedBy.profile'])),
-            ], 201);
+            abort(410, 'Manual low-stock submissions are retired. Physical stock is monitored automatically; historical reports remain read-only.');
         }, 3);
     }
 

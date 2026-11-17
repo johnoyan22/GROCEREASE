@@ -170,7 +170,7 @@ class BatchCorrectionTest extends TransactionTestCase
 
     public function test_product_filter_batch_ownership_and_zero_recovery_are_scoped_to_the_recorded_product(): void
     {
-        $product = \App\Models\Product::create(['store_id' => $this->store->store_id, 'product_name' => 'Water', 'sku' => 'WATER', 'category' => 'Drinks']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $this->store->store_id, 'product_name' => 'Water', 'sku' => 'WATER', 'category' => 'Drinks']);
         $other = StoreInventory::create(['store_id' => $this->store->store_id, 'product_id' => $product->product_id,
             'selling_price' => '10.00', 'hard_stock_qty' => 0, 'status' => 'active']);
         $empty = app(\App\Services\BatchStock::class)->create($other, 50, ['remaining_quantity' => 0, 'status' => 'on_hold']);

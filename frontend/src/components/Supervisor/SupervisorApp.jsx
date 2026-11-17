@@ -12,6 +12,8 @@
 // "loginPath" is where the Logout button sends the user — point it at
 // whatever route your app's real login page lives on.
 
+import CategoryManagement from './CategoryManagement';
+import AutomaticLowStock from '../inventory/low-stock/AutomaticLowStock';
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { SupervisorProvider } from './SupervisorContext'
 import { SupervisorLayout } from './SupervisorLayout'
@@ -35,8 +37,10 @@ export default function SupervisorApp({ basePath = '/supervisor', loginPath = '/
         <Route element={<SupervisorLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<SupervisorDashboard />} />
+          <Route path="categories" element={<CategoryManagement />} />
           <Route path="inventory" element={<SupervisorInventory />} />
           <Route path="staff" element={<Navigate to={`${basePath}/workers`} replace />} />
+          <Route path="low-stock" element={<AutomaticLowStock supervisor />} />
           <Route path="stock-approvals" element={<SupervisorStockApprovals />} />
           <Route path="orders" element={<SupervisorOrders />} />
           <Route path="workers" element={<SupervisorStoreWorkers />} />

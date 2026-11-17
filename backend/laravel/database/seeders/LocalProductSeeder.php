@@ -51,6 +51,8 @@ class LocalProductSeeder extends Seeder
         ];
 
         foreach ($products as $product) {
+            $category = \App\Models\Category::firstOrCreate(['store_id' => $product['store_id'], 'name_key' => \App\Models\Category::nameKey($product['category'])], ['name' => $product['category'], 'status' => 'active']);
+            $product['category_id'] = $category->id;
             Product::firstOrCreate(
                 ['store_id' => $product['store_id'], 'sku' => $product['sku']],
                 $product

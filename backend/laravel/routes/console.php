@@ -25,3 +25,15 @@ Artisan::command('payments:reconcile-session {attempt : Existing attempt UUID} {
     app(\App\Services\PaymentCheckout::class)->reconcileSession($this->argument('attempt'), $this->argument('session'));
     $this->info('Provider session identity verified and bound. Await the signed paid webhook or run the expiration command.');
 })->purpose('Recover an uncertain sandbox session without creating another payable session');
+
+Artisan::command('inventory:reconcile-low-stock', function () {
+    $this->info('Evaluated '.app(\App\Services\LowStockMonitor::class)->reconcile().' inventory records.');
+})->purpose('Reconcile physical low-stock episodes and deliver once to current eligible staff');
+Schedule::command('inventory:reconcile-low-stock')->everyMinute()->withoutOverlapping();
+
+Artisan::command('inventory:category-mapping-status', function () {
+    $rows = \Illuminate\Support\Facades\DB::table('category_mapping_issues')->join('products', 'products.product_id', '=', 'category_mapping_issues.product_id')
+        ->whereNull('products.category_id')->orderBy('products.product_id')->get(['products.product_id', 'products.store_id', 'category_mapping_issues.reason']);
+    $this->table(['Product ID', 'Store ID', 'Mapping issue'], $rows->map(fn ($r) => [(string) $r->product_id, $r->store_id ?? 'Unassigned', $r->reason])->all());
+    $this->info($rows->count().' unresolved category mappings. Original text is preserved in products.category_legacy.');
+})->purpose('Report legacy products requiring category mapping review; no data changes');

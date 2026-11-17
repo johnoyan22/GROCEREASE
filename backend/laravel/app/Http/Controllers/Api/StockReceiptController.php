@@ -74,6 +74,7 @@ class StockReceiptController extends Controller
                 $inventory->hard_stock_qty += $record->quantity;
                 $inventory->stock_version++;
                 $inventory->save();
+                app(\App\Services\LowStockMonitor::class)->evaluate($inventory, $context['store'], 'stock_addition');
             }
             $record->status = $validated['decision'];
             $record->decided_by_user_id = $context['user']->id;

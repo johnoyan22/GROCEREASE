@@ -22,7 +22,7 @@ try {
   assert.deepEqual((await Promise.all([run('duplicate'), run('duplicate')])).map((r) => r.status).sort(), [200, 201]);
   assert.equal((await run('reject')).status, 200);
   assert.deepEqual((await Promise.all([run('race-submit', 0), run('race-submit', 1)])).map((r) => r.status).sort(), [201, 409]);
-  assert.deepEqual((await Promise.all([run('approve', 0), run('approve', 1)])).map((r) => r.status).sort(), [200, 409]);
+  assert.deepEqual((await Promise.all([run('approve', 0), run('approve', 1), run('reconcile'), run('reconcile')])).map((r) => r.status).sort(), [200, 200, 200, 409]);
   assert.equal((await run('verify-initial')).status, 'passed');
   assert.equal((await run('receipt-setup')).status, 'ready');
   const receiptRace = await Promise.all([run('approve', 0), run('receipt')]);
@@ -37,6 +37,16 @@ try {
   assert.ok([200, 409].includes(handoverRace[0].status));
   assert.equal(handoverRace[1].status, 200);
   assert.equal((await run('verify')).status, 'passed');
+  assert.deepEqual((await Promise.all([run('category-duplicate', 0), run('category-duplicate', 1)])).map((r) => r.status).sort(), [201, 422]);
+  assert.equal((await run('category-race-setup')).status, 'ready');
+  const categoryRace = await Promise.all([run('category-product'), run('category-delete')]);
+  assert.ok([[201, 409], [422, 200]].some((pair) => pair.every((status, i) => status === categoryRace[i].status)), JSON.stringify(categoryRace));
+  assert.equal((await run('category-rename-setup')).status, 'ready');
+  const renameRace = await Promise.all([run('category-product'), run('category-rename')]);
+  assert.deepEqual(renameRace.map((r) => r.status), [201, 200]);
+  assert.equal((await run('category-verify')).status, 'passed');
+  console.log('PASS: concurrent rename and product creation keep current category text synchronized.');
+  console.log('PASS: concurrent category duplicate creation and product assignment versus unused-category deletion.');
   console.log('PASS: isolated MariaDB exact-batch corrections; duplicate submit/approval; racing active requests, receipt, reservation, handover; stable number search and immutable receiving evidence.');
 } finally {
   await run('cleanup');

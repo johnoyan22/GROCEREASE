@@ -127,6 +127,7 @@ class PickupController extends Controller
                 $inventory->soft_stock_qty -= $item->quantity;
                 $inventory->stock_version += 1;
                 $inventory->save();
+                app(\App\Services\LowStockMonitor::class)->evaluate($inventory, $context['store'], 'physical_handover');
             }
             DB::table('order_handovers')->insert([
                 'order_id' => $record->order_id, 'order_payment_id' => $payment->id,

@@ -25,7 +25,7 @@ class BatchCorrectionMigrationTest extends TestCase
         $this->seed(\Database\Seeders\RoleSeeder::class);
         $worker = User::factory()->create(['role_id' => Role::where('slug', 'inventory_worker')->value('role_id')]);
         $store = Store::create(['store_name' => 'Legacy QA', 'address' => 'QA']);
-        $product = Product::create(['store_id' => $store->store_id, 'product_name' => 'Legacy rice', 'sku' => 'LEGACY-KEPT', 'category' => 'Staples']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => 'Legacy rice', 'sku' => 'LEGACY-KEPT', 'category' => 'Staples']);
         $inventory = StoreInventory::create(['store_id' => $store->store_id, 'product_id' => $product->product_id,
             'selling_price' => '10.00', 'hard_stock_qty' => 100, 'status' => 'active']);
         app(\App\Services\BatchStock::class)->initialize($inventory);

@@ -38,7 +38,7 @@ foreach (['A', 'B'] as $letter) {
     $store = Store::create(['store_name' => 'AI Test Store '.$letter, 'address' => 'Disposable acceptance fixture']);
     $store->forceFill(['operating_hours' => array_fill(1, 7, ['opens_at' => '00:00', 'closes_at' => '23:59'])])->save();
     foreach (['Rice', 'Brown Rice', 'Spaghetti Pasta', 'Tomato Sauce', 'Milk', 'Eggs'] as $index => $name) {
-        $product = Product::create(['store_id' => $store->store_id, 'product_name' => $letter.' '.$name, 'sku' => 'AI-'.$index,
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => $letter.' '.$name, 'sku' => 'AI-'.$index,
             'category' => $index < 2 ? 'Staples' : ($index < 4 ? 'Pasta' : 'Breakfast'), 'size' => 'Test pack']);
         $inventory = StoreInventory::create(['store_id' => $store->store_id, 'product_id' => $product->product_id,
             'selling_price' => $letter === 'A' ? '45.25' : '99.00', 'hard_stock_qty' => 10, 'soft_stock_qty' => 0, 'status' => 'active']);

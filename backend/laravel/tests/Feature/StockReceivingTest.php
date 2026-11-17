@@ -41,7 +41,7 @@ class StockReceivingTest extends TransactionTestCase
     private function product(array $changes = []): array
     {
         return $this->signIn($this->inventoryWorker)->postJson('/api/inventory/items', array_replace([
-            'product_name' => 'Coke', 'category' => 'Drinks', 'size_amount' => 1.5, 'size_unit' => 'L',
+            'product_name' => 'Coke', 'category_id' => \Tests\Support\CategoryFixture::id($this->store->store_id, 'Drinks'), 'size_amount' => 1.5, 'size_unit' => 'L',
             'selling_unit' => 'bottle', 'selling_price' => '1.00', 'status' => 'active',
         ], $changes))->assertCreated()->json('inventory');
     }
@@ -132,7 +132,7 @@ class StockReceivingTest extends TransactionTestCase
         $product = $this->product(['size_amount' => $unit ? 500 : null, 'size_unit' => $unit]);
         $this->assertSame($unit ? '500 '.$unit : null, $product['size']);
         $this->signIn($this->inventoryWorker)->putJson('/api/inventory/items/'.$product['store_inventory_id'], [
-            'product_name' => 'New name', 'category' => 'Other', 'selling_price' => '2.00', 'status' => 'active',
+            'product_name' => 'New name', 'category_id' => \Tests\Support\CategoryFixture::id($this->store->store_id, 'Other'), 'selling_price' => '2.00', 'status' => 'active',
             'size_amount' => 1.5, 'size_unit' => 'L',
         ])->assertOk()->assertJsonPath('inventory.sku', $product['sku']);
         $this->putJson('/api/inventory/items/'.$product['store_inventory_id'], ['sku' => $product['sku'], 'selling_price' => '1.00', 'status' => 'active'])
@@ -144,7 +144,7 @@ class StockReceivingTest extends TransactionTestCase
     {
         foreach ([['size_amount' => 0], ['size_amount' => -1], ['size_amount' => 1, 'size_unit' => null], ['size_unit' => 'oz'], ['selling_unit' => 'carton'], ['size_amount' => 1, 'size_unit' => 'L', 'size' => '2 kg']] as $changes) {
             $this->signIn($this->inventoryWorker)->postJson('/api/inventory/items', array_replace([
-                'product_name' => 'Invalid', 'category' => 'Test', 'selling_price' => 1, 'status' => 'active',
+                'product_name' => 'Invalid', 'category_id' => \Tests\Support\CategoryFixture::id($this->store->store_id, 'Test'), 'selling_price' => 1, 'status' => 'active',
                 'size_amount' => 1, 'size_unit' => 'L', 'selling_unit' => 'bottle',
             ], $changes))->assertUnprocessable();
         }
@@ -226,7 +226,7 @@ class StockReceivingTest extends TransactionTestCase
     public function test_short_generated_sku_skips_a_preserved_legacy_identifier(): void
     {
         $legacy = sprintf('GE-S%03d-P000001', $this->store->store_id);
-        Product::create(['store_id' => $this->store->store_id, 'sku' => $legacy, 'product_name' => 'Legacy SKU', 'category' => 'Legacy']);
+        \Tests\Support\CategoryFixture::product(['store_id' => $this->store->store_id, 'sku' => $legacy, 'product_name' => 'Legacy SKU', 'category' => 'Legacy']);
         $product = $this->product();
         $this->assertSame(sprintf('GE-S%03d-P000002', $this->store->store_id), $product['sku']);
         $this->assertSame($legacy, Product::where('product_name', 'Legacy SKU')->firstOrFail()->sku);

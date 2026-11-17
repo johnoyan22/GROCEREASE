@@ -86,7 +86,7 @@ try {
             StaffStoreAssignment::create(['store_id' => $store->store_id, 'user_id' => $user->id, 'assigned_by_user_id' => $admin->id]);
             $state[$key][] = $user->id;
         }
-        $product = invoke(StoreInventoryController::class, 'store', ['product_name' => 'Coke', 'category' => 'Drinks', 'selling_price' => '1.00',
+        $product = invoke(StoreInventoryController::class, 'store', ['product_name' => 'Coke', 'category_id' => \Tests\Support\CategoryFixture::id($store->store_id, 'Drinks'), 'selling_price' => '1.00',
             'status' => 'active', 'selling_unit' => 'bottle'], $state['workers'][0])['data']['inventory'];
         $state['inventory'] = $product['store_inventory_id']; $state['store'] = $store->store_id;
         foreach ([100, 50] as $i => $quantity) {
@@ -96,13 +96,37 @@ try {
             invoke(StockReceiptController::class, 'decide', ['decision' => 'approved'], $state['supervisors'][0], ['receipt' => $receipt['data']['receipt']['id']]);
         }
         $state['a'] = InventoryBatch::orderBy('id')->firstOrFail()->id; $state['b'] = InventoryBatch::orderByDesc('id')->firstOrFail()->id;
+        invoke(StockAdjustmentController::class, 'updatePolicy', ['max_per_order' => null, 'low_stock_threshold' => 140], $state['supervisors'][0], ['item' => $state['inventory']]);
         $state['version'] = StoreInventory::findOrFail($state['inventory'])->stock_version;
         file_put_contents($runtime, json_encode($state)); echo json_encode(['status' => 'ready']);
     } else {
         $state = json_decode(file_get_contents($runtime), true, 512, JSON_THROW_ON_ERROR);
         $index = (int) ($argv[3] ?? 0);
         $args = ['item' => $state['inventory']];
-        if ($mode === 'duplicate' || $mode === 'race-submit') {
+        if ($mode === 'category-rename-setup') {
+            $state['category'] = \Tests\Support\CategoryFixture::id($state['store'], 'Rename Race');
+            file_put_contents($runtime, json_encode($state)); echo json_encode(['status' => 'ready']);
+        } elseif ($mode === 'category-rename') {
+            $result = invoke(\App\Http\Controllers\Api\CategoryController::class, 'update', ['name' => 'Renamed Category', 'status' => 'active'], $state['supervisors'][0], ['category' => $state['category']]);
+            echo json_encode(['status' => $result['status']]);
+        } elseif ($mode === 'category-verify') {
+            if (DB::table('products as p')->join('categories as c', 'p.category_id', '=', 'c.id')->whereColumn('p.category', '!=', 'c.name')->exists()) throw new RuntimeException('Concurrent rename left stale current category text.');
+            echo json_encode(['status' => 'passed']);
+        } elseif ($mode === 'category-duplicate') {
+            $result = invoke(\App\Http\Controllers\Api\CategoryController::class, 'store', ['name' => $index ? '  RACING   category ' : 'Racing Category', 'status' => 'active'], $state['supervisors'][$index]);
+            echo json_encode(['status' => $result['status']]);
+        } elseif ($mode === 'category-race-setup') {
+            $state['category'] = \Tests\Support\CategoryFixture::id($state['store'], 'Delete Race');
+            file_put_contents($runtime, json_encode($state)); echo json_encode(['status' => 'ready']);
+        } elseif ($mode === 'category-product') {
+            $result = invoke(StoreInventoryController::class, 'store', ['product_name' => 'Racing category assignment', 'category_id' => $state['category'], 'selling_unit' => 'piece', 'selling_price' => '1.00', 'status' => 'active'], $state['workers'][0]);
+            echo json_encode(['status' => $result['status']]);
+        } elseif ($mode === 'category-delete') {
+            $result = invoke(\App\Http\Controllers\Api\CategoryController::class, 'destroy', [], $state['supervisors'][0], ['category' => $state['category']]);
+            echo json_encode(['status' => $result['status']]);
+        } elseif ($mode === 'reconcile') {
+            app(\App\Services\LowStockMonitor::class)->reconcile(); echo json_encode(['status' => 200]);
+        } elseif ($mode === 'duplicate' || $mode === 'race-submit') {
             $payload = countPayload($state, $state['b'], 40, $mode === 'duplicate' ? $state['operation'] : $state['race_operations'][$index]);
             $payload['expected_stock_version'] = $state['version'];
             $result = invoke(StockAdjustmentController::class, 'store', $payload, $state['workers'][$mode === 'duplicate' ? 0 : $index], $args);
@@ -117,6 +141,7 @@ try {
             verifyTotals($state);
             if (InventoryBatch::count() !== 2 || InventoryBatch::find($state['a'])->remaining_quantity !== 100 || InventoryBatch::find($state['b'])->remaining_quantity !== 40
                 || StockAdjustment::count() !== 2 || DB::table('batch_correction_logs')->count() !== 1) throw new RuntimeException('Exact selected-batch race failed.');
+            if (DB::table('low_stock_episodes')->count() !== 1 || DB::table('staff_low_stock_notifications')->count() !== 4) throw new RuntimeException('Concurrent low-stock evaluation duplicated episodes or recipients.');
             echo json_encode(['status' => 'passed']);
         } elseif ($mode === 'receipt-setup') {
             invoke(StockAdjustmentController::class, 'store', countPayload($state, $state['b'], 45, (string) Str::uuid()), $state['workers'][0], $args);

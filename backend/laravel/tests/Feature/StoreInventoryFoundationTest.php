@@ -43,7 +43,7 @@ class StoreInventoryFoundationTest extends TestCase
 
     private function product(Store $store): Product
     {
-        return Product::create([
+        return \Tests\Support\CategoryFixture::product([
             'store_id' => $store->store_id,
             'product_name' => 'Test Rice',
             'sku' => 'TEST-RICE-1KG',

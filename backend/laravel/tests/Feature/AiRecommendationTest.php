@@ -38,7 +38,7 @@ class AiRecommendationTest extends TransactionTestCase
     private function item(string $name, ?Store $store = null, string $category = 'Staples'): StoreInventory
     {
         $store ??= $this->store;
-        $product = Product::create(['store_id' => $store->store_id, 'product_name' => $name, 'sku' => strtoupper(str_replace(' ', '-', $name)), 'category' => $category]);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => $name, 'sku' => strtoupper(str_replace(' ', '-', $name)), 'category' => $category]);
 
         return StoreInventory::create(['store_id' => $store->store_id, 'product_id' => $product->product_id,
             'selling_price' => '45.25', 'hard_stock_qty' => 10, 'soft_stock_qty' => 2, 'status' => 'active']);

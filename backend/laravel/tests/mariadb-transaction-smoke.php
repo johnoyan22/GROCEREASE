@@ -72,7 +72,7 @@ try {
         $attempts = [];
         $inventoryIds = [];
         foreach ([1, 2] as $number) {
-            $product = Product::create(['store_id' => $store->store_id, 'product_name' => 'Test product '.$number, 'sku' => 'TEST'.$number, 'category' => 'Test']);
+            $product = \Tests\Support\CategoryFixture::product(['store_id' => $store->store_id, 'product_name' => 'Test product '.$number, 'sku' => 'TEST'.$number, 'category' => 'Test']);
             $inventoryIds[] = StoreInventory::create(['store_id' => $store->store_id, 'product_id' => $product->product_id,
                 'selling_price' => '10.00', 'hard_stock_qty' => 1, 'soft_stock_qty' => 0, 'status' => 'active'])->store_inventory_id;
         }

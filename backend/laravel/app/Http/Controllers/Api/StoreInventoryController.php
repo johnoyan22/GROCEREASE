@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryAvailabilityLog;
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\Store;
 use App\Models\StoreInventory;
 use App\Models\User;
@@ -116,6 +117,7 @@ class StoreInventoryController extends Controller
                     'status' => $validated['status'],
                 ]);
                 $inventory->touch();
+                if ($previousStatus !== $inventory->status) app(\App\Services\LowStockMonitor::class)->evaluate($inventory, $store, 'offering_status');
                 if ($previousStatus !== $inventory->status) {
                     $this->recordAvailability($inventory, $request->user(), $previousStatus);
                 }
@@ -158,7 +160,7 @@ class StoreInventoryController extends Controller
     private function withAssignedStore(Request $request, Closure $action, bool $allowSupervisor = false): JsonResponse
     {
         return DB::transaction(function () use ($request, $action, $allowSupervisor) {
-            abort_unless(Schema::hasTable('inventory_batches'), 503, 'Product receiving is awaiting database setup. Please contact your administrator.');
+            abort_unless(Schema::hasColumn('products', 'category_id') && Schema::hasTable('inventory_batches'), 503, 'Product receiving is awaiting database setup. Please contact your administrator.');
             $user = User::query()->with('role')->lockForUpdate()
                 ->findOrFail($request->user()->id);
             $roles = $allowSupervisor ? ['inventory_worker', 'supervisor'] : ['inventory_worker'];
@@ -215,7 +217,11 @@ class StoreInventoryController extends Controller
             'size_amount' => ['required_with:size_unit', 'nullable', 'numeric', 'gt:0', 'max:99999999.9999', 'decimal:0,4'],
             'size_unit' => ['required_with:size_amount', 'nullable', Rule::in(['mg', 'g', 'kg', 'mL', 'L'])],
             'selling_unit' => [$product ? 'sometimes' : 'required', Rule::in(['piece', 'bottle', 'can', 'pack', 'bag'])],
-            'category' => [...$required, 'string', 'max:100'],
+            'category' => ['prohibited'],
+            'category_id' => [...$required, 'integer', 'min:1', function ($attribute, $value, $fail) use ($store, $product) {
+                $category = Category::where('store_id', $store->store_id)->whereKey($value)->lockForUpdate()->first();
+                if (!$category || ($category->status !== 'active' && (int) $product?->category_id !== (int) $value)) $fail('Choose an active category from your store. Ask your Supervisor to add or activate a category.');
+            }],
         ];
     }
 
@@ -234,7 +240,7 @@ class StoreInventoryController extends Controller
             throw ValidationException::withMessages(['size' => 'Edit size using the amount and Unit of Measure fields.']);
         }
         return array_intersect_key($validated, array_flip([
-            'product_name', 'barcode', 'size', 'category', 'size_amount', 'size_unit', 'selling_unit',
+            'product_name', 'barcode', 'size', 'category_id', 'size_amount', 'size_unit', 'selling_unit',
         ]));
     }
 
@@ -250,8 +256,9 @@ class StoreInventoryController extends Controller
         $receiptDates = (clone $eligible)->where('expiry_date', $nearestExpiry)->distinct()->orderBy('received_date')
             ->pluck('received_date')->map(fn ($date) => $date?->format('Y-m-d'));
         return array_merge($item->product->only([
-            'product_id', 'product_name', 'sku', 'barcode', 'size', 'category', 'size_amount', 'size_unit', 'selling_unit',
+            'product_id', 'product_name', 'sku', 'barcode', 'size', 'category', 'category_id', 'size_amount', 'size_unit', 'selling_unit',
         ]), [
+            'category_status' => $item->product->categoryRecord?->status,
             'store_inventory_id' => $item->store_inventory_id,
             'store_id' => $item->store_id,
             'selling_price' => $item->selling_price,

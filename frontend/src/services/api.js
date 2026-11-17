@@ -207,7 +207,7 @@ function productDetails(details) {
     size_amount: details.size_amount,
     size_unit: details.size_unit,
     selling_unit: details.selling_unit,
-    category: details.category,
+    category_id: details.category_id,
     selling_price: details.selling_price,
     status: details.status,
   };
@@ -367,12 +367,18 @@ export async function submitStockAdjustment(id, details) {
   });
 }
 
-export async function submitLowStockReport(id, note) {
+export function getAutomaticLowStock({ signal, ...query } = {}) {
+  return sendRequest('/inventory/low-stock?' + new URLSearchParams(query), { signal, cache: 'no-store' });
+}
+
+export function getLowStockNotifications({ signal, unread = false, ...query } = {}) {
+  return sendRequest('/staff/low-stock-notifications?' + new URLSearchParams({ ...query, unread: unread ? '1' : '0' }), { signal, cache: 'no-store' });
+}
+
+export async function readLowStockNotification(id) {
   const xsrfToken = await getXsrfToken();
-  return sendRequest(`/inventory/items/${encodeURIComponent(id)}/low-stock-reports`, {
-    method: 'POST',
-    headers: { 'X-XSRF-TOKEN': xsrfToken },
-    body: JSON.stringify({ note }),
+  return sendRequest(`/staff/low-stock-notifications/${encodeURIComponent(id)}/read`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken }, body: '{}',
   });
 }
 
@@ -567,3 +573,17 @@ export function getOrderReceipt(id, role, { signal } = {}) {
   if (role === 'supervisor') prefix = 'supervisor';
   return sendRequest(`/${prefix}/orders/${encodeURIComponent(id)}/receipt`, { signal, cache: 'no-store' });
 }
+
+export function getCategories({ signal, ...query } = {}) {
+  return sendRequest('/staff/categories?' + new URLSearchParams(query), { signal, cache: 'no-store' });
+}
+export function getCategoryOptions({ signal } = {}) {
+  return sendRequest('/staff/category-options', { signal, cache: 'no-store' });
+}
+async function saveCategory(path, method, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(path, { method, headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify(details ? { name: details.name, status: details.status } : {}) });
+}
+export function createCategory(details) { return saveCategory('/supervisor/categories', 'POST', details); }
+export function updateCategory(id, details) { return saveCategory(`/supervisor/categories/${encodeURIComponent(id)}`, 'PUT', details); }
+export function deleteCategory(id) { return saveCategory(`/supervisor/categories/${encodeURIComponent(id)}`, 'DELETE'); }

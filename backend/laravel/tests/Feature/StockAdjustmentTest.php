@@ -46,7 +46,7 @@ class StockAdjustmentTest extends TestCase
         $this->worker = $this->account('inventory_worker', $this->first);
         $this->supervisor = $this->account('supervisor', $this->first);
         $this->otherSupervisor = $this->account('supervisor', $this->second);
-        $product = Product::create([
+        $product = \Tests\Support\CategoryFixture::product([
             'store_id' => $this->first->store_id, 'product_name' => 'Rice', 'sku' => 'RICE', 'category' => 'Staples',
         ]);
         $this->inventory = StoreInventory::create([
@@ -297,11 +297,11 @@ class StockAdjustmentTest extends TestCase
         $this->assertDatabaseCount('batch_correction_logs', 0);
     }
 
-    public function test_supervisor_sets_policy_and_low_stock_uses_available_quantity(): void
+    public function test_supervisor_sets_policy_and_low_stock_uses_physical_quantity(): void
     {
         $this->signIn($this->supervisor)->putJson($this->policyPath(), ['max_per_order' => 4, 'low_stock_threshold' => 85])->assertOk();
         $this->getJson('/api/inventory/items')->assertOk()->assertJsonPath('inventory.0.available_stock', 85)
-            ->assertJsonPath('inventory.0.is_low_stock', true)->assertJsonPath('inventory.0.max_per_order', 4);
+            ->assertJsonPath('inventory.0.is_low_stock', false)->assertJsonPath('inventory.0.max_per_order', 4);
         $this->putJson($this->policyPath(), ['max_per_order' => 4, 'low_stock_threshold' => 85])->assertOk();
         $this->assertDatabaseCount('inventory_policy_logs', 1);
         $this->assertDatabaseHas('inventory_policy_logs', [

@@ -44,11 +44,11 @@ class StoreInventoryApiTest extends TestCase
         $this->otherWorker = $this->account('inventory_worker');
         $this->assign($this->worker, $this->first);
         $this->assign($this->otherWorker, $this->second);
-        $this->rice = Product::create([
+        $this->rice = \Tests\Support\CategoryFixture::product([
             'store_id' => $this->first->store_id, 'product_name' => 'Store A Rice',
             'sku' => 'TEST-RICE', 'barcode' => '0001234567890', 'size' => '1 kg', 'category' => 'Staples',
         ]);
-        $this->otherRice = Product::create([
+        $this->otherRice = \Tests\Support\CategoryFixture::product([
             'store_id' => $this->second->store_id, 'product_name' => 'Store B Rice',
             'sku' => 'TEST-RICE', 'category' => 'Staples',
         ]);
@@ -97,7 +97,7 @@ class StoreInventoryApiTest extends TestCase
         return array_replace([
             'product_name' => 'New Store Product', 'barcode' => null,
             'size_amount' => 1, 'size_unit' => 'L', 'selling_unit' => 'bottle',
-            'category' => 'Beverages', 'selling_price' => '25.50', 'status' => 'inactive',
+            'category_id' => \Tests\Support\CategoryFixture::id(($this->app['auth']->user()?->staffStoreAssignment?->store_id ?? $this->first->store_id), 'Beverages'), 'selling_price' => '25.50', 'status' => 'inactive',
         ], $overrides);
     }
 
@@ -212,7 +212,7 @@ class StoreInventoryApiTest extends TestCase
         $this->signIn($this->worker)->postJson(
             '/api/inventory/items', $this->payload(['sku' => '  test-rice  '])
         )->assertUnprocessable()->assertJsonValidationErrors('sku');
-        $other = Product::create([
+        $other = \Tests\Support\CategoryFixture::product([
             'store_id' => $this->first->store_id, 'product_name' => 'Other', 'sku' => 'TAKEN', 'category' => 'Other',
         ]);
         $this->putJson('/api/inventory/items/'.$own->store_inventory_id, [
@@ -250,11 +250,11 @@ class StoreInventoryApiTest extends TestCase
     public function test_invalid_metadata_status_and_missing_fields_are_rejected(): void
     {
         $this->signIn($this->worker)->postJson('/api/inventory/items', [])
-            ->assertUnprocessable()->assertJsonValidationErrors(['product_name', 'selling_unit', 'category', 'selling_price', 'status']);
+            ->assertUnprocessable()->assertJsonValidationErrors(['product_name', 'selling_unit', 'category_id', 'selling_price', 'status']);
         foreach ([
             ['product_name' => str_repeat('a', 256)], ['sku' => str_repeat('a', 65)],
             ['barcode' => ['invalid']], ['size' => str_repeat('a', 101)],
-            ['category' => ''], ['status' => 'unknown'],
+            ['category_id' => ''], ['status' => 'unknown'],
         ] as $invalid) {
             $this->postJson('/api/inventory/items', $this->payload($invalid))
                 ->assertUnprocessable()->assertJsonValidationErrors(array_keys($invalid));

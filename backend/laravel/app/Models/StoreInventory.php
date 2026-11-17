@@ -63,7 +63,7 @@ class StoreInventory extends Model
 
     public function isLowStock(): bool
     {
-        return $this->low_stock_threshold !== null && $this->availableStock() <= $this->low_stock_threshold;
+        return \App\Services\LowStockMonitor::isLow($this);
     }
 
     public function store(): BelongsTo

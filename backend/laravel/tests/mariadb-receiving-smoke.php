@@ -57,7 +57,7 @@ try {
                 if ($role === 'inventory_worker') $workers[] = $user->id; else $supervisors[] = $user->id;
             }
         }
-        $product = invoke(StoreInventoryController::class, 'store', ['product_name' => 'Coke', 'category' => 'Drinks', 'selling_price' => '1.00',
+        $product = invoke(StoreInventoryController::class, 'store', ['product_name' => 'Coke', 'category_id' => \Tests\Support\CategoryFixture::id($store->store_id, 'Drinks'), 'selling_price' => '1.00',
             'status' => 'active', 'size_amount' => 1.5, 'size_unit' => 'L', 'selling_unit' => 'bottle'], $workers[0])['data']['inventory'];
         file_put_contents($runtime, json_encode(['workers' => $workers, 'supervisors' => $supervisors, 'product' => $product, 'operation' => (string) Str::uuid()]));
         echo json_encode(['status' => 'ready']);
@@ -65,7 +65,7 @@ try {
         $state = json_decode(file_get_contents($runtime), true, 512, JSON_THROW_ON_ERROR);
         $index = (int) ($argv[3] ?? 0);
         if ($mode === 'create') {
-            $result = invoke(StoreInventoryController::class, 'store', ['product_name' => 'Concurrent product '.$index, 'category' => 'QA', 'selling_price' => '1.00',
+            $result = invoke(StoreInventoryController::class, 'store', ['product_name' => 'Concurrent product '.$index, 'category_id' => $state['product']['category_id'], 'selling_price' => '1.00',
                 'status' => 'active', 'selling_unit' => 'piece'], $state['workers'][$index % 2]);
             echo json_encode(['status' => $result['status'], 'sku' => $result['data']['inventory']['sku']]);
         } elseif ($mode === 'submit') {

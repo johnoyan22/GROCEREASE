@@ -274,3 +274,18 @@ Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
     Route::put('/supervisor/workers/{worker}', [WorkerController::class, 'update'])
         ->whereNumber('worker')->middleware('throttle:30,1,store-worker-update:')->name('supervisor.workers.update');
 });
+
+Route::get('/inventory/low-stock', [\App\Http\Controllers\Api\LowStockController::class, 'index'])->middleware(['auth:sanctum', 'role:inventory_worker,supervisor']);
+Route::get('/staff/low-stock-notifications', [\App\Http\Controllers\Api\LowStockController::class, 'notifications'])->middleware(['auth:sanctum', 'role:inventory_worker,supervisor']);
+Route::put('/staff/low-stock-notifications/{notification}/read', [\App\Http\Controllers\Api\LowStockController::class, 'read'])
+    ->whereNumber('notification')->middleware(['auth:sanctum', 'role:inventory_worker,supervisor', 'throttle:60,1,staff-low-stock-read:']);
+
+Route::middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])->group(function () {
+    Route::get('/staff/categories', [\App\Http\Controllers\Api\CategoryController::class, 'index']);
+    Route::get('/staff/category-options', [\App\Http\Controllers\Api\CategoryController::class, 'options']);
+});
+Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
+    Route::post('/supervisor/categories', [\App\Http\Controllers\Api\CategoryController::class, 'store'])->middleware('throttle:60,1');
+    Route::put('/supervisor/categories/{category}', [\App\Http\Controllers\Api\CategoryController::class, 'update'])->whereNumber('category')->middleware('throttle:60,1');
+    Route::delete('/supervisor/categories/{category}', [\App\Http\Controllers\Api\CategoryController::class, 'destroy'])->whereNumber('category')->middleware('throttle:60,1');
+});

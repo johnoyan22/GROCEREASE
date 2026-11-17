@@ -75,7 +75,7 @@ class StockReportingTest extends TestCase
 
     private function inventory(Store $store): StoreInventory
     {
-        $product = Product::create([
+        $product = \Tests\Support\CategoryFixture::product([
             'store_id' => $store->store_id, 'product_name' => $store->store_name.' Rice',
             'sku' => 'RICE', 'category' => 'Staples',
         ]);
@@ -101,36 +101,34 @@ class StockReportingTest extends TestCase
     private function productPayload(): array
     {
         return [
-            'product_name' => 'New product', 'selling_unit' => 'piece', 'category' => 'Staples',
+            'product_name' => 'New product', 'selling_unit' => 'piece', 'category_id' => \Tests\Support\CategoryFixture::id($this->first->store_id, 'Staples'),
             'selling_price' => '60.00', 'status' => 'inactive',
         ];
     }
 
-    public function test_report_captures_actor_and_quantity_snapshot_without_changing_inventory(): void
+    private function historicalReport(StoreInventory $item, User $actor, string $note): void
+    {
+        LowStockReport::create(['store_id' => $item->store_id, 'store_inventory_id' => $item->store_inventory_id,
+            'reported_by_user_id' => $actor->id, 'note' => $note, 'observed_hard_stock_qty' => 8, 'observed_soft_stock_qty' => 3]);
+    }
+
+    public function test_manual_submission_is_retired_without_changing_inventory_or_evidence(): void
     {
         $before = $this->own->fresh()->getAttributes();
-        $id = $this->signIn($this->worker)->postJson($this->reportPath(), [
-            'note' => 'Only a few rice packs remain on the shelf.',
-        ])->assertCreated()
-            ->assertJsonPath('report.store_id', $this->first->store_id)
-            ->assertJsonPath('report.reported_by_user_id', $this->worker->id)
-            ->assertJsonPath('report.observed_hard_stock_qty', 8)
-            ->assertJsonPath('report.observed_soft_stock_qty', 3)->json('report.id');
+        $this->signIn($this->worker)->postJson($this->reportPath(), ['note' => 'Former client'])->assertStatus(410);
         $this->assertSame($before, $this->own->fresh()->getAttributes());
-        $this->getJson('/api/inventory/low-stock-reports')->assertOk()
-            ->assertJsonCount(1, 'reports')->assertJsonPath('reports.0.id', $id);
-        $this->own->update(['hard_stock_qty' => 5]);
-        $this->assertSame(8, LowStockReport::findOrFail($id)->observed_hard_stock_qty);
-        $this->assertDatabaseCount('inventory_availability_logs', 0);
+        $this->assertDatabaseCount('low_stock_reports', 0);
     }
 
     public function test_both_roles_read_only_their_own_store_reports_and_availability_history(): void
     {
-        $this->signIn($this->worker)->postJson($this->reportPath(), ['note' => 'A private note'])->assertCreated();
+        $this->historicalReport($this->own, $this->worker, 'A private note');
+        $this->signIn($this->worker);
         $this->putJson('/api/inventory/items/'.$this->own->store_inventory_id, [
             'selling_price' => '50.00', 'status' => 'inactive',
         ])->assertOk();
-        $this->signIn($this->otherWorker)->postJson($this->reportPath($this->foreign), ['note' => 'B private note'])->assertCreated();
+        $this->historicalReport($this->foreign, $this->otherWorker, 'B private note');
+        $this->signIn($this->otherWorker);
         $this->putJson('/api/inventory/items/'.$this->foreign->store_inventory_id, [
             'selling_price' => '50.00', 'status' => 'inactive',
         ])->assertOk();
@@ -204,16 +202,12 @@ class StockReportingTest extends TestCase
         $this->worker->load('staffStoreAssignment.store');
         $this->worker->staffStoreAssignment()->update(['store_id' => $this->second->store_id]);
         $this->signIn($this->worker)->postJson($this->reportPath(), ['note' => 'Old store'])->assertNotFound();
-        $this->postJson($this->reportPath($this->foreign), ['note' => 'New store'])->assertCreated()
-            ->assertJsonPath('report.store_id', $this->second->store_id);
+        $this->postJson($this->reportPath($this->foreign), ['note' => 'New store'])->assertStatus(410);
     }
 
     public function test_invalid_note_and_client_owned_audit_fields_are_rejected(): void
     {
         $this->signIn($this->worker);
-        foreach (['', str_repeat('x', 1001), ['invalid']] as $note) {
-            $this->postJson($this->reportPath(), ['note' => $note])->assertUnprocessable()->assertJsonValidationErrors('note');
-        }
         $fields = [
             'store_id' => $this->second->store_id, 'user_id' => $this->admin->id,
             'store_inventory_id' => $this->foreign->store_inventory_id, 'product_id' => $this->foreign->product_id,

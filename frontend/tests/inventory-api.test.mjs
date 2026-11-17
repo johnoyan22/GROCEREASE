@@ -80,13 +80,13 @@ test('creating a store product sends metadata with CSRF and excludes ownership o
     assert.equal(options.headers['Content-Type'], 'application/json');
     assert.deepEqual(JSON.parse(options.body), {
       product_name: 'Store Rice', barcode: '000123', size_amount: 1, size_unit: 'kg', selling_unit: 'pack',
-      category: 'Staples', selling_price: '25.50', status: 'inactive',
+      category_id: 4, selling_price: '25.50', status: 'inactive',
     });
     return json({ message: 'Product added to your store.' }, 201);
   });
   await createStoreProduct({
     product_name: 'Store Rice', sku: 'FORGED', barcode: '000123', size_amount: 1, size_unit: 'kg', selling_unit: 'pack',
-    category: 'Staples', selling_price: '25.50', status: 'inactive',
+    category_id: 4, selling_price: '25.50', status: 'inactive',
     store_id: 999, product_id: 999, hard_stock_qty: 99, soft_stock_qty: 88,
   });
   assert.deepEqual(calls, [

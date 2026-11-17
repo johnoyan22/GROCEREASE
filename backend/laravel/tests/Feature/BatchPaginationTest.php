@@ -12,7 +12,7 @@ class BatchPaginationTest extends TransactionTestCase
 {
     private function fixture(int $count = 100): StoreInventory
     {
-        $product = Product::create(['store_id' => $this->store->store_id, 'product_name' => 'Paged bottles', 'sku' => 'PAGED', 'category' => 'QA', 'selling_unit' => 'bottle']);
+        $product = \Tests\Support\CategoryFixture::product(['store_id' => $this->store->store_id, 'product_name' => 'Paged bottles', 'sku' => 'PAGED', 'category' => 'QA', 'selling_unit' => 'bottle']);
         $inventory = StoreInventory::create(['store_id' => $this->store->store_id, 'product_id' => $product->product_id,
             'hard_stock_qty' => $count, 'soft_stock_qty' => 0, 'selling_price' => '1.00', 'status' => 'active']);
         $inventory->forceFill(['batches_initialized' => true, 'low_stock_threshold' => $count - 2])->save();
@@ -52,7 +52,7 @@ class BatchPaginationTest extends TransactionTestCase
         $this->assertCount(100, array_unique($ids));
         $this->assertSame($before, $inventory->fresh()->getAttributes());
         $this->assertSame(98, $inventory->fresh()->availableStock());
-        $this->assertTrue($inventory->fresh()->isLowStock());
+        $this->assertFalse($inventory->fresh()->isLowStock());
         $this->getJson('/api/inventory/items?include_batches=0')->assertOk()
             ->assertJsonMissingPath('inventory.1.batches')->assertJsonPath('inventory.1.hard_stock_qty', 100)
             ->assertJsonPath('inventory.1.available_stock', 98)->assertJsonPath('inventory.1.nearest_expiry', '2027-12-31')

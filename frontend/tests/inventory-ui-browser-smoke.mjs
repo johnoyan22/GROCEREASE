@@ -50,6 +50,8 @@ try {
       if (path === '/api/inventory/items') return respond({ store, inventory: [] });
       if (path === '/api/inventory/stock-adjustments') return respond({ store, adjustments });
       if (path === '/api/inventory/stock-receipts') return respond({ store, receipts });
+      if (path === '/api/inventory/low-stock') return respond({ store, inventory: [], pagination: { current_page: 1, last_page: 1, total: 0 } });
+      if (path === '/api/staff/low-stock-notifications') return respond({ store, notifications: [], pagination: { current_page: 1, last_page: 1, total: 0 } });
       if (path === '/api/inventory/low-stock-reports') return respond({ store, reports: [] });
       if (path === '/api/inventory/availability-history') return respond({ store, history: [] });
       if (path === '/api/dashboard/summary') return respond({ store, role, products_managed: 2, inventory_records: 2,
@@ -154,7 +156,7 @@ try {
     }
     assert.equal(await page.locator('body').evaluate((e) => e.scrollWidth <= innerWidth), true);
     // Shared defaults remain usable, including the existing bookmarked Worker order route.
-    await page.goto(origin + '/inventory/low-stock'); await page.getByRole('heading', { name: 'Products at or below their Re-order Level' }).waitFor();
+    await page.goto(origin + '/inventory/low-stock'); await page.getByRole('heading', { name: 'Low Stock Monitoring', exact: true }).waitFor();
     assert.equal(await page.getByRole('group', { name: 'Stock request sections' }).count(), 0);
     await page.goto(origin + '/inventory/activity'); await page.getByRole('heading', { name: /Availability changes/ }).waitFor();
     await page.goto(origin + '/inventory/orders'); await page.getByRole('heading', { name: 'Store Orders', exact: true }).waitFor();

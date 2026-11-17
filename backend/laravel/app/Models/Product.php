@@ -18,12 +18,19 @@ class Product extends Model
         'sku',
         'barcode',
         'size',
-        'category',
+        'category', 'category_id',
         'size_amount', 'size_unit', 'selling_unit',
     ];
 
     protected static function booted(): void
     {
+        static::saving(function (Product $product) {
+            if ($product->category_id !== null) {
+                $category = Category::where('store_id', $product->store_id)->whereKey($product->category_id)->lockForUpdate()->firstOrFail();
+                $product->category = $category->name;
+                Category::whereKey($category->id)->whereNull('ever_used_at')->update(['ever_used_at' => now()]);
+            }
+        });
         static::creating(function (Product $product) {
             if (!$product->sku) {
                 do {
@@ -44,6 +51,8 @@ class Product extends Model
             set: fn (string $value): string => strtoupper(trim($value)),
         );
     }
+
+    public function categoryRecord(): BelongsTo { return $this->belongsTo(Category::class, 'category_id'); }
 
     public function storeInventories(): HasMany
     {

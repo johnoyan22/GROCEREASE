@@ -2,6 +2,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   Bell,
+  Tags,
   ClipboardList,
   CreditCard,
   Gauge,
@@ -18,6 +19,7 @@ import { useSupervisor } from './SupervisorContext'
 const navItems = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
   { key: 'inventory', label: 'Store Products', icon: ClipboardList },
+  { key: 'categories', label: 'Category Management', icon: Tags },
   { key: 'workers', label: 'Store Workers', hint: 'Inventory, Pickers & Packers', icon: Users },
   { key: 'stock-approvals', label: 'Stock Approvals', icon: ClipboardList },
   { key: 'orders', label: 'Orders', hint: 'Active & History', icon: ShoppingCart },

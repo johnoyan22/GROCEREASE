@@ -42,7 +42,7 @@ class DashboardSummaryTest extends TransactionTestCase
 
     public function test_staff_summary_is_own_store_and_counts_physical_reserved_and_available_separately(): void
     {
-        $this->inventory->forceFill(['low_stock_threshold' => 99])->save();
+        $this->inventory->forceFill(['low_stock_threshold' => 100])->save();
         $this->assignWorker();
         $this->signIn($this->inventoryWorker)->postJson('/api/inventory/items/'.$this->inventory->store_inventory_id.'/stock-adjustments', [
             'inventory_batch_id' => $this->inventory->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(), 'requested_remaining_quantity' => 105, 'expected_stock_version' => $this->inventory->fresh()->stock_version, 'reason' => 'Count',
@@ -69,7 +69,7 @@ class DashboardSummaryTest extends TransactionTestCase
 
     public function test_admin_counts_registered_accounts_thresholds_current_restrictions_and_no_fake_fees(): void
     {
-        $this->inventory->forceFill(['low_stock_threshold' => 98])->save();
+        $this->inventory->forceFill(['low_stock_threshold' => 100])->save();
         $ids = [$this->orderId, $this->placeOrder(), $this->placeOrder()];
         foreach ($ids as $index => $id) DB::table('cop_strikes')->insert([
             'order_id' => $id, 'shopper_user_id' => $this->shopper->id, 'store_id' => $this->store->store_id,
