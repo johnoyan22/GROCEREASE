@@ -28,6 +28,7 @@ class CheckoutPricing
             'payment_channel' => ['sometimes', Rule::in(['wallet', 'card'])],
             'provider_reference' => ['prohibited'], 'provider' => ['prohibited'], 'amount' => ['prohibited'],
             'status' => ['prohibited'], 'reservation_status' => ['prohibited'],
+            ...array_fill_keys(['pickup_preparation_minutes', 'pickup_window_minutes', 'window_duration', 'validation_context', 'context', 'window_label', 'window_id', 'role_id'], ['prohibited']),
         ]);
         $items = [];
         foreach ($validated['items'] as $item) {
@@ -51,7 +52,7 @@ class CheckoutPricing
     public function resolve(array $cart): array
     {
         $store = Store::query()->where('status', Store::STATUS_ACTIVE)->lockForUpdate()->findOrFail($cart['store_id']);
-        $schedule = app(PickupScheduling::class)->resolve($store, $cart);
+        $schedule = app(PickupScheduling::class)->resolveCheckout($store, $cart);
         $digital = ($cart['payment_method'] ?? 'cash_on_pickup') === 'digital';
         if ($digital) {
             app(PayMongoGateway::class)->requireSchema();

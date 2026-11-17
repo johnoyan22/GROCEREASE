@@ -16,8 +16,28 @@ class SupervisorPickupSettingsTest extends TransactionTestCase
         return array_merge([
             'operating_hours' => array_fill(1, 7, ['opens_at' => '09:00', 'closes_at' => '21:00']),
             'pickup_service_hours' => array_fill(1, 7, ['opens_at' => '10:00', 'closes_at' => '18:00']),
-            'paid_order_holding_hours' => 24,
+            'paid_order_holding_hours' => 24, 'pickup_preparation_minutes' => 60, 'pickup_window_minutes' => 60,
         ], $changes);
+    }
+
+    public function test_suggested_pickup_gaps_are_adjustable_but_cannot_exceed_store_hours(): void
+    {
+        $settings = $this->settings([
+            'operating_hours' => array_fill(1, 7, ['opens_at' => '09:00', 'closes_at' => '20:30']),
+            'pickup_service_hours' => array_fill(1, 7, ['opens_at' => '10:00', 'closes_at' => '19:30']),
+        ]);
+        $this->signIn($this->supervisor)->putJson('/api/supervisor/pickup-settings', $settings)->assertOk();
+        $settings['pickup_service_hours'][1] = ['opens_at' => '09:30', 'closes_at' => '20:00'];
+        $this->putJson('/api/supervisor/pickup-settings', $settings)->assertOk()
+            ->assertJsonPath('pickup_service_hours.1.opens_at', '09:30')->assertJsonPath('pickup_service_hours.1.closes_at', '20:00');
+        $before = $this->store->fresh()->getAttributes(); $stock = $this->inventory->fresh()->getAttributes();
+        foreach ([['08:30', '20:00'], ['09:30', '21:00'], ['20:00', '19:30']] as [$start, $end]) {
+            $invalid = $settings; $invalid['pickup_service_hours'][1] = ['opens_at' => $start, 'closes_at' => $end];
+            $this->putJson('/api/supervisor/pickup-settings', $invalid)->assertUnprocessable()->assertJsonValidationErrors('pickup_service_hours');
+        }
+        $this->assertSame($before, $this->store->fresh()->getAttributes());
+        $this->assertSame($stock, $this->inventory->fresh()->getAttributes());
+        $this->assertDatabaseCount('store_schedule_logs', 2);
     }
 
     public function test_assigned_supervisor_saves_own_hours_and_holding_with_persistent_actor_audit(): void
@@ -135,9 +155,9 @@ class SupervisorPickupSettingsTest extends TransactionTestCase
         $this->signIn($this->shopper);
         $path = '/api/shopper/stores/'.$this->store->store_id.'/pickup-hours?date=';
         $this->getJson($path.'2026-10-18')->assertUnprocessable();
-        $this->getJson($path.'2026-10-19')->assertOk()->assertJsonPath('hours.earliest_start_at', '16:01');
+        $this->getJson($path.'2026-10-19')->assertOk()->assertJsonPath('hours.earliest_start_at', '17:00');
         $this->travel(2)->hours();
-        $this->getJson($path.'2026-10-19')->assertUnprocessable();
+        $this->getJson($path.'2026-10-19')->assertOk()->assertJsonCount(0, 'hours.windows');
         $this->getJson($path.'2026-10-20')->assertOk()->assertJsonPath('hours.earliest_start_at', '10:00');
     }
 
@@ -271,7 +291,7 @@ class SupervisorPickupSettingsTest extends TransactionTestCase
         $hours[7] = ['opens_at' => '09:00', 'closes_at' => '20:00'];
         $pickup[7] = ['opens_at' => '10:00', 'closes_at' => '18:00'];
         $this->signIn($this->supervisor)->putJson('/api/supervisor/pickup-settings', [
-            'operating_hours' => $hours, 'pickup_service_hours' => $pickup, 'paid_order_holding_hours' => null,
+            'operating_hours' => $hours, 'pickup_service_hours' => $pickup, 'paid_order_holding_hours' => null, 'pickup_preparation_minutes' => 60, 'pickup_window_minutes' => 60,
         ])->assertOk()->assertJsonCount(0, 'affected_orders');
         $this->assertFalse(Order::findOrFail($this->orderId)->pickup_schedule_review_required);
     }

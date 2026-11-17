@@ -69,7 +69,7 @@ beforeEach(t => {
     if (url.endsWith('/dashboard/summary')) return json({ role: 'shopper', server_time: '2026-10-20T08:00:00Z', active_orders: orders.length, recent_active_orders: orders, unread_notifications: unread });
     if (url.endsWith('/shopper/stores')) return json({ stores: [{ store_id: 1, store_name: 'Store A', address: 'A' }, { store_id: 2, store_name: 'Store B', address: 'B' }] });
     if (url.endsWith('/payment-options')) return json({ digital: { available: channels.length > 0, channels, reason: channels.length ? null : 'Sandbox setup unavailable' } });
-    if (url.includes('/pickup-hours')) return json({ hours: { date: '2026-10-21', opens_at: '10:00', closes_at: '18:00', store_opens_at: '09:00', store_closes_at: '21:00', earliest_start_at: '10:00' } });
+    if (url.includes('/pickup-hours')) return json({ store_id: Number(url.match(/stores\/(\d+)/)[1]), hours: { date: new URL(url).searchParams.get('date') || schedule.pickup_date, today: schedule.pickup_date, opens_at: '10:00', closes_at: '18:00', store_opens_at: '09:00', store_closes_at: '21:00', earliest_start_at: '10:00', windows: [{ pickup_start: '10:00', pickup_end: '11:00' }, { pickup_start: '11:00', pickup_end: '12:00' }] } });
     if (url.endsWith('/shopper/checkout/quote')) {
       const cart = JSON.parse(options.body);
       return json({ quote: { store: { store_name: 'Store A', address: 'A' }, items: [{ store_inventory_id: 7, product_name: 'Rice', quantity: 2, unit_price_centavos: 6725, line_total_centavos: 13450 }], subtotal_centavos: 13450, total_centavos: 13450, service_fee_centavos: 0, pickup_window_start_at: '2026-10-21T02:00:00Z', pickup_window_end_at: '2026-10-21T03:00:00Z', cop_claim_deadline_at: '2026-10-21T13:00:00Z', payment_method: cart.payment_method }, quote_token: 'review-token' });
@@ -175,8 +175,9 @@ for (const method of ['cash_on_pickup', 'wallet', 'card']) test('Checkout requir
   assert.equal(wallet.disabled, channels.length === 0);
   if (method !== 'cash_on_pickup') await click(document.querySelector('[value="' + method + '"]'));
   await input(document.querySelector('input[type="date"]'), schedule.pickup_date);
-  const times = document.querySelectorAll('input[type="time"]');
-  await input(times[0], schedule.pickup_start); await input(times[1], schedule.pickup_end);
+  assert.equal(document.querySelectorAll('input[type="time"]').length, 0);
+  await act(async () => { const window = document.querySelector('#checkout-pickup-window'); window.value = schedule.pickup_start + '/' + schedule.pickup_end; window.dispatchEvent(new Event('change', { bubbles: true })); });
+  await settle();
   assert.equal(button('Review current prices and pickup schedule').disabled, false);
   await click(button('Review current prices and pickup schedule'));
   assert.equal(calls.filter(call => call.url.endsWith('/shopper/orders')).length, 0);

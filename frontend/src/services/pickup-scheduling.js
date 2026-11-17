@@ -28,3 +28,62 @@ export function pickupWindowFits(hours, start, end) {
   if (!bounds || minutes(start) === null || minutes(end) === null) return false;
   return start >= bounds.startMin && start <= bounds.startMax && end >= bounds.endMin && end <= bounds.endMax;
 }
+
+// Checkout accepts only the server's options. The bounds helpers above remain
+// available to the Supervisor's authorized legacy-window review workflow.
+export function checkoutPickupWindows(hours) {
+  if (!Array.isArray(hours?.windows)) return [];
+  const seen = new Set();
+  return hours.windows.filter((window) => {
+    if (!window || !pickupWindowFits(hours, window.pickup_start, window.pickup_end)) return false;
+    const key = pickupWindowValue(window);
+    if (seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
+
+export function pickupWindowValue(window) { return window.pickup_start + '/' + window.pickup_end; }
+export function checkoutWindowFits(hours, start, end) {
+  return checkoutPickupWindows(hours).some((window) => window.pickup_start === start && window.pickup_end === end);
+}
+export function pickupWindowLabel(window) {
+  return pickupTimeLabel(window.pickup_start) + ' – ' + pickupTimeLabel(window.pickup_end);
+}
+
+export function pickupTimeLabel(time) {
+  if (minutes(time) === null) return '';
+  const hour = Number(time.slice(0, 2));
+  return `${hour % 12 || 12}:${time.slice(3)} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+export function pickupServicePeriodFits(operating, pickup) {
+  const open = minutes(operating?.opens_at), close = minutes(operating?.closes_at);
+  const start = minutes(pickup?.opens_at), end = minutes(pickup?.closes_at);
+  return ![open, close, start, end].includes(null) && open < close && start >= open && start < end && end <= close;
+}
+
+export function suggestedPickupPeriod(operating) {
+  const open = minutes(operating?.opens_at), close = minutes(operating?.closes_at);
+  if (open === null || close === null || open >= close) return null;
+  // Short days need an explicit Supervisor choice; never create an inverted range.
+  return close - open > 120 ? { opens_at: timeText(open + 60), closes_at: timeText(close - 60) }
+    : { opens_at: operating.opens_at, closes_at: operating.closes_at };
+}
+
+export function pickupServiceTimeOptions(operating, pickup, field) {
+  const open = minutes(operating?.opens_at), close = minutes(operating?.closes_at);
+  if (open === null || close === null || open >= close) return [];
+  const suggested = suggestedPickupPeriod(operating);
+  const options = new Set([open, close]);
+  for (let time = open; time <= close; time += 30) options.add(time);
+  // Keep exact store boundaries, suggestions and previously saved minute values.
+  // Existing settings must remain selectable without silently rounding them.
+  for (const time of [pickup?.opens_at, pickup?.closes_at, suggested?.opens_at, suggested?.closes_at]) {
+    const value = minutes(time);
+    if (value !== null && value >= open && value <= close) options.add(value);
+  }
+  const other = minutes(field === 'opens_at' ? pickup?.closes_at : pickup?.opens_at);
+  return [...options].sort((a, b) => a - b).filter((time) => field === 'opens_at'
+    ? time < close && (other === null || time < other)
+    : time > open && (other === null || time > other)).map(timeText);
+}

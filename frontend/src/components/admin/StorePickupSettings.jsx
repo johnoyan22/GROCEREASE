@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { getStorePickupSettings, getSupervisorPickupSettings, saveSupervisorPickupSettings, suspendSupervisorPickupDate } from '../../services/api';
+import { pickupServicePeriodFits, pickupServiceTimeOptions, pickupTimeLabel, suggestedPickupPeriod } from '../../services/pickup-scheduling';
+
+const preparationChoices = [[30, '30 minutes'], [60, '1 hour'], [90, '1 hour 30 minutes'], [120, '2 hours'], [180, '3 hours']];
+const windowChoices = [[60, '1 hour'], [120, '2 hours']];
+const policyLabel = (choices, value) => choices.find(([minutes]) => minutes === Number(value))?.[1] ?? 'Not recorded';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const inputClass = 'rounded-lg border border-gray-300 bg-white p-2 text-sm';
@@ -24,6 +29,26 @@ function PeriodEditor({ label, period, disabled, onChange }) {
   </div>;
 }
 
+function PickupPeriodEditor({ day, operating, period, onChange }) {
+  const suggested = suggestedPickupPeriod(operating);
+  const validOperating = Boolean(suggested);
+  return <div className="min-w-0 space-y-2">
+    <label className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={!validOperating} checked={Boolean(period)} onChange={(event) => onChange(event.target.checked ? suggested : null)} />{day} pickup service</label>
+    {!validOperating ? <p className="text-xs text-gray-500">Set valid store opening and closing times first.</p> : <>
+      {period ? <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,140px),1fr))] gap-3">
+        {[['opens_at', 'Starts'], ['closes_at', 'Ends']].map(([field, label]) => <label key={field} className="min-w-0 text-xs">{label}
+          <select aria-label={day + ' pickup service ' + (field === 'opens_at' ? 'opening' : 'closing') + ' time'} required value={period[field]} onChange={(event) => onChange({ ...period, [field]: event.target.value })} className={'mt-1 w-full ' + inputClass}>
+            <option value="" disabled>Select a time</option>
+            {pickupServiceTimeOptions(operating, period, field).map((time) => <option key={time} value={time}>{pickupTimeLabel(time)}</option>)}
+          </select>
+        </label>)}
+      </div> : <p className="text-xs text-gray-500">Pickup closed</p>}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500"><span>Suggested: {pickupTimeLabel(suggested.opens_at)} – {pickupTimeLabel(suggested.closes_at)}</span><button type="button" aria-label={'Use suggested ' + day + ' pickup hours'} onClick={() => onChange(suggested)} className="font-medium text-green-800 underline">Use suggested hours</button></div>
+      {operating.closes_at && suggested.opens_at === operating.opens_at && <p className="text-xs text-amber-800">This day is too short for both one-hour gaps. Choose suitable pickup hours within the store hours.</p>}
+    </>}
+  </div>;
+}
+
 function periodText(period) {
   return period ? period.opens_at + '–' + period.closes_at : 'Closed';
 }
@@ -44,6 +69,8 @@ function AuditChange({ entry }) {
         if (JSON.stringify(previousStore) === JSON.stringify(nextStore) && JSON.stringify(previousPickup) === JSON.stringify(nextPickup)) return null;
         return <li key={day}>{label} · Store: {periodText(previousStore)} → {periodText(nextStore)}; pickup: {periodText(previousPickup)} → {periodText(nextPickup)}</li>;
       })}
+      {before.pickup_preparation_minutes !== after.pickup_preparation_minutes && <li>Preparation time: {policyLabel(preparationChoices, before.pickup_preparation_minutes)} &rarr; {policyLabel(preparationChoices, after.pickup_preparation_minutes)}</li>}
+      {before.pickup_window_minutes !== after.pickup_window_minutes && <li>Pickup window length: {policyLabel(windowChoices, before.pickup_window_minutes)} &rarr; {policyLabel(windowChoices, after.pickup_window_minutes)}</li>}
       {before.paid_order_holding_hours !== after.paid_order_holding_hours && <li>Prepaid holding: {before.paid_order_holding_hours ?? 'Not configured'} → {after.paid_order_holding_hours ?? 'Not configured'}{after.paid_order_holding_hours ? ' hours' : ''}</li>}
     </ul>}
     {after.review_order_ids?.length > 0 && <p className="mt-2">Orders flagged for review: {after.review_order_ids.map(function (id) { return '#' + id; }).join(', ')}</p>}
@@ -57,6 +84,8 @@ export function PickupSettingsWorkspace({ readOnly = false, storeId = null }) {
   const [hours, setHours] = useState(null);
   const [pickupHours, setPickupHours] = useState(null);
   const [holding, setHolding] = useState('');
+  const [preparation, setPreparation] = useState('');
+  const [windowMinutes, setWindowMinutes] = useState('');
   const [date, setDate] = useState('');
   const [reason, setReason] = useState('');
   const [pending, setPending] = useState(false);
@@ -69,6 +98,8 @@ export function PickupSettingsWorkspace({ readOnly = false, storeId = null }) {
     setHours(week(result.operating_hours));
     setPickupHours(week(result.pickup_service_hours ?? result.operating_hours));
     setHolding(result.paid_order_holding_hours ?? '');
+    setPreparation(result.pickup_preparation_minutes ?? '');
+    setWindowMinutes(result.pickup_window_minutes ?? '');
   }
 
   useEffect(function () {
@@ -85,17 +116,26 @@ export function PickupSettingsWorkspace({ readOnly = false, storeId = null }) {
 
   function changeOperating(day, period) {
     setHours(function (current) { return { ...current, [day]: period }; });
-    if (!period) setPickupHours(function (current) { return { ...current, [day]: null }; });
+    const suggested = suggestedPickupPeriod(period);
+    const oldSuggested = suggestedPickupPeriod(hours[day]);
+    setPickupHours((current) => {
+      if (!period) return { ...current, [day]: null };
+      if (!suggested) return current;
+      const pickup = current[day];
+      const followsSuggestion = pickup && oldSuggested && pickup.opens_at === oldSuggested.opens_at && pickup.closes_at === oldSuggested.closes_at;
+      if ((!oldSuggested && !pickup) || followsSuggestion || (pickup && !pickupServicePeriodFits(period, pickup))) return { ...current, [day]: suggested };
+      return current;
+    });
   }
 
   async function save(event, action) {
     event.preventDefault();
     if (readOnly || busy.current) return;
-    if (action === 'hours' && !window.confirm('Save these hours? Existing orders on affected weekdays will require review. Their approved windows and deadlines will stay unchanged.')) return;
+    if (action === 'hours' && !window.confirm('Save pickup settings? Changes to operating or pickup-service hours may require existing-order review. Preparation time and window length apply to new checkouts.')) return;
     busy.current = true; setPending(true); setError(''); setNotice('');
     try {
       let result;
-      if (action === 'hours') result = await saveSupervisorPickupSettings(hours, pickupHours, holding === '' ? null : Number(holding));
+      if (action === 'hours') result = await saveSupervisorPickupSettings(hours, pickupHours, holding === '' ? null : Number(holding), Number(preparation), Number(windowMinutes));
       else result = await suspendSupervisorPickupDate(date, reason.trim());
       if (result.store_id !== settings.store_id) {
         setSettings(null); setLoadVersion(function (value) { return value + 1; });
@@ -122,12 +162,18 @@ export function PickupSettingsWorkspace({ readOnly = false, storeId = null }) {
     {settings && <>
       {!settings.operating_hours && <p className="rounded-lg bg-amber-50 p-3 text-sm">Operating hours are not configured. Checkout cannot offer pickup windows yet.</p>}
       {settings.operating_hours && !settings.pickup_service_hours && <p className="rounded-lg bg-amber-50 p-3 text-sm">Pickup currently follows the existing store hours. The Supervisor can save separate pickup-service hours below.</p>}
-      {readOnly ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="py-2">Weekday</th><th>Store hours</th><th>Pickup service</th></tr></thead><tbody>{days.map(function (label, index) { return <tr key={label} className="border-t border-gray-100"><td className="py-3">{label}</td><td>{periodText(hours[index + 1])}</td><td>{periodText(pickupHours[index + 1])}</td></tr>; })}</tbody></table><p className="mt-4 text-sm">Approved prepaid holding: {holding === '' ? 'Not configured' : holding + ' hours'}</p></div>
+      {!readOnly && <p className="text-sm text-gray-600">Suggested pickup hours start one hour after opening and end one hour before closing. Adjust them using the dropdowns within each day&apos;s store hours. Shoppers see only complete arrival windows that fit this range.</p>}
+      {readOnly ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="py-2">Weekday</th><th>Store hours</th><th>Pickup service</th></tr></thead><tbody>{days.map(function (label, index) { return <tr key={label} className="border-t border-gray-100"><td className="py-3">{label}</td><td>{periodText(hours[index + 1])}</td><td>{periodText(pickupHours[index + 1])}</td></tr>; })}</tbody></table><p className="mt-4 text-sm">Preparation time: {policyLabel(preparationChoices, preparation)}</p><p className="mt-2 text-sm">Pickup window length: {policyLabel(windowChoices, windowMinutes)}</p><p className="mt-2 text-sm">Approved prepaid holding: {holding === '' ? 'Not configured' : holding + ' hours'}</p></div>
         : <form onSubmit={function (event) { save(event, 'hours'); }}><fieldset disabled={pending} className="space-y-4">
           {days.map(function (label, index) { const day = index + 1; return <div key={day} className="rounded-lg border border-gray-200 p-4"><h3 className="mb-3 font-semibold">{label}</h3><div className="grid gap-4 sm:grid-cols-2">
             <PeriodEditor label={label + ' store open'} period={hours[day]} onChange={function (period) { changeOperating(day, period); }} />
-            <PeriodEditor label={label + ' pickup service'} period={pickupHours[day]} disabled={!hours[day]} onChange={function (period) { setPickupHours(function (current) { return { ...current, [day]: period }; }); }} />
+            <PickupPeriodEditor day={label} operating={hours[day]} period={pickupHours[day]} onChange={function (period) { setPickupHours(function (current) { return { ...current, [day]: period }; }); }} />
           </div></div>; })}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm">Preparation time<select aria-label="Preparation time" required value={preparation} onChange={(event) => setPreparation(event.target.value)} className={'mt-1 w-full ' + inputClass}><option value="" disabled>Select preparation time</option>{preparationChoices.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label className="block text-sm">Pickup window length<select aria-label="Pickup window length" required value={windowMinutes} onChange={(event) => setWindowMinutes(event.target.value)} className={'mt-1 w-full ' + inputClass}><option value="" disabled>Select window length</option>{windowChoices.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          </div>
+          <p className="text-xs text-gray-600">Preparation time and pickup window length apply to new checkouts. Existing orders keep their approved schedule.</p>
           <label className="block text-sm">Approved prepaid holding period <select value={holding} onChange={function (event) { setHolding(event.target.value); }} className={inputClass}><option value="">Not configured</option><option value="24">24 hours</option><option value="48">48 hours</option></select></label>
           <p className="text-xs text-gray-600">Saved order windows and deadlines are preserved. Review affected orders using Orders → Schedule / unclaimed-order review, with a reason. Expired orders and issued strikes require reconciliation.</p>
           <button className="rounded-lg bg-green-700 px-4 py-2 text-sm text-white">Save pickup settings</button>

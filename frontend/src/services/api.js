@@ -531,14 +531,14 @@ export function getSupervisorPickupSettings({ signal } = {}) {
 export function getSupervisorPickupHours(date, { signal } = {}) {
   return sendRequest(`/supervisor/pickup-hours?date=${encodeURIComponent(date)}`, { signal, cache: 'no-store' });
 }
-export function saveSupervisorPickupSettings(hours, pickupHours, holdingHours) {
-  return writeAction('/supervisor/pickup-settings', 'PUT', { operating_hours: hours, pickup_service_hours: pickupHours, paid_order_holding_hours: holdingHours });
+export function saveSupervisorPickupSettings(hours, pickupHours, holdingHours, preparationMinutes, windowMinutes) {
+  return writeAction('/supervisor/pickup-settings', 'PUT', { operating_hours: hours, pickup_service_hours: pickupHours, paid_order_holding_hours: holdingHours, pickup_preparation_minutes: preparationMinutes, pickup_window_minutes: windowMinutes });
 }
 export function suspendSupervisorPickupDate(date, reason) {
   return writeAction('/supervisor/pickup-closures', 'POST', { date, reason });
 }
 export function getPickupHours(id, date, { signal } = {}) {
-  return sendRequest(`/shopper/stores/${encodeURIComponent(id)}/pickup-hours?date=${encodeURIComponent(date)}`, { signal });
+  return sendRequest(`/shopper/stores/${encodeURIComponent(id)}/pickup-hours` + (date ? `?date=${encodeURIComponent(date)}` : ''), { signal, cache: 'no-store' });
 }
 export function assignOrderWorker(id, workerId, reason) {
   return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/worker`, 'PUT', { worker_id: workerId, reason });

@@ -28,15 +28,15 @@ class PickupSchedulingCopTest extends TransactionTestCase
     {
         $hours = array_fill(1, 7, ['opens_at' => '09:00', 'closes_at' => '21:00']);
         $path = '/api/supervisor/pickup-settings';
-        $this->signIn($this->admin)->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 24])->assertForbidden();
-        $this->signIn($this->supervisor)->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 36])->assertUnprocessable();
-        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 48])->assertOk();
+        $this->signIn($this->admin)->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'pickup_preparation_minutes' => 60, 'pickup_window_minutes' => 60, 'paid_order_holding_hours' => 24])->assertForbidden();
+        $this->signIn($this->supervisor)->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'pickup_preparation_minutes' => 60, 'pickup_window_minutes' => 60, 'paid_order_holding_hours' => 36])->assertUnprocessable();
+        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'pickup_preparation_minutes' => 60, 'pickup_window_minutes' => 60, 'paid_order_holding_hours' => 48])->assertOk();
         $this->getJson($path)->assertOk()->assertJsonPath('paid_order_holding_hours', 48)->assertJsonPath('operating_hours.1.closes_at', '21:00');
         $this->assertDatabaseCount('store_schedule_logs', 1);
-        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => 48])->assertOk();
+        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'pickup_preparation_minutes' => 60, 'pickup_window_minutes' => 60, 'paid_order_holding_hours' => 48])->assertOk();
         $this->assertDatabaseCount('store_schedule_logs', 1);
         $hours[2] = null;
-        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'paid_order_holding_hours' => null])->assertOk();
+        $this->putJson($path, ['operating_hours' => $hours, 'pickup_service_hours' => $hours, 'pickup_preparation_minutes' => 60, 'pickup_window_minutes' => 60, 'paid_order_holding_hours' => null])->assertOk();
         $this->signIn($this->shopper)->postJson('/api/shopper/checkout/quote', $this->cart())->assertUnprocessable();
     }
 

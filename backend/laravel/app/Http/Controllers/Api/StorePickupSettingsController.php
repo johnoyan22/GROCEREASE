@@ -19,7 +19,7 @@ class StorePickupSettingsController extends Controller
     // Admin oversight is read-only. Operational writes use the Supervisor's current assignment.
     public function show(int $store, PickupScheduling $scheduling): JsonResponse
     {
-        $scheduling->requireSchema();
+        $scheduling->requireWindowSchema();
         return DB::transaction(function () use ($store) {
             return response()->json($this->settings(Store::whereKey($store)->lockForUpdate()->firstOrFail()));
         }, 3);
@@ -27,7 +27,7 @@ class StorePickupSettingsController extends Controller
 
     public function supervisorShow(Request $request, StoreStaffAccess $access, PickupScheduling $scheduling): JsonResponse
     {
-        $scheduling->requireSchema();
+        $scheduling->requireWindowSchema();
         $request->validate(['store_id' => ['prohibited']]);
         return DB::transaction(function () use ($request, $access) {
             $context = $access->resolve($request->user(), ['supervisor']);
@@ -37,7 +37,7 @@ class StorePickupSettingsController extends Controller
 
     public function supervisorUpdate(Request $request, StoreStaffAccess $access, PickupScheduling $scheduling): JsonResponse
     {
-        $scheduling->requireSchema();
+        $scheduling->requireWindowSchema();
         return DB::transaction(function () use ($request, $access) {
             $context = $access->resolve($request->user(), ['supervisor']);
             $record = $context['store'];
@@ -51,10 +51,13 @@ class StorePickupSettingsController extends Controller
                 'pickup_service_hours.*.opens_at' => ['required_with:pickup_service_hours.*.closes_at', 'date_format:H:i'],
                 'pickup_service_hours.*.closes_at' => ['required_with:pickup_service_hours.*.opens_at', 'date_format:H:i'],
                 'paid_order_holding_hours' => ['present', 'nullable', 'integer', Rule::in([24, 48])],
+                'pickup_preparation_minutes' => ['required', 'integer', Rule::in(PickupScheduling::PREPARATION_MINUTES)],
+                'pickup_window_minutes' => ['required', 'integer', Rule::in(PickupScheduling::WINDOW_MINUTES)],
+                'role' => ['prohibited'], 'role_id' => ['prohibited'], 'assigned_by_user_id' => ['prohibited'],
                 'store_id' => ['prohibited'], 'user_id' => ['prohibited'], 'changed_by_user_id' => ['prohibited'],
             ]);
             $this->validateHours($validated);
-            $previous = $record->only(['operating_hours', 'pickup_service_hours', 'paid_order_holding_hours']);
+            $previous = $record->only(['operating_hours', 'pickup_service_hours', 'paid_order_holding_hours', 'pickup_preparation_minutes', 'pickup_window_minutes']);
             $record->forceFill($validated);
             $affected = [];
             if ($record->isDirty()) {
@@ -87,7 +90,7 @@ class StorePickupSettingsController extends Controller
 
     public function supervisorCloseDate(Request $request, StoreStaffAccess $access, PickupScheduling $scheduling): JsonResponse
     {
-        $scheduling->requireSchema();
+        $scheduling->requireWindowSchema();
         return DB::transaction(function () use ($request, $access) {
             $context = $access->resolve($request->user(), ['supervisor']);
             $validated = $request->validate([
@@ -117,10 +120,12 @@ class StorePickupSettingsController extends Controller
 
     public function available(Request $request, int $store, PickupScheduling $scheduling): JsonResponse
     {
-        $validated = $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
+        $validated = $request->validate(['date' => ['nullable', 'date_format:Y-m-d'], 'store_id' => ['prohibited']]);
         return DB::transaction(function () use ($store, $validated, $scheduling) {
             $record = Store::active()->whereKey($store)->lockForUpdate()->firstOrFail();
-            return response()->json(['store_id' => $record->store_id, 'hours' => $scheduling->availability($record, $validated['date'])]);
+            $now = CarbonImmutable::now(PickupScheduling::TIMEZONE);
+            return response()->json(['store_id' => $record->store_id, 'hours' => $scheduling->checkoutAvailability($record, $validated['date'] ?? $now->format('Y-m-d'), $now)])
+                ->header('Cache-Control', 'no-store, private');
         }, 3);
     }
 
@@ -156,6 +161,7 @@ class StorePickupSettingsController extends Controller
             'store' => $store->only(['store_id', 'store_name', 'address', 'status']),
             'store_id' => $store->store_id, 'operating_hours' => $store->operating_hours,
             'pickup_service_hours' => $store->pickup_service_hours,
+            'pickup_preparation_minutes' => $store->pickup_preparation_minutes, 'pickup_window_minutes' => $store->pickup_window_minutes,
             'paid_order_holding_hours' => $store->paid_order_holding_hours, 'timezone' => PickupScheduling::TIMEZONE,
             'closures' => DB::table('store_pickup_exceptions')->where('store_id', $store->store_id)->orderByDesc('date')->get(),
             'schedule_history' => $logs,

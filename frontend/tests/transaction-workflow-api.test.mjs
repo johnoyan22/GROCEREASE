@@ -34,8 +34,8 @@ test('store-specific hours reads preserve session and abort, including the chose
 
 test('store settings preserve an explicit missing holding policy and closure audit reason', async function (t) {
   const writes = recordWrites(t);
-  await saveSupervisorPickupSettings({ 1: null }, { 1: null }, null); await suspendSupervisorPickupDate('2026-10-20', 'Power outage');
-  assert.deepEqual(writes, [{ path: '/supervisor/pickup-settings', method: 'PUT', body: { operating_hours: { 1: null }, pickup_service_hours: { 1: null }, paid_order_holding_hours: null } },
+  await saveSupervisorPickupSettings({ 1: null }, { 1: null }, null, 90, 120); await suspendSupervisorPickupDate('2026-10-20', 'Power outage');
+  assert.deepEqual(writes, [{ path: '/supervisor/pickup-settings', method: 'PUT', body: { operating_hours: { 1: null }, pickup_service_hours: { 1: null }, paid_order_holding_hours: null, pickup_preparation_minutes: 90, pickup_window_minutes: 120 } },
     { path: '/supervisor/pickup-closures', method: 'POST', body: { date: '2026-10-20', reason: 'Power outage' } }]);
 });
 
