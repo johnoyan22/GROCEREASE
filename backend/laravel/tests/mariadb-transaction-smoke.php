@@ -104,7 +104,7 @@ try {
         } elseif ($mode === 'assign') {
             $result = invokeController(WorkerAssignmentController::class, 'assign', ['worker_id' => $state['worker_id']], $state['supervisor_id'], $state['order_ids'][(int) ($argv[3] ?? 0)]);
             echo json_encode(['status' => $result['status']]);
-        } elseif ($mode === 'prepare') {
+        } elseif (in_array($mode, ['prepare', 'prepare-claim'], true)) {
             if (DB::table('active_worker_assignments')->count() !== 1) throw new RuntimeException('Concurrent assignment invariant failed.');
             $orderId = (int) DB::table('active_worker_assignments')->value('order_id');
             $userId = $state['supervisor_id'];
@@ -116,11 +116,34 @@ try {
             $order = Order::findOrFail($orderId);
             $secret = invokeController(PickupController::class, 'shopperPickup', [], $order->shopper_user_id, $orderId)['data']['credential'];
             invokeController(PickupController::class, 'confirmCash', ['cashier_name' => 'Isolated Cashier', 'evidence_reference' => 'TEST-ONLY', 'cash_collected' => true], $userId, $orderId);
-            invokeController(PickupController::class, 'verify', ['method' => 'pin', 'credential' => $secret['pin'], 'claimant_name' => 'Isolated Claimant', 'identity_checked' => true], $userId, $orderId);
+            if ($mode === 'prepare') invokeController(PickupController::class, 'verify', ['method' => 'pin', 'credential' => $secret['pin'], 'claimant_name' => 'Isolated Claimant', 'identity_checked' => true], $userId, $orderId);
+            if ($mode === 'prepare-claim') {
+                $secondSupervisor = User::factory()->create(['role_id' => Role::where('slug', 'supervisor')->firstOrFail()->role_id,
+                    'staff_approved_at' => now(), 'staff_approved_by_user_id' => User::findOrFail($userId)->staff_approved_by_user_id]);
+                StaffStoreAssignment::create(['store_id' => $order->store_id, 'user_id' => $secondSupervisor->id, 'assigned_by_user_id' => User::findOrFail($userId)->staff_approved_by_user_id]);
+                $state['second_supervisor_id'] = $secondSupervisor->id;
+                $state['completion_pin'] = $secret['pin']; // Isolated fixture only; cleanup removes runtime file.
+                StoreInventory::findOrFail($item->store_inventory_id)->forceFill(['low_stock_threshold' => 0])->save();
+            }
             $state['completion_order_id'] = $orderId;
             $state['completion_inventory_id'] = $item->store_inventory_id;
             file_put_contents($runtime, json_encode($state));
             echo json_encode(['status' => 'ready_for_concurrent_handover']);
+        } elseif ($mode === 'claim') {
+            $result = invokeController(\App\Http\Controllers\Api\PickupClaimController::class, 'claim', [
+                'method' => 'pin', 'credential' => $state['completion_pin'], 'claiming_as' => 'shopper',
+                'identity_checked' => true, 'physically_handed_over' => true,
+            ], (int) ($argv[3] ?? 0) === 0 ? $state['supervisor_id'] : $state['second_supervisor_id'], $state['completion_order_id']);
+            echo json_encode(['status' => $result['status']]);
+        } elseif ($mode === 'verify-claim') {
+            $inventory = StoreInventory::findOrFail($state['completion_inventory_id']);
+            if ($inventory->hard_stock_qty !== 0 || $inventory->soft_stock_qty !== 0 || $inventory->stock_version !== 2
+                || DB::table('order_handovers')->count() !== 1 || DB::table('pickup_verifications')->count() !== 1
+                || DB::table('order_payments')->count() !== 1 || DB::table('low_stock_episodes')->count() !== 1
+                || DB::table('order_status_history')->where('new_status', 'completed')->count() !== 1
+                || DB::table('pickup_credentials')->whereNotNull('consumed_at')->count() !== 1
+                || (int) DB::table('order_batch_allocations')->where('status', 'fulfilled')->sum('quantity') !== 1) throw new RuntimeException('Concurrent claim invariant failed.');
+            echo json_encode(['status' => 'atomic_claim_once']);
         } elseif ($mode === 'handover') {
             $result = invokeController(PickupController::class, 'handover', ['physically_handed_over' => true], $state['supervisor_id'], $state['completion_order_id']);
             echo json_encode(['status' => $result['status']]);

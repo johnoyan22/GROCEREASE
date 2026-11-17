@@ -61,7 +61,7 @@ try {
         const body = req.postDataJSON(); assert.equal(body.pickup_date, day); assert.equal(body.pickup_start, '12:00'); assert.equal(body.pickup_end, '13:00');
         return respond({ quote_token: 'browser-review', quote: { store, items: [{ store_inventory_id: 7, product_name: 'Rice', quantity: 2, unit_price_centavos: 5000, line_total_centavos: 10000 }], subtotal_centavos: 10000, total_centavos: 10000, service_fee_centavos: 0, payment_method: 'cash_on_pickup', pickup_window_start_at: day + 'T04:00:00Z', pickup_window_end_at: day + 'T05:00:00Z', cop_claim_deadline_at: day + 'T10:00:00Z' } });
       }
-      if (path === '/api/shopper/orders') return respond({ order: { order_id: 9, store_name: 'QA Store', payment_method: 'cash_on_pickup', payment_status: 'unpaid', status: 'waiting', reservation_status: 'active', total_centavos: 10000, pickup_window_start_at: day + 'T04:00:00Z', pickup_window_end_at: day + 'T05:00:00Z' } }, 201);
+      if (path === '/api/shopper/orders') return respond({ order: { order_id: 9, order_reference: 'GE-ORD-00000009', store_name: 'QA Store', payment_method: 'cash_on_pickup', payment_status: 'unpaid', status: 'waiting', reservation_status: 'active', total_centavos: 10000, pickup_window_start_at: day + 'T04:00:00Z', pickup_window_end_at: day + 'T05:00:00Z' } }, 201);
       if (path === '/api/supervisor/pickup-settings') {
         if (method === 'PUT') {
           const body = req.postDataJSON(); assert.equal(body.pickup_preparation_minutes, 90); assert.equal(body.pickup_window_minutes, 120); assert.equal(body.store_id, undefined);
@@ -85,7 +85,7 @@ try {
     await page.getByRole('heading', { name: 'Checkout', exact: true }).click(); await shot('checkout'); const box = await page.getByRole('dialog').boundingBox(); assert.ok(box.x >= 0 && box.x + box.width <= width + 1);
     await page.getByRole('button', { name: 'Review current prices and pickup schedule', exact: true }).click();
     await page.getByRole('button', { name: 'Confirm / Place Order', exact: true }).click();
-    await page.getByText('Order #9 is recorded at QA Store.', { exact: true }).waitFor();
+    await page.getByText('GE-ORD-00000009 is recorded at QA Store.', { exact: true }).waitFor();
     await page.getByText(/Pickup: .*12:00.*1:00/).waitFor(); await noOverflow();
     const placed = writes.find((entry) => entry.path === '/api/shopper/orders').body;
     assert.equal(placed.pickup_start, '12:00'); assert.equal(placed.pickup_end, '13:00');

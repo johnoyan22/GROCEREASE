@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->trimStrings(except: ['credential']);
         $middleware->api(append: [\App\Http\Middleware\EnsureAccountActive::class]);
 
         $middleware->alias([
@@ -29,6 +30,14 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Pickup secrets and order documents must not be cached, including failures.
+        $exceptions->respond(function ($response) {
+            if (request()->is('api/supervisor/pickup/*', 'api/supervisor/orders/*/claim', 'api/*/orders/*/summary', 'api/*/orders/*/receipt', 'api/supervisor/order-reference')) {
+                $response->headers->set('Cache-Control', 'no-store, private');
+                $response->headers->set('Pragma', 'no-cache');
+            }
+            return $response;
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request, \Throwable $exception) =>
                 $request->is('api/*') || $request->expectsJson()

@@ -39,7 +39,7 @@ class OrderData
             ];
         }
         return [
-            'order_id' => $order->order_id, 'store_id' => $order->store_id,
+            'order_id' => $order->order_id, 'order_reference' => OrderReference::format($order->order_id), 'store_id' => $order->store_id,
             'store_name' => $order->store_name, 'store_address' => $order->store_address,
             'shopper_name' => $order->shopper_name, 'status' => $order->status,
             'payment_method' => $order->payment_method, 'payment_status' => $order->payment_status,
@@ -74,13 +74,14 @@ class OrderData
         $summary = [
             'enabled' => $order->pickup_window_start_at !== null,
             'verified_at' => null, 'claimant_name' => null,
-            'payment_confirmed_at' => null, 'handed_over_at' => null, 'expires_at' => null,
+            'payment_valid' => false, 'payment_confirmed_at' => null, 'handed_over_at' => null, 'expires_at' => null,
         ];
         if (!Schema::hasTable('pickup_verifications')) return $summary;
         $verified = DB::table('pickup_verifications')->where('order_id', $order->order_id)->first();
         $payment = DB::table('order_payments')->where('order_id', $order->order_id)->first();
         $handover = DB::table('order_handovers')->where('order_id', $order->order_id)->first();
         $credential = PickupCredential::where('order_id', $order->order_id)->whereNull('revoked_at')->latest('id')->first();
+        $summary['payment_valid'] = app(PaymentEvidence::class)->valid($order, $payment);
         $summary['verified_at'] = $verified?->verified_at;
         $summary['claimant_name'] = $verified?->claimant_name;
         $summary['payment_confirmed_at'] = $payment?->confirmed_at;

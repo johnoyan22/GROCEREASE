@@ -574,6 +574,24 @@ export function getOrderReceipt(id, role, { signal } = {}) {
   return sendRequest(`/${prefix}/orders/${encodeURIComponent(id)}/receipt`, { signal, cache: 'no-store' });
 }
 
+export function getOrderSummary(id, role, { signal } = {}) {
+  const prefix = role === 'supervisor' ? 'supervisor' : 'shopper';
+  return sendRequest(`/${prefix}/orders/${encodeURIComponent(id)}/summary`, { signal, cache: 'no-store' });
+}
+export function lookupOrderReference(reference, { signal } = {}) {
+  return sendRequest('/supervisor/order-reference?' + new URLSearchParams({ reference }), { signal, cache: 'no-store' });
+}
+export async function resolvePickup(details, { signal } = {}) {
+  const token = await getXsrfToken();
+  return sendRequest('/supervisor/pickup/resolve', { method: 'POST', signal, cache: 'no-store', headers: { 'X-XSRF-TOKEN': token },
+    body: JSON.stringify({ method: details.method, credential: details.credential, ...(details.method === 'pin' ? { reference: details.reference } : {}), ...(details.order_context ? { order_context: details.order_context } : {}) }) });
+}
+export function claimOrderPickup(id, details) {
+  return writeAction(`/supervisor/orders/${encodeURIComponent(id)}/claim`, 'POST', { method: details.method, credential: details.credential,
+    claiming_as: details.claiming_as, ...(details.claiming_as === 'representative' ? { claimant_name: details.claimant_name } : {}),
+    claimant_check_note: details.claimant_check_note, identity_checked: details.identity_checked, physically_handed_over: details.physically_handed_over });
+}
+
 export function getCategories({ signal, ...query } = {}) {
   return sendRequest('/staff/categories?' + new URLSearchParams(query), { signal, cache: 'no-store' });
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Services\OrderData;
 use App\Services\PaymentEvidence;
 use App\Services\PickupPolicy;
 use App\Services\StoreStaffAccess;
@@ -30,9 +29,27 @@ class TransactionRecordsController extends Controller
         }, 3);
     }
 
-    public function receipt(Request $request, int $order, StoreStaffAccess $access, PickupPolicy $pickup, OrderData $data): JsonResponse
+    public function summary(Request $request, int $order, StoreStaffAccess $access, PickupPolicy $pickup): JsonResponse
     {
-        return DB::transaction(function () use ($request, $order, $access, $pickup, $data) {
+        return DB::transaction(function () use ($request, $order, $access, $pickup) {
+            $pickup->requireSchema();
+            $query = Order::whereKey($order);
+            if ($request->user()->role?->slug === 'supervisor') {
+                $context = $access->resolve($request->user(), ['supervisor']);
+                $query->where('store_id', $context['store']->store_id);
+            } else {
+                abort_unless($request->user()->role?->slug === 'shopper', 403);
+                $query->where('shopper_user_id', $request->user()->id);
+            }
+            $record = $query->lockForUpdate()->firstOrFail();
+            return response()->json(['summary' => ['order' => app(\App\Services\OrderDocument::class)->present($record)]])
+                ->header('Cache-Control', 'no-store, private')->header('Pragma', 'no-cache');
+        }, 3);
+    }
+
+    public function receipt(Request $request, int $order, StoreStaffAccess $access, PickupPolicy $pickup): JsonResponse
+    {
+        return DB::transaction(function () use ($request, $order, $access, $pickup) {
             $pickup->requireSchema();
             $query = Order::whereKey($order);
             $role = $request->user()->role?->slug;
@@ -48,7 +65,10 @@ class TransactionRecordsController extends Controller
                 && app(PaymentEvidence::class)->valid($record, $payment), 409, 'A final receipt requires a paid and completed physical handover.');
             return response()->json(['receipt' => ['receipt_number' => 'GE-'.$record->order_id.'-'.$handover->id,
                 'transaction_id' => $payment->id, 'confirmed_at' => $payment->confirmed_at, 'handed_over_at' => $handover->handed_over_at,
-                'amount_paid_centavos' => (int) $payment->amount_centavos, 'order' => $data->present($record)]]);
+                'amount_paid_centavos' => (int) $payment->amount_centavos,
+                'claimant_name' => DB::table('pickup_verifications')->where('id', $handover->pickup_verification_id)->value('claimant_name'),
+                'order' => app(\App\Services\OrderDocument::class)->present($record)]])
+                ->header('Cache-Control', 'no-store, private')->header('Pragma', 'no-cache');
         }, 3);
     }
 

@@ -1,18 +1,20 @@
 import { useRef, useState } from 'react';
-import { cancelShopperOrder, updateOrderStatus, readOrderNotification } from '../../services/api';
+import { cancelShopperOrder, updateOrderStatus, readOrderNotification, lookupOrderReference } from '../../services/api';
 import useOrders from '../../hooks/useOrders';
 import StoreSelector from '../inventory/layout/StoreSelector';
 import OrderPickup from './OrderPickup';
 import OrderPreparation from './OrderPreparation';
 import OrderResolution from './OrderResolution';
-import OrderReceipt from './OrderReceipt';
+import OrderReceipt, { OrderDocumentDialog } from './OrderReceipt';
+import PickupClaimModal from './PickupClaimModal';
+import { ScanLine } from 'lucide-react';
 import OrderPayment from './OrderPayment';
 
 const labels = { waiting: 'Waiting', preparing: 'Preparing', ready_for_pickup: 'Ready for pickup', completed: 'Completed', canceled: 'Canceled' };
 const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 const localTime = new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' });
 
-function OrderCard({ order, role, workers, onSaved, onFailure }) {
+function OrderCard({ order, role, workers, onSaved, onFailure, onOpenPickup }) {
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
@@ -55,7 +57,7 @@ function OrderCard({ order, role, workers, onSaved, onFailure }) {
   return (
     <article className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex flex-wrap justify-between gap-3">
-        <div><h2 className="text-lg font-semibold">Order #{order.order_id} · {order.store_name}</h2><p className="mt-1 text-xs text-gray-500">{new Date(order.created_at).toLocaleString('en-PH')}</p></div>
+        <div><h2 className="text-lg font-semibold">{order.order_reference} · {order.store_name}</h2><p className="mt-1 text-xs text-gray-500">{new Date(order.created_at).toLocaleString('en-PH')}</p></div>
         <span className="h-fit rounded-lg bg-green-50 px-3 py-1.5 text-sm font-semibold text-green-800">{statusLabel}</span>
       </div>
       {role !== 'shopper' && <p className="mt-3 text-sm">Shopper: {order.shopper_name}</p>}
@@ -73,8 +75,9 @@ function OrderCard({ order, role, workers, onSaved, onFailure }) {
       {error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
       <OrderPreparation order={order} role={role} workers={workers} onSaved={onSaved} onFailure={onFailure} />
       {role === 'supervisor' && nextStatus && <button type="button" disabled={pending || !canChangeStatus} onClick={function () { perform('status'); }} className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm text-white disabled:opacity-50">{pending ? 'Updating...' : actionLabel}</button>}
-      <OrderPickup order={order} role={role} onSaved={onSaved} onFailure={onFailure} />
+      <OrderPickup order={order} role={role} onOpenPickup={onOpenPickup} onFailure={onFailure} />
       {role === 'supervisor' && <OrderResolution order={order} onSaved={onSaved} onFailure={onFailure} />}
+      {['shopper', 'supervisor'].includes(role) && <OrderReceipt orderId={order.order_id} role={role} summary />}
       {['shopper', 'supervisor'].includes(role) && order.status === 'completed' && <OrderReceipt orderId={order.order_id} role={role} />}
       {role === 'shopper' && order.status === 'waiting' && order.payment_status === 'unpaid' && <div className="mt-4 border-t border-gray-100 pt-4"><label className="block text-sm">Cancellation reason<textarea value={reason} disabled={pending} maxLength="500" rows="2" onChange={function (event) { setReason(event.target.value); }} className="mt-1 w-full rounded-lg border border-gray-300 p-2" /></label><button type="button" disabled={pending} onClick={function () { perform('cancel'); }} className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm text-red-700 disabled:opacity-50">Cancel Waiting order</button></div>}
     </article>
@@ -87,9 +90,23 @@ export default function OrderWorkspace({ role, title = 'Orders', finalOnly = fal
   const [status, setStatus] = useState('');
   const [notice, setNotice] = useState('');
   const [upcoming, setUpcoming] = useState(false);
+  const [pickupContext, setPickupContext] = useState(undefined);
+  const [lookup, setLookup] = useState(null), [finding, setFinding] = useState(false);
+  const lookupVersion = useRef(0);
+  const [documentOrder, setDocumentOrder] = useState(null);
+  const [claimed, setClaimed] = useState(null);
+  async function findReference() {
+    const version = ++lookupVersion.current;
+    setFinding(true); setLookup(null);
+    try {
+      const result = await lookupOrderReference(search.trim());
+      if (version === lookupVersion.current) setLookup(result.order);
+    } catch (failure) { if (version === lookupVersion.current) setNotice(failure.message); }
+    finally { if (version === lookupVersion.current) setFinding(false); }
+  }
   const filtered = orders.orders.filter(function (order) {
     return (!finalOnly || ['completed', 'canceled'].includes(order.status)) && (!status || order.status === status) && (!upcoming || (['waiting', 'preparing', 'ready_for_pickup'].includes(order.status) && new Date(order.pickup_window_end_at).getTime() >= orders.asOf))
-      && [order.order_id, order.store_name, order.shopper_name].join(' ').toLowerCase().includes(search.toLowerCase());
+      && [order.order_reference, order.order_id, order.store_name, order.shopper_name].join(' ').toLowerCase().includes(search.toLowerCase());
   });
 
   function saved(message) { setNotice(message); orders.reload(); }
@@ -108,19 +125,25 @@ export default function OrderWorkspace({ role, title = 'Orders', finalOnly = fal
         <div><h1 className="text-2xl font-bold">{title}</h1><p className="mt-1 text-sm text-gray-600">Track actual orders, pickup schedules, preparation, payment, and release.</p></div>
         {role !== 'shopper' && <StoreSelector store={orders.store} loading={orders.loading} error={orders.error} />}
       </div>
+      {role === 'supervisor' && !orders.loading && !orders.error && <button type="button" onClick={() => setPickupContext(null)} className="mb-4 inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm text-white"><ScanLine size={18} aria-hidden="true" />Scan QR</button>}
+      {claimed && <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm"><p>{claimed.order_reference} - Already claimed.</p><button type="button" onClick={() => setDocumentOrder({ id: claimed.order_id, summary: false })} className="mt-2 text-green-800 underline">Print Pickup Receipt</button></div>}
       {notice && <p role="status" className="mb-4 rounded-lg border border-gray-200 bg-white p-3 text-sm">{notice}</p>}
       {role === 'supervisor' && !orders.loading && !orders.error && <p className="mb-4 text-sm">Available workers: {orders.workers.filter(function (worker) { return worker.availability === 'Available'; }).length} · Busy workers: {orders.workers.filter(function (worker) { return worker.availability === 'Busy'; }).length}. Each worker can hold one active order.</p>}
       {role === 'shopper' && orders.cop && <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 text-sm"><p>COP strikes: {orders.cop.strike_count} · {orders.cop.allowed ? 'Cash on Pickup available' : orders.cop.permanently_disabled ? 'Cash on Pickup permanently disabled' : 'Cash on Pickup disabled until '+localTime.format(new Date(orders.cop.disabled_until))}</p><p className="mt-1 text-xs text-gray-600">COP restrictions do not deactivate your Shopper account. Digital checkout will require an actual verified payment integration.</p></div>}
       {role === 'shopper' && orders.notifications.length > 0 && <details className="mb-4 rounded-lg border border-gray-200 bg-white p-4 text-sm"><summary className="cursor-pointer font-semibold">Order notifications ({orders.notifications.filter(function (entry) { return !entry.read_at; }).length} unread)</summary><ul className="mt-3 space-y-3">{orders.notifications.slice(0, 10).map(function (entry) { return <li key={entry.id}>Order #{entry.order_id} · {entry.message}{!entry.read_at && <button type="button" onClick={function () { markRead(entry.id); }} className="ml-3 text-xs font-semibold text-green-800 underline">Mark read</button>}</li>; })}</ul></details>}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row">
-        <input type="search" aria-label="Search orders" value={search} onChange={function (event) { setSearch(event.target.value); }} placeholder="Search order or store..." className="flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm" />
+        <input type="search" aria-label="Search orders" value={search} onChange={function (event) { setSearch(event.target.value); lookupVersion.current++; setLookup(null); setFinding(false); }} placeholder="Search reference, order ID, shopper or store..." className="flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm" />
+        {role === 'supervisor' && <button type="button" disabled={finding || !search.trim() || orders.loading || Boolean(orders.error)} onClick={findReference} className="rounded-lg border border-green-700 px-4 py-2 text-sm text-green-800 disabled:opacity-50">Find exact reference</button>}
         <select aria-label="Order status" value={status} onChange={function (event) { setStatus(event.target.value); }} className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"><option value="">All statuses</option>{Object.entries(labels).map(function ([value, label]) { return <option key={value} value={value}>{label}</option>; })}</select>
         <button type="button" onClick={orders.reload} className="rounded-lg border border-green-700 bg-white px-4 py-2 text-sm text-green-800">Refresh orders</button>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={upcoming} onChange={function (event) { setUpcoming(event.target.checked); }} />Upcoming scheduled orders</label>
       </div>
+      {lookup && !orders.loading && !orders.error && Number(lookup.store_id) === Number(orders.store?.store_id) && <div className="mb-4 rounded-lg border border-green-200 bg-white p-4 text-sm"><p className="font-semibold">{lookup.order_reference} - {lookup.status === 'completed' ? 'Already claimed' : labels[lookup.status]}</p><p>{lookup.shopper_name} - {lookup.store_name}</p>{lookup.status === 'ready_for_pickup' && <button type="button" onClick={() => setPickupContext(lookup)} className="mt-3 rounded-lg bg-green-700 px-4 py-2 text-white">Confirm pickup / QR or PIN</button>}<OrderReceipt orderId={lookup.order_id} role={role} summary />{lookup.status === 'completed' && <OrderReceipt orderId={lookup.order_id} role={role} />}</div>}
+      {role === 'supervisor' && pickupContext !== undefined && !orders.loading && !orders.error && <PickupClaimModal key={orders.store?.store_id + ':' + (pickupContext?.order_id ?? 'scan')} storeId={orders.store?.store_id} orderContext={pickupContext} onClose={() => { setPickupContext(undefined); orders.reload(); }} onDocument={id => { setPickupContext(undefined); setDocumentOrder({id, summary:true}); }} onClaimed={(order, message) => { setPickupContext(undefined); setClaimed(order); saved(message); }} />}
+      {documentOrder && <OrderDocumentDialog orderId={documentOrder.id} role={role} summary={documentOrder.summary} onClose={() => setDocumentOrder(null)} />}
       {orders.loading && <p role="status" className="rounded-xl border border-gray-200 bg-white p-5 text-sm">Loading orders...</p>}
       {orders.error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">{orders.error}</p>}
-      {!orders.loading && !orders.error && <div className="space-y-5">{filtered.map(function (order) { return <OrderCard key={order.order_id} order={order} role={role} workers={orders.workers} onSaved={saved} onFailure={failed} />; })}{filtered.length === 0 && <p className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">No matching orders.</p>}</div>}
+      {!orders.loading && !orders.error && <div className="space-y-5">{filtered.map(function (order) { return <OrderCard key={order.order_id} order={order} role={role} workers={orders.workers} onSaved={saved} onFailure={failed} onOpenPickup={setPickupContext} />; })}{filtered.length === 0 && <p className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">No matching orders.</p>}</div>}
     </div>
   );
 }

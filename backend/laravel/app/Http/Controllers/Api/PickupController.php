@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderStatusHistory;
 use App\Models\PickupCredential;
-use App\Models\StoreInventory;
 use App\Services\OrderData;
 use App\Services\PickupPolicy;
 use App\Services\StoreStaffAccess;
@@ -14,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class PickupController extends Controller
@@ -81,25 +78,9 @@ class PickupController extends Controller
                 'claimant_check_note' => ['nullable', 'string', 'max:250'],
                 'store_id' => ['prohibited'], 'verified_by_user_id' => ['prohibited'],
             ]);
-            $policy->requireClaimable($record, $context['store']);
-            abort_if(DB::table('pickup_verifications')->where('order_id', $record->order_id)->lockForUpdate()->first(), 409, 'This pickup has already been verified.');
-            $credential = PickupCredential::where('order_id', $record->order_id)->whereNull('revoked_at')->latest('id')->lockForUpdate()->first();
-            $this->requireUsable($credential);
-            $valid = false;
-            if ($validated['method'] === 'pin' && preg_match('/^[0-9]{8}$/D', $validated['credential'])) {
-                $valid = Hash::check($validated['credential'], $credential->pin_hash);
-            }
-            if ($validated['method'] === 'qr' && preg_match('/^[a-f0-9]{64}$/D', $validated['credential'])) {
-                $valid = hash_equals($credential->token_hash, hash('sha256', $validated['credential']));
-            }
-            abort_unless($valid, 422, 'The pickup credential is invalid.');
-            DB::table('pickup_verifications')->insert([
-                'order_id' => $record->order_id, 'pickup_credential_id' => $credential->id,
-                'verified_by_user_id' => $context['user']->id,
-                'method' => $validated['method'], 'claimant_name' => trim($validated['claimant_name']),
-                'claimant_check_note' => isset($validated['claimant_check_note']) ? Crypt::encryptString($validated['claimant_check_note']) : null,
-                'verified_at' => now(), 'created_at' => now(), 'updated_at' => now(),
-            ]);
+            $claim = app(\App\Services\PickupClaim::class);
+            $credential = $claim->credential($record, $context['store'], $validated['method'], $validated['credential']);
+            $claim->verify($record, $credential, $context['user']->id, $validated);
             return response()->json(['message' => 'Credential and claimant verified. Confirm payment and physical handover before release.']);
         }, 3);
     }
@@ -111,46 +92,9 @@ class PickupController extends Controller
             $context = $access->resolve($request->user(), ['supervisor']);
             $policy->requireSchema();
             $record = Order::where('store_id', $context['store']->store_id)->whereKey($order)->lockForUpdate()->firstOrFail();
-            $policy->requireClaimable($record, $context['store']);
-            $payment = DB::table('order_payments')->where('order_id', $record->order_id)->lockForUpdate()->first();
-            abort_unless(app(\App\Services\PaymentEvidence::class)->valid($record, $payment), 409, 'Verified payment is required before final release.');
-            $verified = DB::table('pickup_verifications')->where('order_id', $record->order_id)->lockForUpdate()->first();
-            abort_unless($verified, 409, 'Credential and claimant verification is required before final release.');
-            $credential = PickupCredential::where('order_id', $record->order_id)->whereNull('revoked_at')->latest('id')->lockForUpdate()->first();
-            $this->requireUsable($credential);
-            abort_unless((int) $verified->pickup_credential_id === $credential->id, 409, 'Pickup verification requires reconciliation.');
-            foreach ($record->items()->orderBy('store_inventory_id')->get() as $item) {
-                $inventory = StoreInventory::forStore($record->store_id)->whereKey($item->store_inventory_id)->lockForUpdate()->firstOrFail();
-                abort_if($inventory->soft_stock_qty < $item->quantity || $inventory->hard_stock_qty < $item->quantity, 409, 'Reserved stock requires reconciliation.');
-                app(\App\Services\BatchStock::class)->handover($inventory, $item);
-                $inventory->hard_stock_qty -= $item->quantity;
-                $inventory->soft_stock_qty -= $item->quantity;
-                $inventory->stock_version += 1;
-                $inventory->save();
-                app(\App\Services\LowStockMonitor::class)->evaluate($inventory, $context['store'], 'physical_handover');
-            }
-            DB::table('order_handovers')->insert([
-                'order_id' => $record->order_id, 'order_payment_id' => $payment->id,
-                'pickup_verification_id' => $verified->id, 'handed_over_by_user_id' => $context['user']->id,
-                'handed_over_at' => now(), 'created_at' => now(), 'updated_at' => now(),
-            ]);
-            $credential->consumed_at = now();
-            $credential->save();
-            $record->status = 'completed';
-            $record->claim_status = 'completed';
-            $record->reservation_status = 'fulfilled';
-            $record->completed_at = now();
-            $record->save();
-            OrderStatusHistory::create([
-                'order_id' => $record->order_id, 'changed_by_user_id' => $context['user']->id,
-                'previous_status' => 'ready_for_pickup', 'new_status' => 'completed',
-            ]);
+            app(\App\Services\PickupClaim::class)->handover($record, $context['store'], $context['user']->id);
             return response()->json(['message' => 'Paid order handed over and completed.', 'order' => $data->present($record, true)]);
         }, 3);
     }
 
-    private function requireUsable(?PickupCredential $credential): void
-    {
-        abort_unless($credential && !$credential->consumed_at && !$credential->revoked_at && $credential->expires_at->isFuture(), 409, 'The pickup credential is unavailable, expired, or already used. Contact the store for reconciliation.');
-    }
 }

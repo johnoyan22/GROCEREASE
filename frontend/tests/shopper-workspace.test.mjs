@@ -76,14 +76,14 @@ beforeEach(t => {
     }
     if (url.endsWith('/shopper/orders') && options.method === 'POST') {
       const cart = JSON.parse(options.body);
-      return json({ order: { order_id: 9, store_id: 1, store_name: 'Store A', payment_method: cart.payment_method, payment_status: 'unpaid', status: 'waiting', total_centavos: 13450, reservation_status: 'active' } }, 201);
+      return json({ order: { order_id: 9, order_reference: 'GE-ORD-00000009', store_id: 1, store_name: 'Store A', payment_method: cart.payment_method, payment_status: 'unpaid', status: 'waiting', total_centavos: 13450, reservation_status: 'active' } }, 201);
     }
     if (url.includes('/products')) {
       if (failCatalog) return json({ message: 'Catalog unavailable' }, 503);
       const storeId = Number(url.match(/stores\/(\d+)/)[1]);
       return json({ store: { store_id: storeId, store_name: storeId === 1 ? 'Store A' : 'Store B' }, products: products.filter(row => row.store_id === storeId) });
     }
-    if (url.includes('/checkout-attempts/')) return json({ order: { order_id: 9, store_id: 1, status: 'waiting', payment_status: 'unpaid', total_centavos: 13450 } });
+    if (url.includes('/checkout-attempts/')) return json({ order: { order_id: 9, order_reference: 'GE-ORD-00000009', store_id: 1, status: 'waiting', payment_status: 'unpaid', total_centavos: 13450 } });
     if (url.endsWith('/shopper/order-notifications')) return json({ notifications: [] });
     throw new Error('Unexpected request ' + url);
   });
@@ -184,7 +184,7 @@ for (const method of ['cash_on_pickup', 'wallet', 'card']) test('Checkout requir
   const quote = calls.find(call => call.url.endsWith('/checkout/quote'));
   assert.equal(JSON.parse(quote.options.body).payment_method, method === 'cash_on_pickup' ? 'cash_on_pickup' : 'digital');
   await click(button('Confirm / Place Order'));
-  assert.equal(placed, 1); assert.ok(text().includes('Order #9 is recorded at Store A'));
+  assert.equal(placed, 1); assert.ok(text().includes('GE-ORD-00000009 is recorded at Store A'));
   const body = JSON.parse(calls.find(call => call.url.endsWith('/shopper/orders')).options.body);
   assert.equal(body.pickup_start, schedule.pickup_start); assert.equal(body.quote_token, 'review-token');
   assert.ok(body.idempotency_key); assert.equal(body.payment_status, undefined);
@@ -207,7 +207,7 @@ test('Admin dashboard shows loading, real zeros, and unavailable errors without 
 
 test('transaction reports filter genuine records by Philippine confirmation dates and supermarket', async t => {
   t.mock.method(globalThis, 'fetch', async () => json({ transactions: [
-    { transaction_id: 1, order_id: 9, store_id: 1, store_name: 'Store A', shopper_name: 'Account A', payment_method: 'cash_on_pickup', status: 'waiting', payment_status: 'paid', subtotal_centavos: 10000, service_fee_centavos: 0, amount_centavos: 10000, refund_status: 'not_required', confirmed_at: '2026-10-20 15:59:00' },
+    { transaction_id: 1, order_id: 9, order_reference: 'GE-ORD-00000009', store_id: 1, store_name: 'Store A', shopper_name: 'Account A', payment_method: 'cash_on_pickup', status: 'waiting', payment_status: 'paid', subtotal_centavos: 10000, service_fee_centavos: 0, amount_centavos: 10000, refund_status: 'not_required', confirmed_at: '2026-10-20 15:59:00' },
     { transaction_id: 2, order_id: 10, store_id: 2, store_name: 'Store B', shopper_name: 'Account B', payment_method: 'digital', status: 'waiting', payment_status: 'paid', subtotal_centavos: 20000, service_fee_centavos: 0, amount_centavos: 20000, refund_status: 'not_required', confirmed_at: '2026-10-20 16:01:00' },
   ] }));
   root = createRoot(document.getElementById('root'));

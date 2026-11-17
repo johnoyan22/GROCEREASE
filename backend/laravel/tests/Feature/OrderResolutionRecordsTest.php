@@ -90,7 +90,7 @@ class OrderResolutionRecordsTest extends TransactionTestCase
         $this->inventory->update(['selling_price' => '99.00']);
         $this->signIn($this->shopper)->getJson($this->shopperPath('receipt'))->assertOk()
             ->assertJsonPath('receipt.amount_paid_centavos', 13400)->assertJsonPath('receipt.order.items.0.unit_price_centavos', 6700)
-            ->assertJsonMissingPath('receipt.order.pickup.pin')->assertJsonCount(0, 'receipt.order.assignments');
+            ->assertJsonMissingPath('receipt.order.pickup.pin')->assertJsonMissingPath('receipt.order.assignments');
         $this->getJson($this->shopperPath('receipt'))->assertOk();
         $this->assertDatabaseCount('order_payments', 1);
         $this->assertDatabaseCount('order_handovers', 1);

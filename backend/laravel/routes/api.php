@@ -241,6 +241,7 @@ Route::middleware(['auth:sanctum', 'verified', 'role:shopper'])->group(function 
         ->whereNumber('order')->middleware('throttle:10,1,order-cancel:')->name('shopper.orders.cancel');
     Route::get('/shopper/orders/{order}/pickup', [PickupController::class, 'shopperPickup'])
         ->whereNumber('order')->name('shopper.orders.pickup');
+    Route::get('/shopper/orders/{order}/summary', [TransactionRecordsController::class, 'summary'])->whereNumber('order');
     Route::get('/shopper/orders/{order}/receipt', [TransactionRecordsController::class, 'receipt'])->whereNumber('order');
 });
 
@@ -257,6 +258,10 @@ Route::put('/supervisor/orders/{order}/status', [OrderController::class, 'update
     ->name('supervisor.orders.status');
 
 Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
+    Route::get('/supervisor/order-reference', [\App\Http\Controllers\Api\PickupClaimController::class, 'lookup'])->middleware('throttle:30,1,pickup-lookup:');
+    Route::post('/supervisor/pickup/resolve', [\App\Http\Controllers\Api\PickupClaimController::class, 'resolve'])->middleware('throttle:5,1,pickup-verification:');
+    Route::post('/supervisor/orders/{order}/claim', [\App\Http\Controllers\Api\PickupClaimController::class, 'claim'])->whereNumber('order')->middleware('throttle:5,1,pickup-verification:');
+    Route::get('/supervisor/orders/{order}/summary', [TransactionRecordsController::class, 'summary'])->whereNumber('order');
     Route::get('/supervisor/transactions', [TransactionRecordsController::class, 'supervisorIndex']);
     Route::get('/supervisor/orders/{order}/receipt', [TransactionRecordsController::class, 'receipt'])->whereNumber('order');
     Route::put('/supervisor/orders/{order}/pickup-schedule', [OrderResolutionController::class, 'reschedule'])->whereNumber('order')->middleware('throttle:20,1,reschedule:');
