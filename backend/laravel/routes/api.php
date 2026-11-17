@@ -294,3 +294,10 @@ Route::middleware(['auth:sanctum', 'role:supervisor'])->group(function () {
     Route::put('/supervisor/categories/{category}', [\App\Http\Controllers\Api\CategoryController::class, 'update'])->whereNumber('category')->middleware('throttle:60,1');
     Route::delete('/supervisor/categories/{category}', [\App\Http\Controllers\Api\CategoryController::class, 'destroy'])->whereNumber('category')->middleware('throttle:60,1');
 });
+
+Route::middleware(['auth:sanctum', 'role:admin,supervisor,inventory_worker'])->prefix('reports')->group(function () {
+    Route::get('/options', [\App\Http\Controllers\Api\ReportsController::class, 'options']);
+    Route::post('/', [\App\Http\Controllers\Api\ReportsController::class, 'generate'])->middleware('throttle:5,1,reports-generate:');
+    Route::get('/{snapshot}', [\App\Http\Controllers\Api\ReportsController::class, 'show'])->where('snapshot', '[a-f0-9]{64}')->middleware('throttle:60,1,reports-preview:');
+    Route::get('/{snapshot}/pdf', [\App\Http\Controllers\Api\ReportsController::class, 'pdf'])->where('snapshot', '[a-f0-9]{64}')->middleware('throttle:10,1,reports-pdf:');
+});

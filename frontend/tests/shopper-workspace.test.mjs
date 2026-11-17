@@ -69,7 +69,7 @@ beforeEach(t => {
     if (url.endsWith('/dashboard/summary')) return json({ role: 'shopper', server_time: '2026-10-20T08:00:00Z', active_orders: orders.length, recent_active_orders: orders, unread_notifications: unread });
     if (url.endsWith('/shopper/stores')) return json({ stores: [{ store_id: 1, store_name: 'Store A', address: 'A' }, { store_id: 2, store_name: 'Store B', address: 'B' }] });
     if (url.endsWith('/payment-options')) return json({ digital: { available: channels.length > 0, channels, reason: channels.length ? null : 'Sandbox setup unavailable' } });
-    if (url.includes('/pickup-hours')) return json({ store_id: Number(url.match(/stores\/(\d+)/)[1]), hours: { date: new URL(url).searchParams.get('date') || schedule.pickup_date, today: schedule.pickup_date, opens_at: '10:00', closes_at: '18:00', store_opens_at: '09:00', store_closes_at: '21:00', earliest_start_at: '10:00', windows: [{ pickup_start: '10:00', pickup_end: '11:00' }, { pickup_start: '11:00', pickup_end: '12:00' }] } });
+    if (url.includes('/pickup-hours')) return json({ store_id: Number(url.match(/stores\/(\d+)/)[1]), hours: { date: new URL(url, 'http://localhost:5173').searchParams.get('date') || schedule.pickup_date, today: schedule.pickup_date, opens_at: '10:00', closes_at: '18:00', store_opens_at: '09:00', store_closes_at: '21:00', earliest_start_at: '10:00', windows: [{ pickup_start: '10:00', pickup_end: '11:00' }, { pickup_start: '11:00', pickup_end: '12:00' }] } });
     if (url.endsWith('/shopper/checkout/quote')) {
       const cart = JSON.parse(options.body);
       return json({ quote: { store: { store_name: 'Store A', address: 'A' }, items: [{ store_inventory_id: 7, product_name: 'Rice', quantity: 2, unit_price_centavos: 6725, line_total_centavos: 13450 }], subtotal_centavos: 13450, total_centavos: 13450, service_fee_centavos: 0, pickup_window_start_at: '2026-10-21T02:00:00Z', pickup_window_end_at: '2026-10-21T03:00:00Z', cop_claim_deadline_at: '2026-10-21T13:00:00Z', payment_method: cart.payment_method }, quote_token: 'review-token' });
@@ -205,19 +205,19 @@ test('Admin dashboard shows loading, real zeros, and unavailable errors without 
   assert.ok(text().includes('Database unavailable')); assert.ok(text().includes('Not available'));
 });
 
-test('transaction reports filter genuine records by Philippine confirmation dates and supermarket', async t => {
+test('transaction drill-down filters records by Philippine confirmation dates and supermarket', async t => {
   t.mock.method(globalThis, 'fetch', async () => json({ transactions: [
     { transaction_id: 1, order_id: 9, order_reference: 'GE-ORD-00000009', store_id: 1, store_name: 'Store A', shopper_name: 'Account A', payment_method: 'cash_on_pickup', status: 'waiting', payment_status: 'paid', subtotal_centavos: 10000, service_fee_centavos: 0, amount_centavos: 10000, refund_status: 'not_required', confirmed_at: '2026-10-20 15:59:00' },
     { transaction_id: 2, order_id: 10, store_id: 2, store_name: 'Store B', shopper_name: 'Account B', payment_method: 'digital', status: 'waiting', payment_status: 'paid', subtotal_centavos: 20000, service_fee_centavos: 0, amount_centavos: 20000, refund_status: 'not_required', confirmed_at: '2026-10-20 16:01:00' },
   ] }));
   root = createRoot(document.getElementById('root'));
-  await act(async () => root.render(createElement(TransactionRecords, { role: 'admin', report: true })));
-  await settle(); assert.ok(text().includes('300.00'));
+  await act(async () => root.render(createElement(TransactionRecords, { role: 'admin' })));
+  await settle(); assert.ok(text().includes('Transaction #1')); assert.ok(text().includes('Transaction #2'));
   await input(document.querySelector('[aria-label="Payment report from date"]'), '2026-10-21');
   assert.ok(text().includes('200.00')); assert.equal(text().includes('Transaction #1'), false);
   const stores = document.querySelector('[aria-label="Report supermarket"]');
   await act(async () => { stores.value = '1'; stores.dispatchEvent(new Event('change', { bubbles: true })); });
-  assert.ok(text().includes('No confirmed transactions match this view.')); assert.ok(text().includes('0.00'));
+  assert.ok(text().includes('No confirmed transactions match this view.'));
 });
 
 test('AI requires a selected supermarket and opens the existing store selector', async () => {

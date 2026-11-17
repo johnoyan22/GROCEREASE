@@ -129,6 +129,23 @@ try {
             $state['completion_inventory_id'] = $item->store_inventory_id;
             file_put_contents($runtime, json_encode($state));
             echo json_encode(['status' => 'ready_for_concurrent_handover']);
+        } elseif ($mode === 'reports') {
+            config(['reports.cache_store' => 'array']);
+            $adminId = User::findOrFail($state['supervisor_id'])->staff_approved_by_user_id;
+            foreach (\App\Services\Reports\ReportAccess::TYPES as $type => [$label, $period, $roles]) {
+                $userId = in_array('supervisor', $roles, true) ? $state['supervisor_id'] : $adminId;
+                $filters = ['type' => $type];
+                if (in_array($type, ['current_stock', 'availability'], true)) $filters['search'] = 'Test product';
+                $result = invokeController(\App\Http\Controllers\Api\ReportsController::class, 'generate', $filters, $userId);
+                $report = $result['data']['report'];
+                if ($result['status'] !== 201) throw new RuntimeException('MySQL report generation failed.');
+                if ($type === 'payments' && array_column($report['metrics'], 'value', 'label')['Gross actual payments collected'] !== 1000) throw new RuntimeException('MySQL payment totals failed.');
+                $request = Request::create('/isolated-report-pdf', 'GET');
+                $request->setUserResolver(fn () => User::findOrFail($userId));
+                $response = app()->call([app(\App\Http\Controllers\Api\ReportsController::class), 'pdf'], ['request' => $request, 'snapshot' => $report['id']]);
+                if ($response->getStatusCode() !== 200 || !str_starts_with($response->getContent(), '%PDF-')) throw new RuntimeException('MySQL snapshot PDF failed.');
+            }
+            echo json_encode(['status' => 'reports_and_pdf_passed']);
         } elseif ($mode === 'claim') {
             $result = invokeController(\App\Http\Controllers\Api\PickupClaimController::class, 'claim', [
                 'method' => 'pin', 'credential' => $state['completion_pin'], 'claiming_as' => 'shopper',

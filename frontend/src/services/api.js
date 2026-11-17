@@ -592,6 +592,26 @@ export function claimOrderPickup(id, details) {
     claimant_check_note: details.claimant_check_note, identity_checked: details.identity_checked, physically_handed_over: details.physically_handed_over });
 }
 
+export function getReportOptions({ signal } = {}) { return sendRequest('/reports/options', { signal, cache: 'no-store' }); }
+export function generateReport(filters, { signal } = {}) {
+  return getXsrfToken().then(token => sendRequest('/reports', { method: 'POST', signal, cache: 'no-store', headers: { 'X-XSRF-TOKEN': token }, body: JSON.stringify(filters) }));
+}
+export function getReportPreview(id, pages = {}, { signal } = {}) {
+  const query = new URLSearchParams(); Object.entries(pages).forEach(([section, page]) => query.set(`pages[${section}]`, page));
+  return sendRequest(`/reports/${encodeURIComponent(id)}?${query}`, { signal, cache: 'no-store' });
+}
+export async function downloadReportPdf(id, { signal } = {}) {
+  const response = await fetch(`${API_URL}/reports/${encodeURIComponent(id)}/pdf`, { signal, credentials: 'include', cache: 'no-store', headers: { Accept: 'application/pdf' } });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const failure = new Error(data.message || 'PDF export failed. Retry while this report is available.'); failure.status = response.status; throw failure;
+  }
+  if (!(response.headers.get('Content-Type') || '').includes('application/pdf')) throw new Error('The server did not return a PDF. Retry the export.');
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const filename = disposition.match(/filename="([A-Za-z0-9_.-]+\.pdf)"/)?.[1] || 'GrocerEase-report.pdf';
+  return { blob: await response.blob(), filename };
+}
+
 export function getCategories({ signal, ...query } = {}) {
   return sendRequest('/staff/categories?' + new URLSearchParams(query), { signal, cache: 'no-store' });
 }

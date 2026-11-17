@@ -17,7 +17,7 @@ import StockVerificationRequests from '../pages/inventory/StockVerificationReque
 import LowStockMonitoring from '../pages/inventory/LowStockMonitoring';
 import SubmitStockUpdate from '../pages/inventory/SubmitStockUpdate';
 import InventoryNotifications from '../pages/inventory/InventoryNotifications';
-import ActivityLog from '../pages/inventory/ActivityLog';
+import InventoryReports from '../pages/inventory/InventoryReports';
 import SupervisorApp from '../components/Supervisor/SupervisorApp';
 
 import AdminLayout from '../components/admin/AdminLayout';
@@ -54,7 +54,8 @@ function AppRoutes() {
         <Route path="/inventory/low-stock" element={<LowStockMonitoring />} />
         <Route path="/inventory/stock-update" element={<SubmitStockUpdate />} />
         <Route path="/inventory/notifications" element={<InventoryNotifications />} />
-        <Route path="/inventory/activity" element={<ActivityLog />} />
+        <Route path="/inventory/reports" element={<InventoryReports />} />
+        <Route path="/inventory/activity" element={<Navigate to="/inventory/reports?type=availability" replace />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['supervisor']}/>}>

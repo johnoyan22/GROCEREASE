@@ -59,7 +59,7 @@ try {
     await context.addCookies([{ name: 'XSRF-TOKEN', value: 'qa', url: origin }]);
     let order = structuredClone(baseOrder), loseClaimResponse = false, previewDelay = 0, resolvedStore = 1, previewLifetime = 3600000;
     const writes = [], errors = [];
-    await context.route('http://localhost:8000/**', async route => {
+    await context.route(/\/(?:api|sanctum)\//, async route => {
       const request = route.request(), path = new URL(request.url()).pathname, method = request.method();
       const headers = { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Credentials': 'true', 'Access-Control-Allow-Headers': 'Accept, Content-Type, X-XSRF-TOKEN', 'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS' };
       const respond = (data, status = 200) => route.fulfill({ status, headers, contentType: 'application/json', body: JSON.stringify(data) });

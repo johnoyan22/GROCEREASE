@@ -38,7 +38,7 @@ try {
           quantity: 2, expiry_date: '2027-01-01', eligible: true, allocation_status: 'reserved' }] }] };
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     await context.addCookies([{ name: 'XSRF-TOKEN', value: 'qa-token', url: origin }]);
-    await context.route('http://localhost:8000/**', async (route) => {
+    await context.route(/\/(?:api|sanctum)\//, async (route) => {
       const request = route.request(), url = new URL(request.url()), path = url.pathname, method = request.method();
       const headers = { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Credentials': 'true', 'Access-Control-Allow-Headers': 'Accept, Content-Type, X-XSRF-TOKEN', 'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS' };
       const respond = (data, status = 200) => route.fulfill({ status, headers, contentType: 'application/json', body: JSON.stringify(data) });

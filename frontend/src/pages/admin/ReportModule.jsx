@@ -1,3 +1,2 @@
-import TransactionRecords from '../../components/orders/TransactionRecords';
-import { Link } from 'react-router-dom';
-export default function ReportModule() { return <div><div className="mb-5 flex flex-wrap gap-3"><Link to="/admin/cop" className="rounded-lg border bg-white px-4 py-2 text-sm">COP Monitoring</Link><Link to="/admin/stores" className="rounded-lg border bg-white px-4 py-2 text-sm">Store Oversight</Link></div><TransactionRecords role="admin" title="Sales and Transaction Reports" report /><p className="mt-5 text-sm text-gray-500">Worker incentive reports await an approved allocation formula. SaaS subscription revenue and invoice issuance are not configured.</p></div>; }
+import ReportsWorkspace from '../../components/reports/ReportsWorkspace';
+export default function ReportModule() { return <ReportsWorkspace role="admin" />; }

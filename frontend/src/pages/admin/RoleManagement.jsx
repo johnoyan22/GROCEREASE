@@ -53,7 +53,7 @@ export default function RoleManagement() {
     { module: 'Stock Management', shoppers: false, supervisors: true, inventory: true, admins: true },
     { module: 'Financial Setup', shoppers: false, supervisors: false, inventory: false, admins: true },
     { module: 'COP Management', shoppers: true, supervisors: true, inventory: true, admins: true },
-    { module: 'Report Module', shoppers: false, supervisors: true, inventory: true, admins: true },
+    { module: 'Reports', shoppers: false, supervisors: true, inventory: true, admins: true },
     { module: 'Settings', shoppers: false, supervisors: false, inventory: false, admins: true },
   ];
 

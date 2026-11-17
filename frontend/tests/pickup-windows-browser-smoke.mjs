@@ -44,7 +44,7 @@ try {
     let history = [], availabilityMode = 'normal';
     const writes = [], errors = []; lastErrors = errors;
     const settings = () => ({ ...policy, store_id: 1, store, closures: [], schedule_history: history, affected_orders: [] });
-    await context.route('http://localhost:8000/**', async (route) => {
+    await context.route(/\/(?:api|sanctum)\//, async (route) => {
       const req = route.request(), url = new URL(req.url()), path = url.pathname, method = req.method();
       const headers = { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Credentials': 'true', 'Access-Control-Allow-Headers': 'Accept, Content-Type, X-XSRF-TOKEN', 'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS' };
       const respond = (data, status = 200) => route.fulfill({ status, headers, contentType: 'application/json', body: JSON.stringify(data) });

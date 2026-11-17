@@ -45,7 +45,7 @@ beforeEach((t) => {
   t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
     calls.push({ url, options });
     if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 });
-    if (url.includes('/pickup-hours')) return availability(new URL(url), options);
+    if (url.includes('/pickup-hours')) return availability(new URL(url, 'http://localhost:5173'), options);
     if (url.includes('/payment-options')) return json({ available: false, channels: [] });
     if (url.includes('/checkout-attempts/')) return attemptMode === 'found' ? json({ order: order() }) : json({ message: 'Not found' }, 404);
     if (url.endsWith('/checkout/quote')) return json({ quote_token: 'reviewed-token', quote: { store: { store_name: 'QA Store', address: 'A' }, items: [], subtotal_centavos: 10000, total_centavos: 10000, service_fee_centavos: 0, payment_method: 'cash_on_pickup', pickup_window_start_at: day + 'T04:00:00Z', pickup_window_end_at: day + 'T05:00:00Z', cop_claim_deadline_at: day + 'T10:00:00Z' } });
