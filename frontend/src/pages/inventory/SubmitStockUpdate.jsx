@@ -1,6 +1,6 @@
 import InventoryLayout from '../../components/inventory/layout/InventoryLayout';
-import StockWorkspace from '../../components/inventory/stock-management/StockWorkspace';
+import BatchCorrections from '../../components/inventory/stock-management/BatchCorrections';
 
 export default function SubmitStockUpdate() {
-  return <InventoryLayout activePage="Submit Stock Update"><StockWorkspace title="Submit Stock Correction" initialView="submit" /></InventoryLayout>;
+  return <InventoryLayout activePage="Submit Stock Update"><BatchCorrections /></InventoryLayout>;
 }

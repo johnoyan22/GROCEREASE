@@ -13,11 +13,13 @@ dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; 
 const { act, createElement } = await import('react');
 const { createRoot } = await import('react-dom/client');
 const { MemoryRouter } = await import('react-router-dom');
-let server, Dashboard, Checkout, AdminDashboard, TransactionRecords, root, userId, products, orders, unread, calls, failCatalog, channels;
-const product = { store_id: 1, store_inventory_id: 7, product_name: 'Rice', category: 'Staples', sku: 'RICE', size: '1kg', barcode: null, selling_price: '67.25', available_stock: 20, max_per_order: 5 };
-const schedule = { pickup_date: '2026-10-21', pickup_start: '10:00', pickup_end: '11:00' };
+let server, Dashboard, Checkout, AdminDashboard, TransactionRecords, AiSettings, root, userId, products, orders, unread, calls, failCatalog, channels, aiCartError, aiReply, aiDeferred, settingsData;
+const product = { store_id: 1, product_id: 3, stock_version: 1, store_inventory_id: 7, product_name: 'Rice', category: 'Staples', sku: 'RICE', size: '1kg', barcode: null, selling_price: '67.25', available_stock: 20, max_per_order: 5 };
+// Always choose a future Philippine-local day; the original fixed October date expired.
+const schedule = { pickup_date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + 86400000)), pickup_start: '10:00', pickup_end: '11:00' };
 const key = '04a87418-5ada-4bee-9c35-3cb608cfa525';
 const text = () => document.body.textContent;
+function aiButton() { return [...document.querySelectorAll('button')].find(el => el.textContent.trim().startsWith('AI Recommendations')); }
 function button(label) { return [...document.querySelectorAll('button')].find(el => el.textContent.trim() === label); }
 async function settle() { await act(async () => { await new Promise(resolve => setTimeout(resolve, 15)); }); }
 async function click(el) { assert.ok(el, 'Expected button'); await act(async () => el.dispatchEvent(new MouseEvent('click', { bubbles: true }))); await settle(); }
@@ -33,13 +35,36 @@ before(async () => {
   Checkout = (await server.ssrLoadModule('/src/components/Shoppers/ShopperCheckout.jsx')).default;
   AdminDashboard = (await server.ssrLoadModule('/src/pages/admin/AdminDashboard.jsx')).default;
   TransactionRecords = (await server.ssrLoadModule('/src/components/orders/TransactionRecords.jsx')).default;
+  AiSettings = (await server.ssrLoadModule('/src/components/Supervisor/SupervisorAiSettings.jsx')).default;
 });
 beforeEach(t => {
   sessionStorage.clear(); userId = 5; products = [product]; orders = []; unread = 0; calls = []; failCatalog = false; channels = [];
+  aiCartError = ''; aiReply = null; aiDeferred = null;
+  settingsData = { enabled: true, max_items: 5, ranking_basis: 'hybrid', included_categories: [], excluded_categories: [], include_alternatives: true, store_id: 1 };
   document.cookie = 'XSRF-TOKEN=test';
   t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
     calls.push({ url, options });
     if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 });
+    if (url.endsWith('/shopper/selected-store')) return json({ store: { store_id: JSON.parse(options.body).store_id } });
+    if (url.endsWith('/supervisor/ai-recommendation/settings')) {
+      if (options.method === 'PUT') { const body = JSON.parse(options.body); settingsData = { ...settingsData, ...body, updated_by: 9, updated_at: '2026-11-09T08:00:00Z' }; }
+      return json({ data: settingsData, store: { store_id: 1, store_name: 'Store A' }, categories: ['Staples'], audit: [], dataset_rule: 'Completed paid fulfilled store purchases.' });
+    }
+    if (url.includes('/ai-recommendations')) {
+      const storeId = Number(url.match(/stores\/(\d+)/)[1]);
+      const items = products.filter(p => p.store_id === storeId).map(p => ({ ...p, name: p.product_name, reason: 'Available in this store' }));
+      if (url.endsWith('/cart-check')) {
+        if (aiCartError) return json({ message: aiCartError }, 409);
+        const id = Number(url.match(/items\/(\d+)/)[1]);
+        return json({ store_id: storeId, product: items.find(p => p.store_inventory_id === id) });
+      }
+      if (url.endsWith('/ask')) {
+        if (aiDeferred) return aiDeferred;
+        return json(aiReply ?? { store_id: storeId, data: { items: items.map(p => ({ ...p, quantity: 1, line_total: Number(p.selling_price) })), total: 67.25, parsed: { budget: 500 } }, meta: { enabled: true, understanding: 'keyword', estimate: true } });
+      }
+      if (url.includes('/alternatives/')) return json({ store_id: storeId, data: items, meta: { enabled: true, alternatives_enabled: true } });
+      return json({ store_id: storeId, data: items, meta: { enabled: true, source: 'available' } });
+    }
     if (url.endsWith('/user')) return json({ id: userId, role: { slug: 'shopper' }, email_verified_at: '2026-10-19', profile: { first_name: 'Shopper', last_name: String(userId) } });
     if (url.endsWith('/dashboard/summary')) return json({ role: 'shopper', server_time: '2026-10-20T08:00:00Z', active_orders: orders.length, recent_active_orders: orders, unread_notifications: unread });
     if (url.endsWith('/shopper/stores')) return json({ stores: [{ store_id: 1, store_name: 'Store A', address: 'A' }, { store_id: 2, store_name: 'Store B', address: 'B' }] });
@@ -192,4 +217,77 @@ test('transaction reports filter genuine records by Philippine confirmation date
   const stores = document.querySelector('[aria-label="Report supermarket"]');
   await act(async () => { stores.value = '1'; stores.dispatchEvent(new Event('change', { bubbles: true })); });
   assert.ok(text().includes('No confirmed transactions match this view.')); assert.ok(text().includes('0.00'));
+});
+
+test('AI requires a selected supermarket and opens the existing store selector', async () => {
+  await mount(); await click(aiButton());
+  assert.ok(text().includes('Select a supermarket before requesting recommendations.'));
+  assert.equal(calls.some(call => call.url.includes('/ai-recommendations')), false);
+  await click(button('Choose supermarket'));
+  assert.ok(text().includes('Browse Store Products'));
+});
+
+test('AI Add to Cart updates My Cart, header and account persistence without duplicate rows', async () => {
+  sessionStorage.setItem('grocerease-cart-5', JSON.stringify({ store_id: 1, items: [] }));
+  await mount(); await click(aiButton()); await click(button('Add to Cart'));
+  assert.ok(document.querySelector('[aria-label="Open My Cart, 1 items"]'));
+  await click(button('Add to Cart'));
+  const saved = JSON.parse(sessionStorage.getItem('grocerease-cart-5'));
+  assert.deepEqual(saved.items, [{ store_inventory_id: 7, quantity: 2 }]);
+  const check = calls.find(call => call.url.endsWith('/cart-check'));
+  assert.deepEqual(JSON.parse(check.options.body), { quantity: 1, expected_price: '67.25', stock_version: 1 });
+  await click(button('View My Cart'));
+  assert.ok(text().includes('134.50')); assert.ok(text().includes('Rice'));
+  await act(async () => root.unmount()); root = null; await mount();
+  assert.ok(document.querySelector('[aria-label="Open My Cart, 2 items"]'));
+  await act(async () => root.unmount()); root = null; userId = 6; await mount();
+  assert.ok(document.querySelector('[aria-label="Open My Cart, 0 items"]'));
+});
+
+test('AI stock, price and quantity conflicts leave the real cart unchanged', async () => {
+  sessionStorage.setItem('grocerease-cart-5', JSON.stringify({ store_id: 1, items: [] }));
+  aiCartError = 'This recommendation changed. Refresh and review its current price and availability.';
+  await mount(); await click(aiButton()); await click(button('Add to Cart'));
+  assert.ok(text().includes(aiCartError));
+  assert.ok(document.querySelector('[aria-label="Open My Cart, 0 items"]'));
+  assert.deepEqual(JSON.parse(sessionStorage.getItem('grocerease-cart-5')).items, []);
+});
+
+test('AI text fallback and alternatives display estimates and never place or change an order', async () => {
+  sessionStorage.setItem('grocerease-cart-5', JSON.stringify({ store_id: 1, items: [] }));
+  await mount(); await click(aiButton());
+  await click(button('Ingredients for spaghetti under ₱500'));
+  assert.ok(text().includes('Local keyword/rule fallback'));
+  assert.ok(text().includes('Estimates only')); assert.ok(text().includes('67.25'));
+  await click([...document.querySelectorAll('button')].find(el => el.textContent === 'View alternatives'));
+  assert.ok(text().includes('Alternatives for Rice'));
+  assert.ok(text().includes('confirmed orders are never changed'));
+  assert.equal(calls.some(call => call.url.endsWith('/shopper/orders') && call.options.method === 'POST'), false);
+});
+
+test('a slow AI response cannot reappear after switching supermarket', async () => {
+  sessionStorage.setItem('grocerease-cart-5', JSON.stringify({ store_id: 1, items: [] }));
+  let finish; aiDeferred = new Promise(resolve => { finish = resolve; });
+  await mount(); await click(aiButton()); await click(button('Breakfast for 4 people'));
+  await click(button('Change supermarket'));
+  const select = document.querySelector('select');
+  await act(async () => { select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })); }); await settle();
+  await click(aiButton());
+  await act(async () => finish(json({ store_id: 1, data: { items: [{ ...product, name: 'OLD STORE RESULT' }] }, meta: { enabled: true } }))); await settle();
+  assert.equal(text().includes('OLD STORE RESULT'), false);
+  assert.equal(text().includes('Rice'), false);
+  assert.deepEqual(JSON.parse(sessionStorage.getItem('grocerease-cart-5')), { store_id: 2, items: [] });
+});
+
+test('Supervisor recommendation settings survive refresh and keep assigned-store ownership', async () => {
+  root = createRoot(document.getElementById('root'));
+  await act(async () => root.render(createElement(AiSettings))); await settle();
+  const count = document.querySelector('input[type="number"]');
+  await input(count, '3'); await click(button('Save recommendation settings'));
+  assert.ok(text().includes('Recommendation settings saved.'));
+  await click(button('Refresh AI settings'));
+  assert.equal(document.querySelector('input[type="number"]').value, '3');
+  const write = calls.find(call => call.url.endsWith('/supervisor/ai-recommendation/settings') && call.options.method === 'PUT');
+  const body = JSON.parse(write.options.body);
+  assert.equal(body.expected_store_id, 1); assert.equal(body.store_id, undefined); assert.equal(body.updated_by, undefined);
 });

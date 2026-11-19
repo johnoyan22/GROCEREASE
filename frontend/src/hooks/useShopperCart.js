@@ -2,11 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { findCheckoutAttempt, getShopperProducts, getShopperStores } from '../services/api';
 import { cartFingerprint, cartSummary, changeCartQuantity, readSavedCart } from '../services/cart';
 import { clearCheckoutAttempt, readCheckoutAttempt } from '../services/checkout';
+import { checkAiCartItem, selectShopperStore } from '../services/habelApi';
 
 // Mounted once inside the account-keyed Shopper workspace. Every cart surface uses this instance.
 export default function useShopperCart(userId) {
   const [cart, setCart] = useState(() => readSavedCart(sessionStorage, userId));
   const latestCart = useRef(cart);
+  const aiAdds = useRef(new Set());
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [stores, setStores] = useState([]);
   const [storesError, setStoresError] = useState('');
   const [storesLoading, setStoresLoading] = useState(true);
@@ -70,7 +74,9 @@ export default function useShopperCart(userId) {
     if (!storeId) return;
     const controller = new AbortController();
     let active = true;
-    getShopperProducts(storeId, { signal: controller.signal }).then(function (result) {
+    selectShopperStore(storeId, { signal: controller.signal }).then(function () {
+      return getShopperProducts(storeId, { signal: controller.signal });
+    }).then(function (result) {
       if (result.store?.store_id !== storeId || !Array.isArray(result.products)) throw new Error('Unexpected store products response.');
       if (active) setCatalog({ store: result.store, products: result.products, loading: false, error: '' });
     }).catch(function (error) {
@@ -112,9 +118,32 @@ export default function useShopperCart(userId) {
     latestCart.current = { ...latestCart.current, items: latestCart.current.items.filter(item => item.store_inventory_id !== itemId) };
     setCart(latestCart.current);
   }
+  async function addRecommendation(recommendation, units = 1) {
+    if (locked || catalog.loading || catalog.error) throw new Error('Wait for the current cart and catalog to finish loading.');
+    if (recommendation.store_id !== storeId || latestCart.current.store_id !== storeId) throw new Error('This recommendation belongs to another supermarket.');
+    if (!Number.isSafeInteger(units) || units < 1) throw new Error('Enter a whole quantity.');
+    const id = recommendation.store_inventory_id;
+    if (aiAdds.current.has(id)) throw new Error('This item is already being checked.');
+    const snapshot = latestCart.current;
+    const desired = (latestCart.current.items.find(item => item.store_inventory_id === id)?.quantity ?? 0) + units;
+    aiAdds.current.add(id);
+    try {
+      const result = await checkAiCartItem(storeId, recommendation, desired);
+      if (!mounted.current || latestCart.current !== snapshot) throw new Error('Your cart or supermarket changed. Review recommendations again.');
+      const product = result.product;
+      if (result.store_id !== storeId || product?.store_id !== storeId || product.store_inventory_id !== id) throw new Error('Unexpected store catalog response.');
+      // The server returned the actual current inventory row. Reuse the cart's existing validator.
+      const updated = changeCartQuantity(latestCart.current, storeId, product, desired);
+      latestCart.current = updated;
+      setCatalog(current => ({ ...current, products: [...current.products.filter(row => row.store_inventory_id !== id), product] }));
+      setCart(updated);
+      setMessage('');
+      return true;
+    } finally { aiAdds.current.delete(id); }
+  }
   const summary = cartSummary(cart, catalog.products);
   const quantity = cart.items.reduce((total, item) => total + item.quantity, 0);
   const pricesAvailable = !catalog.loading && !catalog.error && summary.rows.every(row => row.product && !row.priceError);
   return { cart, storeId, stores, storesError, storesLoading, catalog, summary, quantity, pricesAvailable,
-    message, recovery, locked, refresh, switchStore, changeQuantity, removeItem, orderPlaced };
+    message, recovery, locked, refresh, switchStore, changeQuantity, removeItem, orderPlaced, addRecommendation };
 }

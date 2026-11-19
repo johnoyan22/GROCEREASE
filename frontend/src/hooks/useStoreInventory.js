@@ -11,7 +11,7 @@ export default function useStoreInventory() {
     const controller = new AbortController();
     let active = true;
 
-    getInventoryItems({ signal: controller.signal })
+    getInventoryItems({ signal: controller.signal, includeBatches: false })
       .then((data) => {
         if (!data.store?.store_id || !Array.isArray(data.inventory)) {
           throw new Error('Unexpected inventory response.');

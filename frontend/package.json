@@ -13,6 +13,8 @@
     "test:stores": "node --test tests/admin-stores-api.test.mjs",
     "test:supervisor-staff": "node --test tests/supervisor-staff-api.test.mjs",
     "test:stock": "node --test tests/stock-api.test.mjs",
+    "test:stock-browser": "node tests/stock-browser-smoke.mjs",
+    "test:corrections-browser": "node tests/batch-correction-browser-smoke.mjs",
     "test:shopper": "node --test tests/shopper-cart.test.mjs",
     "test:checkout": "node --test tests/checkout-orders.test.mjs",
     "test:workers": "node --test tests/store-workers.test.mjs",
@@ -39,6 +41,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
+    "playwright": "^1.65.0",
     "vite": "^8.2.0"
   }
 }

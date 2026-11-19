@@ -101,7 +101,7 @@ class StockReportingTest extends TestCase
     private function productPayload(): array
     {
         return [
-            'product_name' => 'New product', 'sku' => 'NEW', 'category' => 'Staples',
+            'product_name' => 'New product', 'selling_unit' => 'piece', 'category' => 'Staples',
             'selling_price' => '60.00', 'status' => 'inactive',
         ];
     }

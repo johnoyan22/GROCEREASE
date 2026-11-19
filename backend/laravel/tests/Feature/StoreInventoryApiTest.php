@@ -95,8 +95,9 @@ class StoreInventoryApiTest extends TestCase
     private function payload(array $overrides = []): array
     {
         return array_replace([
-            'product_name' => 'New Store Product', 'sku' => 'NEW-001', 'barcode' => null,
-            'size' => '1 L', 'category' => 'Beverages', 'selling_price' => '25.50', 'status' => 'inactive',
+            'product_name' => 'New Store Product', 'barcode' => null,
+            'size_amount' => 1, 'size_unit' => 'L', 'selling_unit' => 'bottle',
+            'category' => 'Beverages', 'selling_price' => '25.50', 'status' => 'inactive',
         ], $overrides);
     }
 
@@ -154,16 +155,16 @@ class StoreInventoryApiTest extends TestCase
     public function test_worker_creates_product_details_and_inventory_in_own_store(): void
     {
         $this->signIn($this->worker)
-            ->postJson('/api/inventory/items', $this->payload(['sku' => '  new-001  ']))
+            ->postJson('/api/inventory/items', $this->payload())
             ->assertCreated()->assertJsonPath('inventory.store_id', $this->first->store_id)
             ->assertJsonPath('inventory.product_name', 'New Store Product')
-            ->assertJsonPath('inventory.sku', 'NEW-001')
+            ->assertJsonPath('inventory.sku', fn ($sku) => str_starts_with($sku, sprintf('GE-S%03d-', $this->first->store_id)))
             ->assertJsonPath('inventory.selling_price', '25.50')
             ->assertJsonPath('inventory.hard_stock_qty', 0)
             ->assertJsonPath('inventory.soft_stock_qty', 0)
             ->assertJsonPath('inventory.status', 'inactive');
         $this->assertDatabaseHas('products', [
-            'store_id' => $this->first->store_id, 'sku' => 'NEW-001', 'category' => 'Beverages',
+            'store_id' => $this->first->store_id, 'category' => 'Beverages', 'size' => '1 L',
         ]);
         $this->assertDatabaseCount('products', 3);
         $this->assertDatabaseCount('store_inventory', 1);
@@ -171,7 +172,7 @@ class StoreInventoryApiTest extends TestCase
             ->assertJsonPath('inventory.0.product_name', 'New Store Product');
     }
 
-    public function test_different_stores_can_create_the_same_sku_as_separate_products(): void
+    public function test_different_stores_create_separate_products_with_automatic_skus(): void
     {
         $first = $this->signIn($this->worker)
             ->postJson('/api/inventory/items', $this->payload())
@@ -194,7 +195,7 @@ class StoreInventoryApiTest extends TestCase
         $original = $this->otherRice->fresh()->getAttributes();
         $this->signIn($this->worker)->putJson(
             '/api/inventory/items/'.$own->store_inventory_id,
-            $this->payload(['product_name' => 'Updated A Rice', 'sku' => 'TEST-RICE', 'selling_price' => '72.25', 'status' => 'active'])
+            $this->payload(['product_name' => 'Updated A Rice', 'selling_price' => '72.25', 'status' => 'active'])
         )->assertOk()->assertJsonPath('inventory.product_name', 'Updated A Rice');
         $this->getJson('/api/inventory/items')->assertOk()
             ->assertJsonPath('inventory.0.product_name', 'Updated A Rice')
@@ -249,7 +250,7 @@ class StoreInventoryApiTest extends TestCase
     public function test_invalid_metadata_status_and_missing_fields_are_rejected(): void
     {
         $this->signIn($this->worker)->postJson('/api/inventory/items', [])
-            ->assertUnprocessable()->assertJsonValidationErrors(['product_name', 'sku', 'category', 'selling_price', 'status']);
+            ->assertUnprocessable()->assertJsonValidationErrors(['product_name', 'selling_unit', 'category', 'selling_price', 'status']);
         foreach ([
             ['product_name' => str_repeat('a', 256)], ['sku' => str_repeat('a', 65)],
             ['barcode' => ['invalid']], ['size' => str_repeat('a', 101)],

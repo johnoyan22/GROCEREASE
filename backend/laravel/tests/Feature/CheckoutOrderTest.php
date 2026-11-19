@@ -366,8 +366,9 @@ class CheckoutOrderTest extends TestCase
 
     public function test_new_order_reservation_invalidates_pending_stock_correction(): void
     {
+        app(\App\Services\BatchStock::class)->initialize($this->rice);
         $request = $this->signIn($this->worker)->postJson('/api/inventory/items/'.$this->rice->store_inventory_id.'/stock-adjustments', [
-            'requested_hard_stock_qty' => 110, 'expected_stock_version' => 0, 'reason' => 'Physical recount',
+            'inventory_batch_id' => $this->rice->batches()->value('id'), 'operation_id' => (string) \Illuminate\Support\Str::uuid(), 'requested_remaining_quantity' => 110, 'expected_stock_version' => 0, 'reason' => 'Physical recount',
         ])->assertCreated()->json('adjustment.id');
         $this->place();
         $this->signIn($this->supervisor)->putJson('/api/supervisor/stock-adjustments/'.$request.'/decision', ['decision' => 'approved'])->assertConflict();

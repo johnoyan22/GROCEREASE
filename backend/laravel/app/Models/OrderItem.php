@@ -9,7 +9,7 @@ class OrderItem extends Model
     protected $primaryKey = 'order_item_id';
     protected $fillable = [
         'order_id', 'store_id', 'store_inventory_id', 'product_name', 'sku', 'size',
-        'quantity', 'unit_price_centavos', 'line_total_centavos',
+        'quantity', 'unit_price_centavos', 'line_total_centavos', 'selling_unit',
     ];
 
     protected function casts(): array

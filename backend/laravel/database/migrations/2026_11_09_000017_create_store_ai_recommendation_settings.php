@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('store_ai_recommendation_settings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('store_id')->unique()->constrained('stores', 'store_id')->restrictOnDelete();
+            $table->boolean('enabled')->default(true);
+            $table->unsignedTinyInteger('max_items')->default(5);
+            $table->string('ranking_basis', 30)->default('hybrid');
+            $table->json('included_categories')->nullable();
+            $table->json('excluded_categories')->nullable();
+            $table->boolean('include_alternatives')->default(true);
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+        });
+        Schema::create('ai_recommendation_setting_audits', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('store_id')->constrained('stores', 'store_id')->restrictOnDelete();
+            $table->foreignId('changed_by')->constrained('users')->restrictOnDelete();
+            $table->json('before');
+            $table->json('after');
+            $table->timestamp('created_at');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('ai_recommendation_setting_audits');
+        Schema::dropIfExists('store_ai_recommendation_settings');
+    }
+};

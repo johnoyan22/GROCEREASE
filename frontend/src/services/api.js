@@ -1,7 +1,7 @@
 const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api';
 const BACKEND_URL = API_URL.replace('/api', '');
 
-async function getXsrfToken() {
+export async function getXsrfToken() {
   const response = await fetch(`${BACKEND_URL}/sanctum/csrf-cookie`, {
     credentials: 'include',
   });
@@ -190,16 +190,23 @@ export function getAssignedStore({ signal } = {}) {
   return sendRequest('/staff/store', { signal });
 }
 
-export function getInventoryItems({ signal } = {}) {
-  return sendRequest('/inventory/items', { signal });
+export function getInventoryItems({ signal, includeBatches = true } = {}) {
+  return sendRequest('/inventory/items' + (includeBatches ? '' : '?include_batches=0'), { signal });
+}
+
+export function getInventoryBatches(id, { page = 1, includeEmpty = false, signal } = {}) {
+  const query = new URLSearchParams({ page: String(page), include_empty: includeEmpty ? '1' : '0' });
+  return sendRequest(`/inventory/items/${encodeURIComponent(id)}/batches?${query}`, { signal, cache: 'no-store' });
 }
 
 function productDetails(details) {
   return {
     product_name: details.product_name,
-    sku: details.sku,
     barcode: details.barcode,
     size: details.size,
+    size_amount: details.size_amount,
+    size_unit: details.size_unit,
+    selling_unit: details.selling_unit,
     category: details.category,
     selling_price: details.selling_price,
     status: details.status,
@@ -308,8 +315,33 @@ export async function assignSupervisorStaff(id) {
   });
 }
 
+export function getCorrectionBatches({ page = 1, search = '', product = '', condition = '', includeEmpty = false, signal } = {}) {
+  const query = new URLSearchParams({ page: String(page), search, product: String(product), condition, include_empty: includeEmpty ? '1' : '0' });
+  return sendRequest('/inventory/correction-batches?' + query, { signal, cache: 'no-store' });
+}
+
 export function getStockAdjustments({ signal } = {}) {
   return sendRequest('/inventory/stock-adjustments', { signal });
+}
+
+export function getStockReceipts({ signal } = {}) {
+  return sendRequest('/inventory/stock-receipts', { signal });
+}
+
+export async function submitStockReceipt(id, details) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/inventory/items/${encodeURIComponent(id)}/stock-receipts`, {
+    method: 'POST', headers: { 'X-XSRF-TOKEN': xsrfToken },
+    body: JSON.stringify({ operation_id: details.operation_id, quantity: details.quantity,
+      received_date: details.received_date, expiry_date: details.expiry_date, description: details.description }),
+  });
+}
+
+export async function decideStockReceipt(id, decision, note) {
+  const xsrfToken = await getXsrfToken();
+  return sendRequest(`/supervisor/stock-receipts/${encodeURIComponent(id)}/decision`, {
+    method: 'PUT', headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify({ decision, decision_note: note }),
+  });
 }
 
 export function getLowStockReports({ signal } = {}) {
@@ -326,7 +358,9 @@ export async function submitStockAdjustment(id, details) {
     method: 'POST',
     headers: { 'X-XSRF-TOKEN': xsrfToken },
     body: JSON.stringify({
-      requested_hard_stock_qty: details.requested_hard_stock_qty,
+      inventory_batch_id: details.inventory_batch_id,
+      operation_id: details.operation_id,
+      requested_remaining_quantity: details.requested_remaining_quantity,
       expected_stock_version: details.expected_stock_version,
       reason: details.reason,
     }),

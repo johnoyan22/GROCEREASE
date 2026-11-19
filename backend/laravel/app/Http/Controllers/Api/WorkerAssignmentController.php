@@ -57,6 +57,8 @@ class WorkerAssignmentController extends Controller
             $active = DB::table('active_worker_assignments')->where('order_id', $record->order_id)->lockForUpdate()->first();
             abort_unless($active, 409, 'No active worker task remains for this order.');
             foreach ($record->items()->orderBy('order_item_id')->lockForUpdate()->get() as $item) {
+                $inventory = $access->inventory($context['store'], $item->store_inventory_id);
+                app(\App\Services\BatchStock::class)->validateItem($inventory, $item);
                 abort_unless($item->prepared_qty === $item->quantity, 409, 'Complete the digital item checklist before reviewing preparation.');
             }
             $assignment = WorkerAssignment::whereKey($active->assignment_id)->lockForUpdate()->firstOrFail();
@@ -83,6 +85,8 @@ class WorkerAssignmentController extends Controller
             abort_unless(DB::table('active_worker_assignments')->where('order_id', $record->order_id)->lockForUpdate()->first(), 409, 'Assign an active preparation worker first.');
             foreach ($validated['items'] as $requested) {
                 $item = $record->items()->whereKey($requested['order_item_id'])->lockForUpdate()->firstOrFail();
+                $inventory = $access->inventory($context['store'], $item->store_inventory_id);
+                app(\App\Services\BatchStock::class)->validateItem($inventory, $item);
                 $quantity = (int) $requested['prepared_qty'];
                 abort_if($quantity > $item->quantity, 422, 'Prepared quantity cannot exceed the ordered quantity.');
                 if ($item->prepared_qty === $quantity) continue;

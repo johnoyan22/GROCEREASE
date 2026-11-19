@@ -4,6 +4,7 @@ import {
   createStoreProduct,
   getAssignedStore,
   getInventoryItems,
+  getInventoryBatches,
   updateStoreProduct,
 } from '../src/services/api.js';
 
@@ -25,6 +26,26 @@ function json(data, status = 200) {
     status, headers: { 'Content-Type': 'application/json' },
   });
 }
+
+test('batch pages request only one product and fixed display filters with abort and no cache', async (t) => {
+  const signal = new AbortController().signal;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(url, 'http://localhost:8000/api/inventory/items/7/batches?page=20&include_empty=1');
+    assert.equal(options.signal, signal);
+    assert.equal(options.credentials, 'include');
+    assert.equal(options.cache, 'no-store');
+    return json({ batches: [], pagination: { current_page: 20 } });
+  });
+  await getInventoryBatches(7, { page: 20, includeEmpty: true, signal });
+});
+
+test('inventory UI opts out of full batch arrays without changing default operational reads', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    assert.equal(url, 'http://localhost:8000/api/inventory/items?include_batches=0');
+    return json({ store: { store_id: 1 }, inventory: [] });
+  });
+  await getInventoryItems({ includeBatches: false });
+});
 
 test('inventory reads include the authenticated session and cancellation signal', async (t) => {
   const controller = new AbortController();
@@ -58,13 +79,13 @@ test('creating a store product sends metadata with CSRF and excludes ownership o
     assert.equal(options.headers['X-XSRF-TOKEN'], 'secure=token');
     assert.equal(options.headers['Content-Type'], 'application/json');
     assert.deepEqual(JSON.parse(options.body), {
-      product_name: 'Store Rice', sku: 'RICE-001', barcode: '000123', size: '1 kg',
+      product_name: 'Store Rice', barcode: '000123', size_amount: 1, size_unit: 'kg', selling_unit: 'pack',
       category: 'Staples', selling_price: '25.50', status: 'inactive',
     });
     return json({ message: 'Product added to your store.' }, 201);
   });
   await createStoreProduct({
-    product_name: 'Store Rice', sku: 'RICE-001', barcode: '000123', size: '1 kg',
+    product_name: 'Store Rice', sku: 'FORGED', barcode: '000123', size_amount: 1, size_unit: 'kg', selling_unit: 'pack',
     category: 'Staples', selling_price: '25.50', status: 'inactive',
     store_id: 999, product_id: 999, hard_stock_qty: 99, soft_stock_qty: 88,
   });
@@ -80,7 +101,7 @@ test('updates preserve decimal text and exclude product/store/quantity changes',
     assert.equal(url, 'http://localhost:8000/api/inventory/items/7');
     assert.equal(options.method, 'PUT');
     assert.equal(options.headers['X-XSRF-TOKEN'], 'secure=token');
-    assert.deepEqual(JSON.parse(options.body), { product_name: 'Updated Rice', sku: 'RICE-001', selling_price: '72.25', status: 'active' });
+    assert.deepEqual(JSON.parse(options.body), { product_name: 'Updated Rice', selling_price: '72.25', status: 'active' });
     return json({ message: 'Store price and status saved.' });
   });
   await updateStoreProduct(7, {

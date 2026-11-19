@@ -23,10 +23,10 @@ class StoreInventoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         return $this->withAssignedStore($request, function (Store $store) use ($request) {
-            $request->validate($this->protectedFields());
+            $request->validate([...$this->protectedFields(), 'include_batches' => ['sometimes', 'boolean']]);
             $inventory = $this->ownedInventory($store)->with('product')
                 ->orderBy('store_inventory_id')->get()
-                ->map(fn (StoreInventory $item): array => $this->itemData($item));
+                ->map(fn (StoreInventory $item): array => $this->itemData($item, $request->boolean('include_batches', true)));
 
             return response()->json([
                 'store' => $this->storeData($store),
@@ -35,11 +35,34 @@ class StoreInventoryController extends Controller
         }, true);
     }
 
+    public function batches(Request $request, int $item): JsonResponse
+    {
+        return $this->withAssignedStore($request, function (Store $store) use ($request, $item) {
+            $validated = $request->validate([...$this->protectedFields(),
+                'page' => ['sometimes', 'integer', 'min:1', 'max:2147483647'],
+                'include_empty' => ['sometimes', 'boolean'], 'per_page' => ['prohibited'],
+            ]);
+            $inventory = $this->ownedInventory($store)->whereKey($item)->firstOrFail();
+            $query = $inventory->batches();
+            if (!$request->boolean('include_empty')) $query->where('remaining_quantity', '>', 0);
+            $total = (clone $query)->count();
+            $lastPage = max(1, (int) ceil($total / 5));
+            $page = min((int) ($validated['page'] ?? 1), $lastPage);
+            $batches = $query->orderByRaw('expiry_date IS NULL')->orderBy('expiry_date')->orderBy('id')
+                ->offset(($page - 1) * 5)->limit(5)->get()->map->publicData();
+
+            return response()->json(['store' => $this->storeData($store),
+                'store_inventory_id' => $inventory->store_inventory_id, 'batches' => $batches,
+                'pagination' => ['current_page' => $page, 'last_page' => $lastPage, 'per_page' => 5, 'total' => $total,
+                    'from' => $total ? ($page - 1) * 5 + 1 : null, 'to' => $total ? min($page * 5, $total) : null],
+            ])->header('Cache-Control', 'no-store, private');
+        }, true);
+    }
+
     public function store(Request $request): JsonResponse
     {
         try {
             return $this->withAssignedStore($request, function (Store $store) use ($request) {
-                $this->normalizeSku($request);
                 $validated = $request->validate(array_merge(
                     $this->writeRules(),
                     $this->productRules($store)
@@ -81,14 +104,13 @@ class StoreInventoryController extends Controller
                 $product = Product::forStore($store->store_id)
                     ->whereKey($inventory->product_id)->lockForUpdate()->firstOrFail();
 
-                $this->normalizeSku($request);
                 $validated = $request->validate(array_merge(
                     $this->writeRules(),
                     $this->productRules($store, $product)
                 ));
 
                 $previousStatus = $inventory->status;
-                $product->update($this->metadata($validated));
+                $product->update($this->metadata($validated, $product));
                 $inventory->fill([
                     'selling_price' => $validated['selling_price'],
                     'status' => $validated['status'],
@@ -136,6 +158,7 @@ class StoreInventoryController extends Controller
     private function withAssignedStore(Request $request, Closure $action, bool $allowSupervisor = false): JsonResponse
     {
         return DB::transaction(function () use ($request, $action, $allowSupervisor) {
+            abort_unless(Schema::hasTable('inventory_batches'), 503, 'Product receiving is awaiting database setup. Please contact your administrator.');
             $user = User::query()->with('role')->lockForUpdate()
                 ->findOrFail($request->user()->id);
             $roles = $allowSupervisor ? ['inventory_worker', 'supervisor'] : ['inventory_worker'];
@@ -183,31 +206,35 @@ class StoreInventoryController extends Controller
     private function productRules(Store $store, ?Product $product = null): array
     {
         $required = $product ? ['sometimes', 'required'] : ['required'];
-        $sku = Rule::unique('products', 'sku')->where('store_id', $store->store_id);
-        if ($product) {
-            $sku->ignore($product->product_id, 'product_id');
-        }
 
         return [
             'product_name' => [...$required, 'string', 'max:255'],
-            'sku' => [...$required, 'string', 'max:64', $sku],
+            'sku' => ['prohibited'],
             'barcode' => ['sometimes', 'nullable', 'string', 'max:64'],
             'size' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'size_amount' => ['required_with:size_unit', 'nullable', 'numeric', 'gt:0', 'max:99999999.9999', 'decimal:0,4'],
+            'size_unit' => ['required_with:size_amount', 'nullable', Rule::in(['mg', 'g', 'kg', 'mL', 'L'])],
+            'selling_unit' => [$product ? 'sometimes' : 'required', Rule::in(['piece', 'bottle', 'can', 'pack', 'bag'])],
             'category' => [...$required, 'string', 'max:100'],
         ];
     }
 
-    private function normalizeSku(Request $request): void
+    private function metadata(array $validated, ?Product $product = null): array
     {
-        if (is_string($request->input('sku'))) {
-            $request->merge(['sku' => strtoupper(trim($request->input('sku')))]);
+        if (array_key_exists('size_amount', $validated) || array_key_exists('size_unit', $validated)) {
+            if (!array_key_exists('size_amount', $validated) || !array_key_exists('size_unit', $validated)) {
+                throw ValidationException::withMessages(['size_amount' => 'Provide both size fields, or clear both for a count-only product.']);
+            }
+            $display = $validated['size_amount'] === null ? null : rtrim(rtrim(number_format((float) $validated['size_amount'], 4, '.', ''), '0'), '.').' '.$validated['size_unit'];
+            if (isset($validated['size']) && $validated['size'] !== $display) {
+                throw ValidationException::withMessages(['size' => 'Size must agree with the amount and unit.']);
+            }
+            $validated['size'] = $display;
+        } elseif (array_key_exists('size', $validated) && $validated['size'] !== $product?->size) {
+            throw ValidationException::withMessages(['size' => 'Edit size using the amount and Unit of Measure fields.']);
         }
-    }
-
-    private function metadata(array $validated): array
-    {
         return array_intersect_key($validated, array_flip([
-            'product_name', 'sku', 'barcode', 'size', 'category',
+            'product_name', 'barcode', 'size', 'category', 'size_amount', 'size_unit', 'selling_unit',
         ]));
     }
 
@@ -216,10 +243,14 @@ class StoreInventoryController extends Controller
         return $store->only(['store_id', 'store_name', 'address', 'status']);
     }
 
-    private function itemData(StoreInventory $item): array
+    private function itemData(StoreInventory $item, bool $includeBatches = true): array
     {
+        $eligible = $item->batches()->where('remaining_quantity', '>', 0)->where('status', 'active');
+        $nearestExpiry = (clone $eligible)->where('expiry_date', '>=', now('Asia/Manila')->format('Y-m-d'))->min('expiry_date');
+        $receiptDates = (clone $eligible)->where('expiry_date', $nearestExpiry)->distinct()->orderBy('received_date')
+            ->pluck('received_date')->map(fn ($date) => $date?->format('Y-m-d'));
         return array_merge($item->product->only([
-            'product_id', 'product_name', 'sku', 'barcode', 'size', 'category',
+            'product_id', 'product_name', 'sku', 'barcode', 'size', 'category', 'size_amount', 'size_unit', 'selling_unit',
         ]), [
             'store_inventory_id' => $item->store_inventory_id,
             'store_id' => $item->store_id,
@@ -231,6 +262,11 @@ class StoreInventoryController extends Controller
             'low_stock_threshold' => $item->low_stock_threshold,
             'is_low_stock' => $item->isLowStock(),
             'stock_version' => $item->stock_version,
+            'nearest_expiry' => $nearestExpiry,
+            'expiry_received_dates' => $receiptDates,
+            'has_unknown_expiry' => $item->batches()->where('remaining_quantity', '>', 0)->whereNull('expiry_date')->exists() || (!$item->batches_initialized && $item->hard_stock_qty > 0),
+            'expired_quantity' => (int) $item->batches()->where('expiry_date', '<', now('Asia/Manila')->format('Y-m-d'))->sum('remaining_quantity'),
+            ...($includeBatches ? ['batches' => $item->batches()->orderByRaw('expiry_date IS NULL')->orderBy('expiry_date')->orderBy('id')->get()->map->publicData()] : []),
             'status' => $item->status,
             'updated_at' => $item->updated_at?->toIso8601String(),
         ]);

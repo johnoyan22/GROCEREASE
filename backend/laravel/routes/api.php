@@ -1,5 +1,7 @@
 <?php
 
+require __DIR__.'/habel.php';
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DashboardController;
@@ -174,6 +176,8 @@ Route::middleware(['auth:sanctum', 'role:inventory_worker'])->group(function () 
 Route::get('/inventory/items', [StoreInventoryController::class, 'index'])
     ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])
     ->name('inventory.items.index');
+Route::get('/inventory/items/{item}/batches', [StoreInventoryController::class, 'batches'])
+    ->whereNumber('item')->middleware(['auth:sanctum', 'role:inventory_worker,supervisor']);
 
 Route::middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])->group(function () {
     Route::get('/inventory/low-stock-reports', [StockReportingController::class, 'index'])
@@ -187,9 +191,18 @@ Route::post('/inventory/items/{item}/low-stock-reports', [StockReportingControll
     ->middleware(['auth:sanctum', 'role:inventory_worker', 'throttle:20,1,low-stock-report:'])
     ->name('inventory.low-stock-reports.store');
 
+Route::get('/inventory/correction-batches', [StockAdjustmentController::class, 'batches'])
+    ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])
+    ->name('inventory.correction-batches.index');
 Route::get('/inventory/stock-adjustments', [StockAdjustmentController::class, 'index'])
     ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor'])
     ->name('inventory.stock-adjustments.index');
+Route::get('/inventory/stock-receipts', [\App\Http\Controllers\Api\StockReceiptController::class, 'index'])
+    ->middleware(['auth:sanctum', 'role:inventory_worker,supervisor']);
+Route::post('/inventory/items/{item}/stock-receipts', [\App\Http\Controllers\Api\StockReceiptController::class, 'store'])
+    ->whereNumber('item')->middleware(['auth:sanctum', 'role:inventory_worker', 'throttle:30,1,stock-receipt-create:']);
+Route::put('/supervisor/stock-receipts/{receipt}/decision', [\App\Http\Controllers\Api\StockReceiptController::class, 'decide'])
+    ->whereNumber('receipt')->middleware(['auth:sanctum', 'role:supervisor', 'throttle:30,1,stock-receipt-decision:']);
 Route::post('/inventory/items/{item}/stock-adjustments', [StockAdjustmentController::class, 'store'])
     ->whereNumber('item')
     ->middleware(['auth:sanctum', 'role:inventory_worker', 'throttle:20,1,stock-adjustment-create:'])

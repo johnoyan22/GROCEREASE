@@ -99,6 +99,7 @@ class CheckoutPricing
                 'inventory' => $inventory, 'quantity' => $quantity,
                 'product_name' => $inventory->product->product_name, 'sku' => $inventory->product->sku,
                 'size' => $inventory->product->size,
+                'selling_unit' => $inventory->product->selling_unit,
                 'unit_price_centavos' => $unitPrice, 'line_total_centavos' => $lineTotal,
             ];
         }
@@ -118,6 +119,7 @@ class CheckoutPricing
             $items[] = [
                 'store_inventory_id' => $line['inventory']->store_inventory_id,
                 'product_name' => $line['product_name'], 'sku' => $line['sku'], 'size' => $line['size'],
+                'selling_unit' => $line['selling_unit'],
                 'quantity' => $line['quantity'], 'unit_price_centavos' => $line['unit_price_centavos'],
                 'line_total_centavos' => $line['line_total_centavos'],
             ];

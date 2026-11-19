@@ -57,6 +57,7 @@ class OrderResolutionController extends Controller
             foreach ($record->items()->orderBy('store_inventory_id')->get() as $item) {
                 $inventory = StoreInventory::forStore($record->store_id)->whereKey($item->store_inventory_id)->lockForUpdate()->firstOrFail();
                 abort_if($inventory->soft_stock_qty < $item->quantity, 409, 'Reserved quantities require reconciliation.');
+                app(\App\Services\BatchStock::class)->release($inventory, $item);
                 $inventory->soft_stock_qty -= $item->quantity;
                 $inventory->stock_version += 1;
                 $inventory->save();

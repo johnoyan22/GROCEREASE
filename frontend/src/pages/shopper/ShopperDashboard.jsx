@@ -88,7 +88,7 @@ function ShopperWorkspace({ user, setUser }) {
         {activeTab === 'Dashboard' && <ShopperMainContent setActiveTab={setActiveTab} shopping={shopping} summary={summary} />}
         {activeTab === 'Browse' && <ShopperBrowseProducts shopping={shopping} search={search} setSearch={setSearch} onViewCart={() => setActiveTab('Cart')} />}
         {activeTab === 'Cart' && <ShopperMyCart shopping={shopping} userId={user.id} onContinue={() => setActiveTab('Browse')} />}
-        {activeTab === 'AI' && <ShopperAIRecommendations />}
+        {activeTab === 'AI' && <ShopperAIRecommendations key={shopping.storeId ?? 'no-store'} shopping={shopping} onAddToCart={shopping.addRecommendation} onSelectStore={() => setActiveTab('Browse')} onViewCart={() => setActiveTab('Cart')} />}
         {activeTab === 'Orders' && <ShopperMyOrders />}
         {(activeTab === 'Pickup' || activeTab === 'Pick up Information') && <ShopperPickupInformation />}
         {activeTab === 'Notifications' && <ShopperNotifications />}
