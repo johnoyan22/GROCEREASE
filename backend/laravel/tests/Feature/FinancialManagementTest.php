@@ -202,7 +202,7 @@ class FinancialManagementTest extends TransactionTestCase
     public function test_provider_fee_line_and_pinned_attempt_survives_disabled_method(): void
     {
         Http::preventStrayRequests();
-        config(['payments.mode'=>'test','payments.merchants'=>[$this->store->store_id=>[
+        config(['payments.provider'=>'paymongo','payments.mode'=>'test','payments.merchants'=>[$this->store->store_id=>[
             'merchant_id'=>'org_financefixture','secret_key'=>'sk_test_financefixture','webhook_secret'=>'fixture','methods'=>['gcash','card']]]]);
         $this->store->forceFill(['paid_order_holding_hours'=>24])->save();
         $this->policy();

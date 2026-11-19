@@ -243,7 +243,7 @@ class FinancialLedger
         abort_if($in['fee_enabled'] && ((int) $in['rate_bps'] === 0 || empty(trim($in['approval_note'] ?? ''))), 422, 'An enabled fee requires a positive rate and store approval/reference note.');
         $methods = $in['digital_methods'] ?? null;
         if ($methods !== null) {
-            $merchant = app(PayMongoGateway::class)->merchant($store);
+            $merchant = app(PaymentGateways::class)->merchant($store);
             abort_if(array_diff($methods, $merchant['methods']), 422, 'Only methods supported by the configured merchant can be selected.');
             sort($methods);
         }

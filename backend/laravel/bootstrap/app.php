@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $trustedProxies = array_values(array_filter(array_map('trim', explode(',', (string) env('GROCEREASE_TRUSTED_PROXIES', '')))));
+        foreach ($trustedProxies as $proxy) { if (!filter_var($proxy, FILTER_VALIDATE_IP)) throw new RuntimeException('GROCEREASE_TRUSTED_PROXIES must contain exact trusted proxy IPs, never wildcards.'); }
+        $middleware->trustProxies(at: $trustedProxies, headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);
         $middleware->statefulApi();
         $middleware->trimStrings(except: ['credential']);
         $middleware->api(append: [\App\Http\Middleware\EnsureAccountActive::class]);
@@ -32,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Pickup secrets and order documents must not be cached, including failures.
         $exceptions->respond(function ($response) {
-            if (request()->is('api/admin/cop/*', 'api/admin/cop-strikes*', 'api/admin/cop-strikes/*', 'api/shopper/cop-status', 'api/reports', 'api/reports/*', 'api/supervisor/pickup/*', 'api/supervisor/orders/*/claim', 'api/*/orders/*/summary', 'api/*/orders/*/receipt', 'api/supervisor/order-reference')) {
+            if (request()->is('api/admin/financial/*', 'api/payments/xendit/*', 'api/shopper/orders/*/payment-session', 'api/admin/cop/*', 'api/admin/cop-strikes*', 'api/admin/cop-strikes/*', 'api/shopper/cop-status', 'api/reports', 'api/reports/*', 'api/supervisor/pickup/*', 'api/supervisor/orders/*/claim', 'api/*/orders/*/summary', 'api/*/orders/*/receipt', 'api/supervisor/order-reference')) {
                 $response->headers->set('Cache-Control', 'no-store, private');
                 $response->headers->set('Pragma', 'no-cache');
             }

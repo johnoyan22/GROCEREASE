@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Services\FinancialLedger;
 use App\Services\FinancialPolicy;
-use App\Services\PayMongoGateway;
+use App\Services\PaymentGateways;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -82,9 +82,9 @@ class FinancialManagementController extends Controller
                 $policy = app(FinancialPolicy::class)->current($store);
                 $version = $policy['version'] ? DB::table('store_financial_policy_versions')->find($policy['version']) : null;
                 $result['policy'] = $policy + ['approval_note' => $version?->approval_note];
-                try { $result['merchant_methods'] = app(PayMongoGateway::class)->merchant($store)['methods']; }
+                try { $result['merchant_methods'] = app(PaymentGateways::class)->merchant($store)['methods']; }
                 catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $result['merchant_methods'] = []; }
-                $result['gateway'] = app(PayMongoGateway::class)->options($store);
+                $result['gateway'] = app(PaymentGateways::class)->options($store);
             }
             return $this->response($result);
         });
@@ -135,7 +135,7 @@ class FinancialManagementController extends Controller
             'contribute' => ['id' => $id, 'amount' => ['required', 'string']],
             'policy' => ['expected_version' => $version, 'fee_enabled' => ['required', 'boolean'], 'rate_bps' => ['required', 'integer', 'between:0,10000'],
                 'cap' => ['nullable', 'string'], 'approval_note' => ['nullable', 'string', 'max:500'], 'digital_enabled' => ['required', 'boolean'],
-                'digital_methods' => ['nullable', 'array', 'max:6'], 'digital_methods.*' => ['required', 'string', 'distinct', Rule::in(['card', 'gcash', 'paymaya', 'grab_pay', 'qrph', 'shopee_pay'])]],
+                'digital_methods' => ['nullable', 'array', 'max:6'], 'digital_methods.*' => ['required', 'string', 'distinct', Rule::in(PaymentGateways::METHODS)]],
             default => abort(404), // reserve/release deliberately absent
         };
         $in = $this->only($request, $fields + ['mode' => ['required', Rule::in(['actual', 'test'])], 'idempotency_key' => ['required', 'uuid'], 'reason' => ['required', 'string', 'min:3', 'max:500']]);

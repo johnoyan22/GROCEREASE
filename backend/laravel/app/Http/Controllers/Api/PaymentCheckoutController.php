@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentCheckoutController extends Controller
 {
-    public function options(int $store, PayMongoGateway $gateway): JsonResponse
+    public function options(int $store, \App\Services\PaymentGateways $gateway): JsonResponse
     {
         $record = Store::where('status', 'active')->findOrFail($store);
         $options = $gateway->options($store);
@@ -26,6 +26,7 @@ class PaymentCheckoutController extends Controller
     public function start(Request $request, int $order, PaymentCheckout $checkout): JsonResponse
     {
         $request->validate(['amount' => ['prohibited'], 'payment_status' => ['prohibited'], 'store_id' => ['prohibited'], 'provider_reference' => ['prohibited']]);
+        abort_if($request->all(), 422, 'Payment-session requests cannot supply totals, provider or state fields.');
         return response()->json(['payment' => $checkout->start($order, $request->user()->id)])->header('Cache-Control', 'no-store');
     }
 
@@ -36,7 +37,7 @@ class PaymentCheckoutController extends Controller
 
     public function webhook(Request $request, int $store, PayMongoGateway $gateway, PaymentCheckout $checkout): JsonResponse
     {
-        $merchant = $gateway->merchant($store);
+        $merchant = $gateway->merchant($store, true);
         $gateway->requireSchema();
         $raw = $request->getContent();
         abort_if(strlen($raw) > 262144, 413);
@@ -59,7 +60,7 @@ class PaymentCheckoutController extends Controller
         if (($attributes['type'] ?? null) !== 'checkout_session.payment.paid') return response()->json(['message' => 'Event ignored.']);
         if (isset($attributes['organization_id'])) abort_unless($attributes['organization_id'] === $merchant['merchant_id'], 409, 'Webhook merchant mismatch.');
         $session = $attributes['data'] ?? [];
-        $attempt = PaymentCheckoutAttempt::where('store_id', $store)->whereKey($session['attributes']['metadata']['attempt_id'] ?? '')->firstOrFail();
+        $attempt = PaymentCheckoutAttempt::where('store_id', $store)->where('provider', 'paymongo')->whereKey($session['attributes']['metadata']['attempt_id'] ?? '')->firstOrFail();
         abort_unless($attempt->merchant_id === $merchant['merchant_id'], 409, 'Webhook store mismatch.');
         $checkout->locked($attempt->order_id, null, function ($order, $locked) use ($event, $raw, $session, $gateway, $checkout) {
             $existing = DB::table('payment_webhook_events')->where('provider_event_id', $event['id'])->first();

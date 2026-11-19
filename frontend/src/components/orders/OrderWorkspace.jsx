@@ -86,7 +86,10 @@ function OrderCard({ order, role, workers, onSaved, onFailure, onOpenPickup }) {
 
 export default function OrderWorkspace({ role, title = 'Orders', finalOnly = false }) {
   const orders = useOrders(role);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => {
+    const target = role === 'shopper' && !finalOnly ? new URLSearchParams(window.location.search).get('payment_order') : null;
+    return /^[1-9][0-9]{0,19}$/.test(target ?? '') ? 'GE-ORD-'+target.padStart(8,'0') : '';
+  });
   const [status, setStatus] = useState('');
   const [notice, setNotice] = useState('');
   const [upcoming, setUpcoming] = useState(false);

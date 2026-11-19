@@ -282,7 +282,7 @@ class AdminCopManagementTest extends TransactionTestCase
         $order = Order::findOrFail($this->orderId); $this->travelTo($order->pickup_window_start_at->copy()->addMinute());
         $this->signIn($this->supervisor)->postJson($this->path('claim'), ['method' => 'pin', 'credential' => $secret['pin'], 'claiming_as' => 'shopper', 'identity_checked' => true, 'physically_handed_over' => true])->assertOk();
         $this->assertDatabaseHas('orders', ['order_id' => $this->orderId, 'claim_status' => 'completed']);
-        config(['payments.mode' => 'test', 'payments.merchants' => [$this->store->store_id => ['merchant_id' => 'org_fixture', 'secret_key' => 'sk_test_fixture', 'webhook_secret' => 'whsec_fixture', 'methods' => ['gcash', 'card']]]]);
+        config(['payments.provider' => 'paymongo', 'payments.mode' => 'test', 'payments.merchants' => [$this->store->store_id => ['merchant_id' => 'org_fixture', 'secret_key' => 'sk_test_fixture', 'webhook_secret' => 'whsec_fixture', 'methods' => ['gcash', 'card']]]]);
         $this->store->forceFill(['paid_order_holding_hours' => 24])->save();
         $cart = $this->cart(['payment_method' => 'digital', 'payment_channel' => 'wallet']);
         $quote = $this->signIn($this->shopper)->postJson('/api/shopper/checkout/quote', $cart)->assertOk()->json('quote_token');

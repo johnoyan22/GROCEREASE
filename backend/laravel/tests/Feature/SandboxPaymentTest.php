@@ -14,11 +14,21 @@ use Tests\Support\TransactionTestCase;
 
 class SandboxPaymentTest extends TransactionTestCase
 {
+    public function test_original_paymongo_attempt_continues_after_new_provider_and_mode_switch(): void
+    {
+        $order=$this->digitalOrder();$session=$this->providerSession($order,true);$this->fake($session);
+        config(['payments.provider'=>'xendit','payments.mode'=>'disabled']);
+        app(PaymentCheckout::class)->start($order->order_id,$this->shopper->id);
+        $this->webhook($order,$session)->assertOk();
+        $this->assertSame('paid',$order->fresh()->payment_status);
+        $this->assertSame('paymongo',PaymentCheckoutAttempt::where('order_id',$order->order_id)->value('provider'));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
         Http::preventStrayRequests();
-        config(['payments.mode' => 'test', 'payments.merchants' => [$this->store->store_id => [
+        config(['payments.provider' => 'paymongo', 'payments.mode' => 'test', 'payments.merchants' => [$this->store->store_id => [
             'merchant_id' => 'org_storeA', 'secret_key' => 'sk_test_fixture', 'webhook_secret' => 'whsec_fixture', 'methods' => ['gcash', 'card'],
         ]]]);
         $this->store->forceFill(['paid_order_holding_hours' => 24])->save();

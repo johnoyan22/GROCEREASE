@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\AdminAccountController;
 Route::get('/dashboard/summary', [DashboardController::class, 'summary'])
     ->middleware(['auth:sanctum', 'role:shopper,inventory_worker,supervisor,admin']);
 
+Route::post('/payments/xendit/test/{store}/webhook', \App\Http\Controllers\Api\XenditWebhookController::class)->whereNumber('store');
+
 Route::post('/payments/paymongo/test/{store}/webhook', [PaymentCheckoutController::class, 'webhook'])->whereNumber('store');
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailVerificationController;

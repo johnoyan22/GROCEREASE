@@ -11,9 +11,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PayMongoGateway
 {
-    public function merchant(int $storeId): array
+    public function merchant(int $storeId, bool $existingAttempt = false): array
     {
-        abort_unless(config('payments.mode') === 'test', 503, 'Digital payment is unavailable. Only an authorized test gateway can be enabled.');
+        abort_unless($existingAttempt || config('payments.mode') === 'test', 503, 'Digital payment is unavailable. Only an authorized test gateway can be enabled.');
         $merchant = config('payments.merchants.'.$storeId);
         abort_unless(is_array($merchant) && preg_match('/^org_[a-zA-Z0-9]+$/', $merchant['merchant_id'] ?? '')
             && str_starts_with($merchant['secret_key'] ?? '', 'sk_test_') && !empty($merchant['webhook_secret']), 503, 'This supermarket has no authorized PayMongo test merchant configuration.');
@@ -46,8 +46,8 @@ class PayMongoGateway
 
     public function boundMerchant(PaymentCheckoutAttempt $attempt): array
     {
-        $merchant = $this->merchant($attempt->store_id);
-        abort_unless($attempt->mode === 'test' && $attempt->merchant_id === $merchant['merchant_id']
+        $merchant = $this->merchant($attempt->store_id, true);
+        abort_unless($attempt->provider === 'paymongo' && $attempt->mode === 'test' && $attempt->merchant_id === $merchant['merchant_id']
             && hash_equals($attempt->credential_fingerprint, hash('sha256', $merchant['secret_key'])), 409, 'The payment merchant configuration changed; reconciliation is required.');
         return $merchant;
     }

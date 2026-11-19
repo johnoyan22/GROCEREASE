@@ -169,8 +169,9 @@ class ReportSummariesTest extends TransactionTestCase
             'amount_centavos' => $testOrder->total_centavos, 'evidence_type' => 'provider_callback', 'evidence_reference' => 'SECRET-TEST-EVIDENCE', 'confirmed_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
         $response = $this->signIn($this->supervisor)->report('payments', $this->period())->assertCreated(); $r = $response->json('report'); $m = $this->metrics($r);
         $this->assertSame(13400, $m['Gross actual payments collected']); $this->assertSame(1, $m['Actual verified collections']);
-        $this->assertSame(13400, $m['Test / sandbox collections (excluded from actual)']); $this->assertSame(13400, $m['Legacy / unclassified collections (excluded from actual)']);
-        $this->assertSame(3, array_sum(array_column($this->section($r, 'payments')['rows'], 'awaiting')));
+        $this->assertSame(13400, $m['Test / sandbox collections (excluded from actual)']); $this->assertSame(0, $m['Legacy / unclassified collections (excluded from actual)']);
+        $this->assertSame(1, $m['Records excluded: invalid payment evidence (all modes)']);
+        $this->assertSame(2, array_sum(array_column($this->section($r, 'payments')['rows'], 'awaiting')));
         foreach (['DO-NOT-EXPORT-EVIDENCE', 'SECRET-TEST-EVIDENCE', 'provider_reference', 'cashier_name', 'shopper_name', 'pin_hash', 'qr_token'] as $secret) $this->assertStringNotContainsString($secret, $response->getContent());
         $this->assertStringContainsString('no order total is deducted', $this->section($r, 'refunds')['basis']);
         DB::table('order_payments')->where('order_id', $this->orderId)->update(['cashier_name' => null]);

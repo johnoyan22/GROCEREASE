@@ -138,8 +138,12 @@ abstract class TransactionTestCase extends TestCase
         $order->payment_method = 'digital';
         $order->payment_status = 'paid';
         $order->save();
+        $paymentId = 'pay_fixture'.str_replace('-', '', (string) Str::uuid());
+        \App\Models\PaymentCheckoutAttempt::create(['id'=>(string)Str::uuid(),'order_id'=>$order->order_id,'store_id'=>$order->store_id,
+            'provider'=>'paymongo','merchant_id'=>'org_fixture','credential_fingerprint'=>str_repeat('a',64),'mode'=>'test','amount_centavos'=>$order->total_centavos,
+            'currency'=>'PHP','channels'=>['gcash'],'status'=>'paid','provider_payment_id'=>$paymentId,'expires_at'=>now()->addMinutes(15)]);
         DB::table('order_payments')->insert(['order_id' => $order->order_id, 'method' => 'digital',
-            'verification_source' => 'provider', 'provider' => 'test_provider', 'provider_reference' => (string) Str::uuid(),
+            'verification_source' => 'provider', 'provider' => 'paymongo_test', 'provider_reference' => $paymentId,
             'amount_centavos' => $order->total_centavos, 'evidence_type' => 'provider_callback',
             'evidence_reference' => \Illuminate\Support\Facades\Crypt::encryptString('Test verified callback'),
             'confirmed_at' => now(), 'created_at' => now(), 'updated_at' => now()]);

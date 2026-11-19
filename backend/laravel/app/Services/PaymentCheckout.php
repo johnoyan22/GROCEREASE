@@ -20,8 +20,8 @@ class PaymentCheckout
     // Called in the same transaction as the order and its reservation.
     public function createAttempt(Order $order, string $channel): void
     {
-        $this->gateway->requireSchema();
-        $merchant = $this->gateway->merchant($order->store_id);
+        app(PaymentGateways::class)->selected()->requireSchema();
+        $merchant = app(PaymentGateways::class)->merchant($order->store_id);
         $policy = $order->financial_policy_snapshot ?? app(FinancialPolicy::class)->current($order->store_id);
         $methods = app(FinancialPolicy::class)->methods($policy, $merchant['methods']);
         $channels = $channel === 'card' ? array_values(array_intersect($methods, ['card']))
@@ -29,7 +29,10 @@ class PaymentCheckout
         abort_unless($channels, 422, 'This payment channel is unavailable for the supermarket.');
         $expires = now()->addMinutes((int) config('payments.reservation_minutes'));
         if ($order->pickup_window_start_at->lessThan($expires)) $expires = $order->pickup_window_start_at->copy();
-        PaymentCheckoutAttempt::create(['id' => (string) Str::uuid(), 'order_id' => $order->order_id,
+        $id = (string) Str::uuid();
+        if (config('payments.provider') === 'xendit') app(XenditGateway::class)->requireCreationWindow($expires);
+        PaymentCheckoutAttempt::create(['id' => $id, 'provider' => config('payments.provider'),
+            'provider_reference' => config('payments.provider') === 'xendit' ? 'GE-'.$order->order_id.'-'.$id : null, 'order_id' => $order->order_id,
             'store_id' => $order->store_id, 'merchant_id' => $merchant['merchant_id'],
             'credential_fingerprint' => hash('sha256', $merchant['secret_key']), 'mode' => 'test',
             'amount_centavos' => $order->total_centavos, 'currency' => $order->currency, 'channels' => $channels,
@@ -38,6 +41,7 @@ class PaymentCheckout
 
     public function start(int $orderId, int $shopperId): array
     {
+        if (PaymentCheckoutAttempt::where('order_id', $orderId)->value('provider') === 'xendit') return app(XenditCheckout::class)->start($orderId, $shopperId);
         $this->gateway->requireSchema();
         $claimed = false;
         [$order, $attempt] = $this->locked($orderId, $shopperId, function ($order, $attempt) use (&$claimed) {
@@ -80,6 +84,7 @@ class PaymentCheckout
 
     public function status(int $orderId, int $shopperId): array
     {
+        if (PaymentCheckoutAttempt::where('order_id', $orderId)->value('provider') === 'xendit') return app(XenditCheckout::class)->status($orderId, $shopperId);
         $this->gateway->requireSchema();
         return $this->locked($orderId, $shopperId, function ($order, $attempt) {
             if ($order->payment_status === 'unpaid' && $order->status === 'waiting' && $attempt->provider_session_id) {
@@ -99,6 +104,10 @@ class PaymentCheckout
     {
         $this->gateway->requireSchema();
         $attempt = PaymentCheckoutAttempt::findOrFail($attemptId);
+        if ($attempt->provider === 'xendit') {
+            $this->locked($attempt->order_id, null, fn ($o, $a) => app(XenditCheckout::class)->refreshLocked($o, $a, $sessionId));
+            return;
+        }
         $this->locked($attempt->order_id, null, function ($order, $locked) use ($sessionId) {
             $session = $this->gateway->retrieve($locked, $sessionId);
             $this->validateSession($order, $locked, $session);
@@ -119,6 +128,7 @@ class PaymentCheckout
         abort_unless($order->payment_method === 'digital' && $order->payment_status === 'unpaid'
             && $order->status === 'waiting' && $order->reservation_status === 'active', 409, 'Only an unpaid Waiting digital order can expire or cancel.');
         $attempt = PaymentCheckoutAttempt::where('order_id', $order->order_id)->lockForUpdate()->firstOrFail();
+        if ($attempt->provider === 'xendit') { app(XenditCheckout::class)->cancelLocked($order, $attempt, $actorId, $reason, $expired); return; }
         if ($attempt->provider_session_id) {
             $session = $this->gateway->retrieve($attempt);
             $this->validateSession($order, $attempt, $session);
@@ -136,6 +146,12 @@ class PaymentCheckout
         } else {
             abort_unless($attempt->status === 'pending', 409, 'An uncertain provider creation must be reconciled before stock can be released.');
         }
+        $this->releaseReservationLocked($order, $attempt, $actorId, $reason, $expired);
+    }
+
+    public function releaseReservationLocked(Order $order, PaymentCheckoutAttempt $attempt, ?int $actorId, string $reason, bool $expired): void
+    {
+        abort_unless($order->status === 'waiting' && $order->payment_status === 'unpaid' && $order->reservation_status === 'active', 409, 'Only an active unpaid reservation can be released.');
         foreach ($order->items()->orderBy('store_inventory_id')->get() as $item) {
             $inventory = StoreInventory::forStore($order->store_id)->whereKey($item->store_inventory_id)->lockForUpdate()->firstOrFail();
             abort_if($inventory->soft_stock_qty < $item->quantity, 409, 'Reserved stock requires reconciliation.');
@@ -194,6 +210,7 @@ class PaymentCheckout
 
     public function confirmPaidLocked(Order $order, PaymentCheckoutAttempt $attempt, array $session): void
     {
+        abort_unless($attempt->provider === 'paymongo', 409, 'A PayMongo attempt is required.');
         $this->validateSession($order, $attempt, $session);
         $paid = array_values(array_filter($session['attributes']['payments'] ?? [], fn ($row) => ($row['attributes']['status'] ?? null) === 'paid'));
         abort_unless(count($paid) === 1, 409, 'One authentic paid payment is required.');
@@ -218,7 +235,14 @@ class PaymentCheckout
 
     public function publicAttempt(PaymentCheckoutAttempt $attempt, bool $includeUrl = false): array
     {
-        return ['status' => $attempt->status, 'mode' => 'test', 'expires_at' => $attempt->expires_at->toIso8601String(),
+        $verified = false;
+        if ($attempt->status === 'paid') {
+            $order = Order::find($attempt->order_id);
+            $verified = $order && app(PaymentEvidence::class)->valid($order, DB::table('order_payments')->where('order_id', $attempt->order_id)->first());
+        }
+        return ['status' => $attempt->status, 'mode' => $attempt->mode, 'provider' => $attempt->provider,
+            'verified' => (bool) $verified,
+            'label' => $attempt->provider === 'xendit' ? 'Xendit (Test)' : 'PayMongo (Test)', 'expires_at' => $attempt->expires_at->toIso8601String(),
             'last_error' => $attempt->last_error,
             'checkout_url' => $includeUrl && in_array($attempt->status, ['pending_payment', 'failed_attempt'], true) && $attempt->expires_at->isFuture() ? $attempt->checkout_url : null];
     }

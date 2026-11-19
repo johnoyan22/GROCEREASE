@@ -76,7 +76,7 @@ export default function ShopperDashboard() {
 }
 
 function ShopperWorkspace({ user, setUser }) {
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeTab, setActiveTab] = useState(() => /^[1-9][0-9]{0,19}$/.test(new URLSearchParams(window.location.search).get('payment_order') ?? '') ? 'Orders' : 'Dashboard');
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);

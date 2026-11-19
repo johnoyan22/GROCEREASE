@@ -29,7 +29,7 @@ class CheckoutPricing
             'provider_reference' => ['prohibited'], 'provider' => ['prohibited'], 'amount' => ['prohibited'],
             'status' => ['prohibited'], 'reservation_status' => ['prohibited'],
             ...array_fill_keys(['pickup_preparation_minutes', 'pickup_window_minutes', 'window_duration', 'validation_context', 'context', 'window_label', 'window_id', 'role_id'], ['prohibited']),
-            'financial_policy_snapshot' => ['prohibited'], 'financial_policy' => ['prohibited'], 'cop_policy_version_id' => ['prohibited'], 'cop_policy_snapshot' => ['prohibited'], 'cop' => ['prohibited'], 'cop_policy' => ['prohibited'],
+            'payment_provider' => ['prohibited'], 'gateway_provider' => ['prohibited'], 'gateway_mode' => ['prohibited'], 'financial_policy_snapshot' => ['prohibited'], 'financial_policy' => ['prohibited'], 'cop_policy_version_id' => ['prohibited'], 'cop_policy_snapshot' => ['prohibited'], 'cop' => ['prohibited'], 'cop_policy' => ['prohibited'],
         ]);
         $items = [];
         foreach ($validated['items'] as $item) {
@@ -58,8 +58,13 @@ class CheckoutPricing
         $financial = app(FinancialPolicy::class)->current($store->store_id);
         $digital = ($cart['payment_method'] ?? 'cash_on_pickup') === 'digital';
         if ($digital) {
-            app(PayMongoGateway::class)->requireSchema();
-            $merchant = app(PayMongoGateway::class)->merchant($store->store_id);
+            app(PaymentGateways::class)->selected()->requireSchema();
+            $merchant = app(PaymentGateways::class)->merchant($store->store_id);
+            if (config('payments.provider') === 'xendit') {
+                $expiry = now()->addMinutes((int) config('payments.reservation_minutes'));
+                app(XenditGateway::class)->requireCreationWindow($schedule['pickup_window_start_at']->min($expiry));
+                app(XenditGateway::class)->returnUrl(1, 'success');
+            }
             $methods = app(FinancialPolicy::class)->methods($financial, $merchant['methods']);
             $channels = $cart['payment_channel'] === 'card' ? array_intersect($methods, ['card']) : array_diff($methods, ['card']);
             abort_unless($channels, 422, 'The selected payment channel is unavailable for this supermarket.');
@@ -109,6 +114,7 @@ class CheckoutPricing
         $fee = app(FinancialPolicy::class)->fee($financial, $subtotal);
         abort_if($fee > $maximum - $subtotal, 422, $digital ? 'This fee-inclusive order exceeds the supported centavo range.' : $ceilingMessage.' The maximum includes the service charge.');
         return [
+            'payment_provider' => $digital ? config('payments.provider') : null,
             'financial_policy_snapshot' => $financial,
             'store' => $store, 'lines' => $lines, 'subtotal_centavos' => $subtotal,
             'service_fee_centavos' => $fee, 'total_centavos' => $subtotal + $fee,
@@ -137,6 +143,7 @@ class CheckoutPricing
             'total_centavos' => $pricing['total_centavos'], 'currency' => 'PHP',
             'service_fee_policy' => $pricing['service_fee_policy'],
             'financial_policy' => $pricing['financial_policy_snapshot'],
+            'payment_provider' => $pricing['payment_provider'],
             'payment_method' => $pricing['payment_method'], 'payment_channel' => $pricing['payment_channel'],
             'pickup_window_start_at' => $pricing['schedule']['pickup_window_start_at']->toIso8601String(),
             'pickup_window_end_at' => $pricing['schedule']['pickup_window_end_at']->toIso8601String(),

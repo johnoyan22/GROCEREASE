@@ -93,11 +93,7 @@ class ReportBuilder
 
     private function paymentMode(object $payment): string
     {
-        if ($payment->method === 'cash_on_pickup') return 'actual';
-        // Called only after PaymentEvidence::valid. paymongo_test therefore has a matching
-        // trusted paid test attempt; test_provider is the existing trusted test-fixture source.
-        // Other provider names never establish a real or test mode by substring guessing.
-        return in_array($payment->provider, ['paymongo_test', 'test_provider'], true) ? 'test' : 'legacy';
+        return app(PaymentEvidence::class)->mode($payment);
     }
 
     private function stock(): void
