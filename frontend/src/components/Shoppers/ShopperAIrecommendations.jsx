@@ -41,12 +41,12 @@ function imageErrorMessage(error) {
 
 function ProductCard({ item, onAdd, onAlternatives }) {
   return (
-    <div className="border border-gray-300 rounded-xl p-2.5 flex flex-col justify-between items-center text-center bg-white">
+    <div className="min-w-0 border border-gray-300 rounded-xl p-3 flex flex-col justify-between items-center text-center bg-white">
       <div className="w-full h-24 flex items-center justify-center mb-2 rounded bg-gray-100">
         <Package className="w-8 h-8 text-gray-400" aria-hidden="true" />
       </div>
       <div className="w-full">
-        <h3 className="text-xs font-bold text-black truncate" title={item.name}>{item.name}</h3>
+        <h3 className="text-sm font-bold text-black line-clamp-2" title={item.name}>{item.name}</h3>
         <p className="text-xs font-black text-black mt-0.5">{formatPrice(item.selling_price)}</p>
         {item.size && <p className="text-[10px] text-gray-500">{item.size}</p>}
         <p className="text-[10px] text-gray-500 mt-0.5 truncate" title={item.reason}>{item.reason}</p>
@@ -66,9 +66,9 @@ function ProductCard({ item, onAdd, onAlternatives }) {
 
 // The account-keyed workspace owns the only cart. Store/catalog changes remount this view.
 export default function ShopperAIRecommendations({ shopping, onAddToCart, onSelectStore, onViewCart }) {
-  if (!shopping.storeId) return <main className="p-6"><h1 className="text-xl font-bold">AI Recommendations</h1><p className="my-4">Select a supermarket before requesting recommendations.</p><button onClick={onSelectStore} className="rounded bg-green-700 px-4 py-2 text-white">Choose supermarket</button></main>;
-  if (shopping.catalog.loading || shopping.locked) return <p role="status" className="p-6">Loading your selected supermarket and cart...</p>;
-  if (shopping.catalog.error) return <main className="p-6"><p role="alert">{shopping.catalog.error}</p><button onClick={shopping.refresh}>Refresh products</button></main>;
+  if (!shopping.storeId) return <main className="p-4 sm:p-6"><h1 className="text-xl font-bold">AI Recommendations</h1><p className="my-4">Select a supermarket before requesting recommendations.</p><button onClick={onSelectStore} className="rounded bg-green-700 px-4 py-2 text-white">Choose supermarket</button></main>;
+  if (shopping.catalog.loading || shopping.locked) return <p role="status" className="p-4 sm:p-6">Loading your selected supermarket and cart...</p>;
+  if (shopping.catalog.error) return <main className="p-4 sm:p-6"><p role="alert">{shopping.catalog.error}</p><button onClick={shopping.refresh}>Refresh products</button></main>;
   const signature = JSON.stringify(shopping.catalog.products.map(p => [p.store_inventory_id, p.selling_price, p.available_stock, p.max_per_order]));
   return <StoreAiRecommendations key={shopping.storeId + signature} storeId={shopping.storeId} storeName={shopping.catalog.store?.store_name}
     cartInventoryIds={shopping.cart.items.map(item => item.store_inventory_id)} onAddToCart={onAddToCart} onViewCart={onViewCart} onSelectStore={onSelectStore} />;
@@ -277,8 +277,8 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
   }
 
   return (
-    <div className="flex-1 bg-white min-h-screen flex flex-col font-sans">
-      <main className="p-6 max-w-5xl">
+    <div className="min-w-0 flex-1 bg-white min-h-full flex flex-col font-sans">
+      <main className="min-w-0 w-full p-4 sm:p-6 max-w-5xl">
         {/* Header Title */}
         <div className="mb-4">
           <h1 className="text-sm font-bold text-black">AI Recommendations</h1>
@@ -287,7 +287,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
           </p>
         </div>
 
-        <div className="flex gap-4 mb-4 text-xs text-green-800"><button onClick={onSelectStore} className="underline">Change supermarket</button><button onClick={onViewCart} className="underline">View My Cart</button><button onClick={() => { setAskResult(null); setAlternatives(null); setStatus('loading'); setLoadVersion(v => v + 1); }} className="underline">Refresh recommendations</button></div>
+        <div className="flex flex-wrap gap-3 mb-4 text-xs text-green-800"><button onClick={onSelectStore} className="underline">Change supermarket</button><button onClick={onViewCart} className="underline">View My Cart</button><button onClick={() => { setAskResult(null); setAlternatives(null); setStatus('loading'); setLoadVersion(v => v + 1); }} className="underline">Refresh recommendations</button></div>
         {notice && (
           <p role="status" className="mb-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-900">
             {notice}
@@ -297,7 +297,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
         <fieldset disabled={addBusy} className="border-0 p-0 m-0">
         {/* AI Prompt Container */}
         <div className="border border-gray-400 rounded-xl p-4 mb-6">
-          <div className="flex gap-6 border-b border-gray-200 pb-2 mb-3">
+          <div className="flex gap-4 sm:p-6 border-b border-gray-200 pb-2 mb-3">
             <button
               type="button"
               onClick={() => setActiveTab('ask')}
@@ -332,7 +332,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                   maxLength={500}
                   placeholder="What are you looking for today?"
                   aria-label="What are you looking for today?"
-                  className="w-full text-xs focus:outline-none text-gray-800 placeholder-gray-500"
+                  className="min-w-0 flex-1 text-base sm:text-sm focus:outline-none text-gray-800 placeholder-gray-500"
                 />
                 <button
                   type="button"
@@ -367,10 +367,10 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
           ) : (
             <div className="border border-gray-300 rounded-lg p-4">
               {!imageFile ? (
-                <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-gray-300 p-6 text-center hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-600">
+                <label className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-gray-300 p-4 sm:p-6 text-center hover:bg-gray-50 focus-within:ring-2 focus-within:ring-green-600">
                   <ImageIcon className="w-6 h-6 text-gray-400 mb-2" aria-hidden="true" />
                   <span className="text-xs font-bold text-black">Choose a photo</span>
-                  <span className="text-[11px] text-gray-500 mt-1">
+                  <span className="text-xs text-gray-500 mt-1">
                     A dish, your ingredients, a pantry shelf or a grocery list. JPG, PNG or WebP, up to 4 MB.
                   </span>
                   <input
@@ -381,14 +381,14 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                   />
                 </label>
               ) : (
-                <div className="flex items-start gap-3">
+                <div className="flex flex-col items-start gap-3 sm:flex-row">
                   <img
                     src={imagePreview}
                     alt="Your selected photo"
                     className="h-24 w-24 rounded-lg object-cover border border-gray-200"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-black truncate">{imageFile.name}</p>
+                    <p className="text-sm font-bold text-black line-clamp-2">{imageFile.name}</p>
                     <input
                       type="text"
                       value={imageNote}
@@ -398,7 +398,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
                       aria-label="Optional note about your photo"
                       className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-xs text-gray-800 placeholder-gray-500 focus:outline-none"
                     />
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={submitImage}
@@ -473,16 +473,16 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
               <>
                 <ul className="divide-y divide-green-100">
                   {askItems.map((item) => (
-                    <li key={item.store_inventory_id} className="flex items-center justify-between gap-3 py-2">
+                    <li key={item.store_inventory_id} className="flex flex-col items-start justify-between gap-3 py-3 sm:flex-row sm:items-center">
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-black truncate">
+                        <p className="text-sm font-bold text-black line-clamp-2">
                           {item.name}{item.size ? ` (${item.size})` : ''}
                         </p>
                         <p className="text-[11px] text-gray-600">
                           {item.quantity} &times; {formatPrice(item.selling_price)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
                         <span className="text-xs font-black text-black">{formatPrice(item.line_total)}</span>
                         <button
                           type="button"
@@ -558,7 +558,7 @@ function StoreAiRecommendations({ storeId, storeName, cartInventoryIds, onAddToC
           )}
 
           {status === 'ready' && enabled && items.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {visibleItems.map((item) => (
                 <ProductCard key={item.product_id} item={item} onAdd={handleAdd} onAlternatives={loadAlternatives} />
               ))}

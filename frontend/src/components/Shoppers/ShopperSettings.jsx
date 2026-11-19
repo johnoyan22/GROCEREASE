@@ -9,16 +9,8 @@ import { changeShopperPassword } from '../../services/api';
 // Place ToggleSwitch OUTSIDE ShopperSettings here
 const ToggleSwitch = ({ enabled, setEnabled }) => (
   <div className="flex items-center gap-2">
-    <button 
-      type="button"
-      onClick={() => setEnabled(!enabled)}
-      className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 ${
-        enabled ? 'bg-[#006e00]' : 'bg-gray-300'
-      }`}
-    >
-      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
-        enabled ? 'translate-x-4' : 'translate-x-0'
-      }`} />
+    <button type="button" aria-label="Toggle preference" aria-pressed={enabled} onClick={() => setEnabled(!enabled)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg">
+      <span className={'flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ' + (enabled ? 'bg-[#006e00]' : 'bg-gray-300')}><span className={'h-4 w-4 rounded-full bg-white shadow-md transition-transform ' + (enabled ? 'translate-x-4' : 'translate-x-0')} /></span>
     </button>
     <span className="text-[11px] font-medium text-gray-700">
       {enabled ? 'Enabled' : 'Disabled'}
@@ -172,7 +164,7 @@ async function handlePasswordSubmit(event) {
 }
 
   return (
-    <div className="flex-1 bg-white min-h-screen p-6 font-sans">
+    <div className="flex-1 bg-white min-h-full p-4 sm:p-6 font-sans">
       {/* Page Title Header */}
       <div className="mb-6">
         <h1 className="text-sm font-bold text-black">Settings</h1>
@@ -184,7 +176,7 @@ async function handlePasswordSubmit(event) {
 
       <div className="max-w-5xl space-y-4">
         {/* Top Row Grid */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           
           {/* 1. Account & Security Card */}
           <div className="border border-gray-300 rounded-xl p-4 bg-white">
@@ -196,17 +188,17 @@ async function handlePasswordSubmit(event) {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <User className="w-4 h-4 text-gray-500" />
                   <span>Full Name</span>
                 </div>
-                <span className="font-semibold text-black text-right break-words">
+                <span className="font-semibold text-black min-w-0 max-w-full text-right [overflow-wrap:anywhere]">
                   {fullName || 'Not provided'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Mail className="w-4 h-4 text-gray-500" />
                   <span>Email Address</span>
@@ -217,9 +209,9 @@ async function handlePasswordSubmit(event) {
               </div>
 
               <div className='pb-3 border-b border-gray-200'>
-                <div className='flex items-center justify-between gap-3'>
+                <div className='flex flex-wrap items-center justify-between gap-3'>
                   <div className='flex items-center gap-2 text-gray-700'>
-                    <Lock className='w-4 hh-4 text-gray-500'/>
+                    <Lock className='w-4 h-4 text-gray-500'/>
                     <span>Change Password</span>
                   </div>
                 </div>
@@ -325,7 +317,7 @@ async function handlePasswordSubmit(event) {
                 </form>
               )}
 
-              <div className="flex items-center justify-between gap-3 pt-0.5">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Mail className="w-4 h-4 text-gray-500" />
                   <span>Email Verification</span>
@@ -353,7 +345,7 @@ async function handlePasswordSubmit(event) {
             </div>
 
             <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between pb-1.5 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Bell className="w-4 h-4 text-gray-500" />
                   <span>Order Status Updates</span>
@@ -361,7 +353,7 @@ async function handlePasswordSubmit(event) {
                 <ToggleSwitch enabled={orderStatus} setEnabled={setOrderStatus} />
               </div>
 
-              <div className="flex items-center justify-between pb-1.5 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Bell className="w-4 h-4 text-gray-500" />
                   <span>Payment Alerts</span>
@@ -369,7 +361,7 @@ async function handlePasswordSubmit(event) {
                 <ToggleSwitch enabled={paymentAlerts} setEnabled={setPaymentAlerts} />
               </div>
 
-              <div className="flex items-center justify-between pb-1.5 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Bell className="w-4 h-4 text-gray-500" />
                   <span>Pickup Reminders</span>
@@ -377,7 +369,7 @@ async function handlePasswordSubmit(event) {
                 <ToggleSwitch enabled={pickupReminders} setEnabled={setPickupReminders} />
               </div>
 
-              <div className="flex items-center justify-between pb-1.5 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Bell className="w-4 h-4 text-gray-500" />
                   <span>AI Recommendation Alerts</span>
@@ -385,7 +377,7 @@ async function handlePasswordSubmit(event) {
                 <ToggleSwitch enabled={aiAlerts} setEnabled={setAiAlerts} />
               </div>
 
-              <div className="flex items-center justify-between pt-0.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Bell className="w-4 h-4 text-gray-500" />
                   <span>Alternative Product Updates</span>
@@ -398,7 +390,7 @@ async function handlePasswordSubmit(event) {
         </div>
 
         {/* Bottom Row Grid */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
           {/* 3. Shopping & Pickup Preferences Card */}
           <div className="border border-gray-300 rounded-xl p-4 bg-white">
@@ -410,7 +402,7 @@ async function handlePasswordSubmit(event) {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Store className="w-4 h-4 text-gray-500" />
                   <span className="text-[11px]">Preferred Pickup Branch</span>
@@ -420,7 +412,7 @@ async function handlePasswordSubmit(event) {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <ShoppingCart className="w-4 h-4 text-gray-500" />
                   <span>Alternative Product Suggestion</span>
@@ -428,7 +420,7 @@ async function handlePasswordSubmit(event) {
                 <ToggleSwitch enabled={altSuggestions} setEnabled={setAltSuggestions} />
               </div>
 
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <span className="bg-emerald-100 text-[#006e00] text-[9px] font-bold px-1 py-0.2 rounded flex items-center gap-0.5">
                     <Sparkles className="w-2.5 h-2.5" /> AI
@@ -438,7 +430,7 @@ async function handlePasswordSubmit(event) {
                 <ToggleSwitch enabled={aiRecommendation} setEnabled={setAiRecommendation} />
               </div>
 
-              <div className="flex items-center justify-between pt-0.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Receipt className="w-4 h-4 text-gray-500" />
                   <span>Digital Receipt After Claim</span>
@@ -458,7 +450,7 @@ async function handlePasswordSubmit(event) {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
                   <History className="w-4 h-4 text-gray-500" />
                   <span>Shopping History for Recommendation</span>
@@ -466,7 +458,7 @@ async function handlePasswordSubmit(event) {
                 <ToggleSwitch enabled={historyForRec} setEnabled={setHistoryForRec} />
               </div>
 
-              <div className="flex items-center justify-between pt-0.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Wallet className="w-4 h-4 text-gray-500" />
                   <span>Show Budget Monitoring in Cart</span>
@@ -479,7 +471,7 @@ async function handlePasswordSubmit(event) {
         </div>
 
         {/* Footer Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end pt-2">
           <button
             type="button"
             disabled

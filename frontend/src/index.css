@@ -1,1 +1,62 @@
 @import "tailwindcss";
+
+/* Shopper surfaces size to their content so forms remain reachable above mobile keyboards. */
+:where(.shopper-app, .shopper-auth, .public-site, .shopper-dialog) {
+  overflow-wrap: anywhere;
+}
+
+:where(.shopper-app, .shopper-auth, .public-site, .shopper-dialog) :where(button) {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  touch-action: manipulation;
+}
+
+:where(.shopper-app, .shopper-auth, .public-site, .shopper-dialog) :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  font-size: 1rem;
+}
+
+:where(.shopper-app, .shopper-auth, .public-site, .shopper-dialog) :where(label:has(> input[type="checkbox"]), label:has(> input[type="radio"])) {
+  min-height: 2.75rem;
+}
+
+:where(.shopper-app, .shopper-auth, .public-site, .shopper-dialog) :where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #15803d;
+  outline-offset: 3px;
+}
+
+.shopper-app #shopper-content {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+@media screen and (max-width: 639px) {
+  .shopper-app .shopper-order-items {
+    display: block;
+    min-width: 0;
+  }
+
+  .shopper-app .shopper-order-items thead { display: none; }
+  .shopper-app .shopper-order-items tbody { display: block; }
+  .shopper-app .shopper-order-items tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+  }
+
+  .shopper-app .shopper-order-items td { display: block; padding: 0; }
+  .shopper-app .shopper-order-items td::before {
+    content: attr(data-label);
+    display: block;
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .shopper-app .shopper-order-items td:first-child { grid-column: 1 / -1; font-weight: 600; }
+  .shopper-app .shopper-order-items td:first-child::before { display: none; }
+  .shopper-app .shopper-order-items td:last-child { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 0.75rem; }
+  .shopper-app .shopper-order-items td:last-child::before { margin-bottom: 0; }
+}

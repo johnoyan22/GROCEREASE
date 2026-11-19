@@ -73,9 +73,9 @@ function RegisterForm() {
     }
   };
   return (
-    <div className="w-1/2 border border-gray-300 rounded-3xl p-8 lg:p-10 flex flex-col justify-between bg-white">
+    <div className="min-w-0 w-full border border-gray-300 rounded-2xl p-5 sm:p-8 lg:p-10 flex flex-col justify-between bg-white">
       <div>
-        <h1 className="text-3xl font-black text-center text-black tracking-tight mb-2">
+        <h1 className="text-2xl font-black sm:text-3xl text-center text-black tracking-tight mb-2">
           Create Your Account
         </h1>
       <p className="text-xs font-medium text-center text-gray-500 mb-8">
@@ -83,14 +83,14 @@ function RegisterForm() {
       </p>
 
         {errorMessage && (
-          <div className="mb-4 text-center text-xs font-semibold text-red-600 bg-red-50 border border-red-200 py-2 px-3 rounded-md">
+          <div role="alert" className="mb-4 text-center text-xs font-semibold text-red-600 bg-red-50 border border-red-200 py-2 px-3 rounded-md">
             {errorMessage}
           </div>
         )}
 
         <form onSubmit={handleRegister} className="space-y-4">
          {/* First and Last Name */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label
               htmlFor="firstName"
@@ -102,12 +102,13 @@ function RegisterForm() {
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 id="firstName"
+                autoComplete="given-name"
                 type="text"
                 name="firstName"
                 placeholder="First name"
                 value={formData.firstName}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -124,12 +125,13 @@ function RegisterForm() {
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 id="lastName"
+                autoComplete="family-name"
                 type="text"
                 name="lastName"
                 placeholder="Last name"
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -138,16 +140,18 @@ function RegisterForm() {
 
           {/* Email Address */}
           <div>
-            <label className="block text-xs font-bold text-black mb-1.5">Email Address</label>
+            <label htmlFor="register-email" className="block text-sm font-bold text-black mb-1.5">Email Address</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 type="email"
+                id="register-email"
+                autoComplete="email"
                 name="email"
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -155,16 +159,18 @@ function RegisterForm() {
 
           {/* Phone Number */}
           <div>
-            <label className="block text-xs font-bold text-black mb-1.5">Phone Number</label>
+            <label htmlFor="register-phoneNumber" className="block text-sm font-bold text-black mb-1.5">Phone Number</label>
             <div className="relative">
               <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 type="tel"
+                id="register-phoneNumber"
+                autoComplete="tel"
                 name="phoneNumber"
                 placeholder="09XXXXXXXXX"
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -172,32 +178,36 @@ function RegisterForm() {
 
           {/* Address (optional) */}
           <div>
-            <label className="block text-xs font-bold text-black mb-1.5">Address <span className="text-gray-400 font-normal">(optional)</span></label>
+            <label htmlFor="register-address" className="block text-sm font-bold text-black mb-1.5">Address <span className="text-gray-400 font-normal">(optional)</span></label>
             <div className="relative">
               <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 type="text"
+                id="register-address"
+                autoComplete="street-address"
                 name="address"
                 placeholder="Enter your address"
                 value={formData.address}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
               />
             </div>
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-xs font-bold text-black mb-1.5">Password</label>
+            <label htmlFor="register-password" className="block text-sm font-bold text-black mb-1.5">Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 type="password"
+                id="register-password"
+                autoComplete="new-password"
                 name="password"
                 placeholder="Create your password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
@@ -205,30 +215,32 @@ function RegisterForm() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-xs font-bold text-black mb-1.5">Confirm Password</label>
+            <label htmlFor="register-confirmPassword" className="block text-sm font-bold text-black mb-1.5">Confirm Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 type="password"
+                id="register-confirmPassword"
+                autoComplete="new-password"
                 name="confirmPassword"
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[#006e00] text-gray-800 placeholder-gray-400"
                 required
               />
             </div>
           </div>
 
           {/* Terms Checkbox */}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-start gap-2 pt-1">
             <input
               type="checkbox"
               name="agreeToTerms"
               id="terms"
               checked={formData.agreeToTerms}
               onChange={handleChange}
-              className="w-4 h-4 accent-[#006e00] rounded border-gray-300"
+              className="mt-1 h-4 w-4 shrink-0 accent-[#006e00] rounded border-gray-300"
               required
             />
             <label htmlFor="terms" className="text-[11px] text-gray-600">

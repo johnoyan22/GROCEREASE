@@ -63,7 +63,7 @@ try {
     await page.getByRole('button',{name:'Manage COP Rules',exact:true}).click();
     await page.getByLabel('Maximum order total (PHP)').fill('2000.01');await page.getByLabel('Change reason',{exact:true}).fill('Approved maximum change');
     assert.equal(await page.getByRole('button',{name:'Save COP rules',exact:true}).isDisabled(),true);
-    await page.getByLabel('I reviewed the before/after rules and confirm this global change.').check();await page.getByRole('button',{name:'Save COP rules',exact:true}).click();
+    await page.getByLabel('Confirm rule changes.').check();await page.getByRole('button',{name:'Save COP rules',exact:true}).click();
     await page.getByRole('dialog').waitFor({state:'detached'});assert.equal(writes[0].body.expected_version,1);assert.equal(writes[0].body.maximum_php,'2000.01');
     await page.getByRole('button',{name:'Rule history',exact:true}).click();await page.getByText('Version 2',{exact:false}).waitFor();await page.keyboard.press('Escape');
     await page.getByRole('button',{name:'COP Access',exact:true}).click();await page.getByRole('button',{name:'Manage access',exact:true}).click();await page.getByRole('heading',{name:'COP Access: Zero Strike Shopper'}).waitFor();

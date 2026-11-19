@@ -9,7 +9,7 @@ class ReportPdf
     public function render(array $snapshot): string
     {
         $snapshot = app(ReportPresentation::class)->compact($snapshot);
-        $wide = collect($snapshot['sections'])->contains(fn ($section) => ($section['visible'] ?? true)
+        $wide = $snapshot['type'] === 'financial' || collect($snapshot['sections'])->contains(fn ($section) => ($section['visible'] ?? true)
             && count($section['rows']) > 0 && count($section['columns']) > 7);
         $pdf = Pdf::loadView('reports.summary', ['report' => $snapshot, 'wide' => $wide])->setPaper('a4', $wide ? 'landscape' : 'portrait')->setOptions([
             'isRemoteEnabled' => false, 'isPhpEnabled' => false, 'isJavascriptEnabled' => false,

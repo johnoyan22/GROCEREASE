@@ -29,7 +29,7 @@ class ReportBuilder
             'current_stock' => $this->stock(), 'batches' => $this->batches(),
             'stock_changes' => $this->changes(), 'availability' => $this->availability(),
             'payments' => $this->payments(), 'order_operations', 'store_operations' => $this->operations(),
-            'cop' => $this->cop(),
+            'cop' => $this->cop(), 'financial' => $this->financial(),
         };
         abort_if(array_sum(array_column($this->sections, 'row_count')) > config('reports.max_report_rows'), 422,
             'This report is too large. Narrow the period, store, search or status filters. No rows were truncated.');
@@ -238,6 +238,84 @@ class ReportBuilder
         $this->metric('Recorded availability changes', count($rows));
         $this->section('availability', 'Availability changes', 'Recorded created_at in period, Philippine time. This preserves the old Activity Log: offering availability changes only, not all staff activity or stock movement.',
             $this->columns(['product' => 'Product', 'sku' => 'SKU', 'previous' => 'Previous', 'new' => 'New', 'actor' => 'Actor', 'at' => 'Recorded at']), $rows);
+    }
+
+
+    private function financial(): void
+    {
+        $this->requireTables(['subscription_bills', 'subscription_payments', 'incentive_budgets', 'incentive_movements']);
+        $mode = $this->filters['mode'];
+        $activity = []; $balances = [];
+        $stores = $this->rows($this->scope(DB::table('stores'), 'store_id')->orderBy('store_id'));
+        foreach ($stores as $store) {
+            $activity[$store->store_id] = ['store' => $store->store_name, 'billed' => 0, 'verified' => 0, 'reversed' => 0, 'contributed' => 0, 'returned' => 0, 'fee' => 0];
+            $balances[$store->store_id] = ['store' => $store->store_name, 'overdue' => 0, 'unallocated' => 0, 'available' => 0, 'reserved' => 0, 'net' => 0];
+        }
+        $start = CarbonImmutable::parse($this->filters['from'], 'Asia/Manila')->startOfDay()->utc();
+        $end = CarbonImmutable::parse($this->filters['until'], 'Asia/Manila')->addDay()->startOfDay()->utc();
+        $inPeriod = fn ($at) => $at && CarbonImmutable::parse($at, 'UTC') >= $start && CarbonImmutable::parse($at, 'UTC') < $end;
+        $bills = $this->rows($this->scope(DB::table('subscription_bills')->where('mode', $mode))->orderBy('id'));
+        $payments = $this->rows($this->scope(DB::table('subscription_payments as p'), 'p.store_id')->where('p.mode', $mode)
+            ->leftJoin('subscription_payment_verifications as v', 'v.payment_id', '=', 'p.id')
+            ->leftJoin('subscription_payment_reversals as r', 'r.payment_id', '=', 'p.id')
+            ->select('p.id', 'p.bill_id', 'p.store_id', 'p.amount_centavos', 'p.active_bill_key', 'v.created_at as verified_at', 'r.created_at as reversed_at')->orderBy('p.id'));
+        $paidBills = [];
+        foreach ($payments as $p) {
+            if ($inPeriod($p->verified_at)) $activity[$p->store_id]['verified'] += (int) $p->amount_centavos;
+            if ($p->verified_at && $inPeriod($p->reversed_at)) $activity[$p->store_id]['reversed'] += (int) $p->amount_centavos;
+            if ($p->verified_at && !$p->reversed_at) {
+                $paidBills[$p->bill_id] = true;
+                $balances[$p->store_id]['unallocated'] += (int) $p->amount_centavos;
+            }
+        }
+        foreach ($bills as $bill) {
+            if ($inPeriod($bill->created_at)) $activity[$bill->store_id]['billed'] += (int) $bill->amount_centavos;
+            if ($bill->active_period_key && !isset($paidBills[$bill->id]) && $bill->due_on < $this->now->format('Y-m-d')) $balances[$bill->store_id]['overdue'] += (int) $bill->amount_centavos;
+        }
+        $budgets = $this->rows($this->scope(DB::table('incentive_budgets'))->where('mode', $mode)->orderBy('id'));
+        foreach ($budgets as $budget) {
+            $balances[$budget->store_id]['available'] = (int) $budget->available_centavos;
+            $balances[$budget->store_id]['reserved'] = (int) $budget->reserved_centavos;
+            $balances[$budget->store_id]['net'] = (int) $budget->available_centavos + (int) $budget->reserved_centavos;
+        }
+        $validReceipts = $payments->filter(fn ($p) => $p->verified_at && !$p->reversed_at)->keyBy('id');
+        $movements = $this->rows(DB::table('incentive_movements')->whereIn('budget_id', $budgets->pluck('id'))->orderBy('id'));
+        $budgetStores = $budgets->keyBy('id');
+        foreach ($movements as $m) {
+            $store = $budgetStores[$m->budget_id]->store_id;
+            $field = match ($m->kind) { 'contribution' => 'contributed', 'contribution_return' => 'returned', default => null };
+            if ($field && $inPeriod($m->created_at)) $activity[$store][$field] += (int) $m->amount_centavos;
+            if ($field && $validReceipts->has($m->payment_id)) $balances[$store]['unallocated'] += ($field === 'returned' ? 1 : -1) * (int) $m->amount_centavos;
+        }
+        $fees = $this->rows($this->period($this->scope(DB::table('order_payments as p')->join('orders as o', 'o.order_id', '=', 'p.order_id'), 'o.store_id'), 'p.confirmed_at')
+            ->where('o.service_fee_centavos', '>', 0)->select('p.*')->orderBy('p.id'));
+        $orders = $this->rows(Order::whereIn('order_id', $fees->pluck('order_id')))->keyBy('order_id');
+        $excluded = 0;
+        foreach ($fees as $payment) {
+            $order = $orders->get($payment->order_id);
+            if (!$order || !app(PaymentEvidence::class)->valid($order, $payment) || $order->currency !== 'PHP'
+                || $order->service_fee_centavos > $order->total_centavos || $this->paymentMode($payment) === 'legacy') { $excluded++; continue; }
+            if ($this->paymentMode($payment) === $mode) $activity[$order->store_id]['fee'] += $order->service_fee_centavos;
+        }
+        foreach (['billed' => 'Bills created in period', 'verified' => 'Payments verified in period', 'reversed' => 'Verified payments reversed in period',
+            'contributed' => 'Contributions in period', 'returned' => 'Contribution returns in period', 'fee' => 'Verified service-fee components in period'] as $key => $label) {
+            $value = array_sum(array_column($activity, $key));
+            abort_if($value > 9007199254740991, 422, 'Financial totals exceed the exact report range. Narrow the store scope.');
+            $this->metric($label, $value, 'money');
+        }
+        foreach (['overdue' => 'Current overdue bills', 'unallocated' => 'Current unallocated verified receipts', 'available' => 'Current available funding',
+            'reserved' => 'Current reserved funding', 'net' => 'Current net funded'] as $key => $label) {
+            $value = array_sum(array_column($balances, $key));
+            abort_if($value > 9007199254740991, 422, 'Financial totals exceed the exact report range. Narrow the store scope.');
+            $this->metric($label, $value, 'money');
+        }
+        $this->section('financial_activity', 'Period activity (PHP)', 'Manila dates: bill creation, Admin verification, reversal and movement posting; grocery payment confirmation for service fees.',
+            $this->columns(['store' => 'Store', 'billed' => 'Billed', 'verified' => 'Verified', 'reversed' => 'Reversed', 'contributed' => 'Contrib.', 'returned' => 'Returned', 'fee' => 'Service fee'], ['billed','verified','reversed','contributed','returned','fee']), array_values($activity));
+        $this->section('financial_balances', 'Balances as of generation (PHP)', 'Current snapshot across all dates in the selected mode; not limited to the activity period.',
+            $this->columns(['store' => 'Store', 'overdue' => 'Overdue', 'unallocated' => 'Unallocated receipts', 'available' => 'Available', 'reserved' => 'Reserved', 'net' => 'Net funded'], ['overdue','unallocated','available','reserved','net']), array_values($balances));
+        $this->notes[] = 'Billed includes subsequently voided bills; verified and reversed activity are shown separately. Manual verification is an Admin attestation.';
+        $this->notes[] = 'Fee components are gross verified grocery-payment components, not remittance or profit. No worker earnings or payouts are recorded.';
+        if ($excluded) $this->notes[] = $excluded.' fee records excluded for invalid evidence or unclassified mode.';
     }
 
     private function payments(): void

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../../services/api';
 import useShopperCart from '../../hooks/useShopperCart';
@@ -6,6 +6,7 @@ import useDashboardSummary from '../../hooks/useDashboardSummary';
 import ShopperMyCart from '../../components/Shoppers/ShopperMyCart';
 import ShopperSidebar from '../../components/Shoppers/ShopperSidebar';
 import ShopperHeader from '../../components/Shoppers/ShopperHeader';
+import ShopperMobileNavigation from '../../components/Shoppers/ShopperMobileNavigation';
 import ShopperMainContent from '../../components/Shoppers/ShopperMainContent';
 import ShopperBrowseProducts from '../../components/Shoppers/ShopperBrowseProducts';
 import ShopperAIRecommendations from '../../components/Shoppers/ShopperAIrecommendations';
@@ -77,14 +78,20 @@ export default function ShopperDashboard() {
 function ShopperWorkspace({ user, setUser }) {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [search, setSearch] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
   const shopping = useShopperCart(user.id);
   const summary = useDashboardSummary('shopper', activeTab);
+  useEffect(() => { document.scrollingElement?.scrollTo?.({ top: 0, left: 0, behavior: 'auto' }); }, [activeTab]);
   function searchProducts(value) { setSearch(value); setActiveTab('Browse'); }
-  return <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+  function navigateTab(tab) { setActiveTab(tab); setMenuOpen(false); }
+  return <div className="shopper-app flex min-h-dvh min-w-0 bg-gray-50 font-sans">
+    <a href="#shopper-content" className="sr-only z-50 rounded-lg bg-white p-3 text-green-800 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
     <ShopperSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <ShopperHeader user={user} quantity={shopping.quantity} unreadCount={summary.data?.unread_notifications} onCart={() => setActiveTab('Cart')} onNotifications={() => setActiveTab('Notifications')} onProfile={() => setActiveTab('Profile')} onSearch={searchProducts} />
-      <div className="flex-1 overflow-y-auto">
+    {menuOpen && <ShopperMobileNavigation activeTab={activeTab} onNavigate={navigateTab} onClose={closeMenu} />}
+    <div className="flex min-w-0 flex-1 flex-col">
+      <ShopperHeader user={user} quantity={shopping.quantity} unreadCount={summary.data?.unread_notifications} onCart={() => navigateTab('Cart')} onNotifications={() => navigateTab('Notifications')} onProfile={() => navigateTab('Profile')} onSearch={searchProducts} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} />
+      <div id="shopper-content" tabIndex="-1" className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 outline-none">
         {activeTab === 'Dashboard' && <ShopperMainContent setActiveTab={setActiveTab} shopping={shopping} summary={summary} />}
         {activeTab === 'Browse' && <ShopperBrowseProducts shopping={shopping} search={search} setSearch={setSearch} onViewCart={() => setActiveTab('Cart')} />}
         {activeTab === 'Cart' && <ShopperMyCart shopping={shopping} userId={user.id} onContinue={() => setActiveTab('Browse')} />}

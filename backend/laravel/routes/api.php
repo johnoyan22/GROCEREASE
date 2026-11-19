@@ -94,6 +94,13 @@ Route::put('/admin/password', [ShopperProfileController::class, 'updatePassword'
     ->name('admin.password.update');
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::prefix('admin/financial')->controller(\App\Http\Controllers\Api\FinancialManagementController::class)->group(function () {
+        Route::get('options', 'options');
+        Route::get('{store}', 'index')->whereNumber('store');
+        Route::get('{store}/bills/{bill}', 'billDetails')->whereNumber(['store', 'bill']);
+        Route::post('{store}/{action}', 'write')->whereNumber('store')->middleware('throttle:30,1,financial-write:');
+    });
+
     Route::get('/admin/accounts', [AdminAccountController::class, 'index']);
     Route::put('/admin/accounts/{user}/status', [AdminAccountController::class, 'update'])->whereNumber('user')->middleware('throttle:20,1,account-status:');
     Route::get('/admin/transactions', [TransactionRecordsController::class, 'adminIndex']);

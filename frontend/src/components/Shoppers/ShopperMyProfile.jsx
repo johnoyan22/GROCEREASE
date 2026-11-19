@@ -107,7 +107,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
 
   if (!profile) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <p role="alert" className="text-sm text-red-600">
           Your account does not have a profile. Please contact your administrator.
         </p>
@@ -137,7 +137,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
 
 
   return (
-    <div className="flex-1 bg-white min-h-screen p-6 font-sans">
+    <div className="flex-1 bg-white min-h-full p-4 sm:p-6 font-sans">
       {/* Title Header */}
       <div className="mb-6">
         <h1 className="text-sm font-bold text-black">My Profile</h1>
@@ -157,9 +157,9 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
         )}
 
          <section className="border border-green-600 rounded-xl p-5 bg-white shadow-xs">
-          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center bg-gray-50">
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center mb-5 pb-4 border-b border-gray-100">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="w-10 h-10 shrink-0 rounded-full border border-gray-300 flex items-center justify-center bg-gray-50">
                 <User className="w-5 h-5 text-gray-700" />
               </div>
               <div>
@@ -186,7 +186,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
             <form onSubmit={handleSave} className="space-y-4">
               <fieldset
                 disabled={isSaving}
-                className="grid gap-4 sm:grid-cols-2"
+                className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2"
               >
                 <legend className="sr-only">Edit personal details</legend>
 
@@ -233,7 +233,7 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
                 Email and phone number cannot be changed through this form.
               </p>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={cancelEditing}
@@ -252,11 +252,11 @@ export default function ShopperMyProfile({ user, onProfileUpdated }) {
               </div>
             </form>
           ) : (
-            <dl className="grid gap-4 sm:grid-cols-2">
+            <dl className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
               {savedDetails.map(([label, value]) => (
-                <div key={label} className="border-b border-gray-200 pb-3">
+                <div key={label} className="min-w-0 border-b border-gray-200 pb-3">
                   <dt className="text-xs text-gray-600">{label}</dt>
-                  <dd className="mt-1 text-sm font-semibold text-black break-words">
+                  <dd className="mt-1 text-sm font-semibold text-black [overflow-wrap:anywhere]">
                     {value}
                   </dd>
                 </div>

@@ -22,8 +22,10 @@ class PaymentCheckout
     {
         $this->gateway->requireSchema();
         $merchant = $this->gateway->merchant($order->store_id);
-        $channels = $channel === 'card' ? array_values(array_intersect($merchant['methods'], ['card']))
-            : array_values(array_diff($merchant['methods'], ['card']));
+        $policy = $order->financial_policy_snapshot ?? app(FinancialPolicy::class)->current($order->store_id);
+        $methods = app(FinancialPolicy::class)->methods($policy, $merchant['methods']);
+        $channels = $channel === 'card' ? array_values(array_intersect($methods, ['card']))
+            : array_values(array_diff($methods, ['card']));
         abort_unless($channels, 422, 'This payment channel is unavailable for the supermarket.');
         $expires = now()->addMinutes((int) config('payments.reservation_minutes'));
         if ($order->pickup_window_start_at->lessThan($expires)) $expires = $order->pickup_window_start_at->copy();

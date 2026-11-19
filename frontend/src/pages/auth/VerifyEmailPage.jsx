@@ -164,8 +164,8 @@ function VerifyEmailPage() {
   const linkStatus = searchParams.get('status');
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-12 flex items-center justify-center">
-      <section className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 sm:p-10 shadow-sm">
+    <main className="shopper-auth min-h-dvh bg-gray-50 px-4 py-8 sm:py-12 flex items-center justify-center">
+      <section className="w-full min-w-0 max-w-lg break-words rounded-2xl border border-gray-200 bg-white p-6 sm:p-10 shadow-sm">
         <Link to="/" className="text-xl font-black text-[#006e00]">
           GrocerEase
         </Link>

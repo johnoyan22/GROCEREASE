@@ -1,23 +1,24 @@
+import { Link } from 'react-router-dom';
 import grocerease from '../../assets/images/grocerease.png';
 import Logo from '../../assets/images/Logo.png';
 
 function RegisterHero() {
   return (
-    <div className="w-1/2 flex flex-col justify-between">
+    <div className="flex min-w-0 flex-col justify-between">
       {/* Brand Logo */}
-      <div className="flex items-center gap-3">
-        <img src={Logo} alt="GrocerEase Logo" className="w-14 h-14 object-contain" />
-        <span className="text-3xl font-black text-black tracking-tight">
+      <Link to="/" aria-label="GrocerEase home" className="flex w-fit items-center gap-2">
+        <img src={Logo} alt="GrocerEase Logo" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
+        <span className="text-2xl font-black sm:text-3xl text-black tracking-tight">
           Grocer<span className="text-[#006e00]">Ease</span>
         </span>
-      </div>
+      </Link>
 
       {/* Full Grocery Produce Image */}
-      <div className="w-full flex-1 flex items-center justify-center p-4 bg-transparent">
+      <div className="hidden w-full flex-1 items-center justify-center p-4 lg:flex">
         <img 
           src={grocerease} 
           alt="Fresh Produce Shelves" 
-          className="w-full h-full object-contain"
+          className="max-h-[70dvh] w-full object-contain"
         />
       </div>
     </div>

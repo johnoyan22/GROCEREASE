@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { downloadReportPdf, generateReport, getReportOptions, getReportPreview } from '../../services/api';
+import { formatCentavos } from '../../services/money';
 
 const field = 'mt-1 w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm';
 const button = 'rounded-lg bg-green-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50';
-const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 const time = new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' });
-const display = (value, format) => format === 'money' ? money.format(value / 100) : String(value ?? '');
+const display = (value, format) => format === 'money' ? formatCentavos(value) : String(value ?? '');
 
 export default function ReportsWorkspace(props) { return <ReportWorkspace key={props.role+':'+(props.initialType ?? '')} {...props} />; }
 
@@ -22,7 +22,7 @@ function ReportWorkspace({ role, initialType }) {
       if (!active.current) return;
       if (!Array.isArray(result.types) || result.types.length === 0) throw new Error('Report options are unavailable.');
       const first = result.types.some(type => type.id === initialType) ? initialType : result.types[0].id;
-      setOptions(result); setFilters({ type: first, from: result.from, until: result.until, store_id: '', search: '', status: 'all', mode: 'all' });
+      setOptions(result); setFilters({ type: first, from: result.from, until: result.until, store_id: '', search: '', status: 'all', mode: first === 'financial' ? 'actual' : 'all' });
     }).catch(failure => { if (active.current && failure.name !== 'AbortError') setError(failure.message); });
     return () => { active.current = false; controller.abort(); operation.current?.abort(); };
   }, [initialType, role, version]);
@@ -37,7 +37,7 @@ function ReportWorkspace({ role, initialType }) {
   const inventory = ['current_stock', 'batches', 'stock_changes', 'availability'].includes(filters?.type);
   function change(name, value) {
     revision.current++; operation.current?.abort(); setPending(false); setError(''); setReportKey('');
-    setFilters(current => ({ ...current, [name]: value, ...(name === 'type' ? { status: 'all', search: '', mode: 'all' } : {}) }));
+    setFilters(current => ({ ...current, [name]: value, ...(name === 'type' ? { status: 'all', search: '', mode: value === 'financial' ? 'actual' : 'all' } : {}) }));
   }
   function accessFailure(failure) {
     if ([401, 403, 410].includes(failure.status)) { setReport(null); setReportKey(''); setExpired(true); }
@@ -52,7 +52,7 @@ function ReportWorkspace({ role, initialType }) {
       ...(role === 'admin' && filters.store_id ? { store_id: Number(filters.store_id) } : {}),
       ...(inventory ? { search: filters.search } : {}),
       ...(['batches', 'stock_changes'].includes(filters.type) ? { status: filters.status } : {}),
-      ...(filters.type === 'payments' ? { mode: filters.mode } : {}),
+      ...(['payments', 'financial'].includes(filters.type) ? { mode: filters.mode } : {}),
     };
     setPending(true); setError('');
     try {
@@ -97,7 +97,7 @@ function ReportWorkspace({ role, initialType }) {
         {role === 'admin' && <label className="text-sm">Store<select aria-label="Report store" value={filters.store_id} onChange={event => change('store_id', event.target.value)} className={field}><option value="">All authorized stores</option>{options.stores.map(store => <option key={store.store_id} value={store.store_id}>{store.store_name}</option>)}</select></label>}
         {inventory && <label className="text-sm">Search product / SKU{filters.type === 'batches' || filters.type === 'stock_changes' ? ' / batch' : ''}<input aria-label="Report search" type="search" maxLength="100" value={filters.search} onChange={event => change('search', event.target.value)} className={field} /></label>}
         {['batches', 'stock_changes'].includes(filters.type) && <label className="text-sm">Status<select aria-label="Report status" value={filters.status} onChange={event => change('status', event.target.value)} className={field}>{(filters.type === 'batches' ? ['all', 'active', 'expired', 'depleted', 'on_hold', 'inactive', 'expiring_30'] : ['all', 'approved', 'pending', 'rejected']).map(status => <option key={status} value={status}>{status === 'expiring_30' ? 'Expiring within 30 days' : status.replaceAll('_', ' ')}</option>)}</select></label>}
-        {filters.type === 'payments' && <label className="text-sm">Payment mode<select aria-label="Report payment mode" value={filters.mode} onChange={event => change('mode', event.target.value)} className={field}><option value="all">All modes, separated</option><option value="actual">Actual collections</option><option value="test">Test / Sandbox only</option><option value="legacy">Legacy / unclassified only</option></select></label>}
+        {['payments', 'financial'].includes(filters.type) && <label className="text-sm">Payment mode<select aria-label="Report payment mode" value={filters.mode} onChange={event => change('mode', event.target.value)} className={field}>{filters.type === 'payments' && <option value="all">All modes, separated</option>}<option value="actual">Actual collections</option><option value="test">Test / Sandbox only</option>{filters.type === 'payments' && <option value="legacy">Legacy / unclassified only</option>}</select></label>}
       </fieldset>
       <p className="mt-4 text-xs text-gray-600">{type?.period ? 'Philippine dates. Maximum 93 days.' : 'Current snapshot.'}</p>
       <div className="mt-4 flex flex-wrap gap-3"><button disabled={pending || exporting} className={button}>{pending ? 'Loading report...' : 'Generate Report'}</button><button type="button" disabled={!report || stale || pending || exporting} onClick={exportPdf} className="rounded-lg border border-green-700 px-4 py-2.5 text-sm font-semibold text-green-800 disabled:opacity-50">{exporting ? 'Exporting PDF...' : 'Export PDF'}</button></div>

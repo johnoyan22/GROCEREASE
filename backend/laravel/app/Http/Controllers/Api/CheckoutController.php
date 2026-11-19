@@ -99,6 +99,7 @@ class CheckoutController extends Controller
                 'status' => 'waiting', 'payment_method' => $cart['payment_method'], 'payment_status' => 'unpaid',
                 'reservation_status' => 'active', 'currency' => 'PHP',
                 'subtotal_centavos' => $resolved['subtotal_centavos'], 'service_fee_centavos' => $resolved['service_fee_centavos'],
+                'financial_policy_snapshot' => $resolved['financial_policy_snapshot'],
                 'total_centavos' => $resolved['total_centavos'], 'service_fee_policy' => $resolved['service_fee_policy'],
                 'idempotency_key' => $key, 'request_hash' => $hash,
                 'cop_policy_version_id' => $policy['version'], 'cop_policy_snapshot' => $policy,

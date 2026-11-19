@@ -4,7 +4,7 @@ import usePaymentOptions from '../../hooks/usePaymentOptions';
 import useCopStatus from '../../hooks/useCopStatus';
 import OrderPayment from '../orders/OrderPayment';
 import { OrderDocumentDialog } from '../orders/OrderReceipt';
-import { clearCheckoutAttempt, readCheckoutAttempt, saveCheckoutAttempt } from '../../services/checkout';
+import { clearCheckoutAttempt, createCheckoutKey, readCheckoutAttempt, saveCheckoutAttempt } from '../../services/checkout';
 import { checkoutPickupWindows, checkoutWindowFits, pickupWindowLabel, pickupWindowValue } from '../../services/pickup-scheduling';
 
 const money = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -42,6 +42,9 @@ function CheckoutDialog({ cart, userId, onPlaced, onClose }) {
 
   useEffect(function () {
     const element = dialog.current;
+    const previous = document.activeElement;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     element.showModal();
     const controller = new AbortController();
     let active = true;
@@ -64,7 +67,7 @@ function CheckoutDialog({ cart, userId, onPlaced, onClose }) {
       } finally { if (active) setLoading(false); }
     }
     recover();
-    return function () { active = false; controller.abort(); element.close(); };
+    return function () { active = false; controller.abort(); element.close(); document.body.style.overflow = overflow; if (previous?.isConnected) previous.focus({ preventScroll: true }); };
   }, [cart, userId, onPlaced]);
 
   useEffect(function () {
@@ -164,7 +167,7 @@ function CheckoutDialog({ cart, userId, onPlaced, onClose }) {
     submitting.current = true; setPending(true); setError('');
     let started = false;
     try {
-      if (!key.current) key.current = crypto.randomUUID();
+      if (!key.current) key.current = createCheckoutKey();
       saveCheckoutAttempt(sessionStorage, userId, reviewCart, key.current);
       started = true;
       const result = await createCheckoutOrder(reviewCart, review.quote_token, key.current);
@@ -180,7 +183,7 @@ function CheckoutDialog({ cart, userId, onPlaced, onClose }) {
     } finally { submitting.current = false; setPending(false); }
   }
 
-  return <>{showSummary && order && <OrderDocumentDialog orderId={order.order_id} role="shopper" summary onClose={() => { setShowSummary(false); dialog.current.showModal(); }} />}<dialog aria-labelledby="checkout-dialog-title" ref={dialog} onCancel={function (event) { event.preventDefault(); if (!pending && !uncertain) onClose(); }} className="fixed inset-0 m-auto max-h-[90vh] w-[min(95vw,640px)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-xl backdrop:bg-black/40">
+  return <>{showSummary && order && <OrderDocumentDialog orderId={order.order_id} role="shopper" summary onClose={() => { setShowSummary(false); dialog.current.showModal(); }} />}<dialog aria-labelledby="checkout-dialog-title" ref={dialog} onCancel={function (event) { event.preventDefault(); if (!pending && !uncertain) onClose(); }} className="shopper-dialog fixed inset-0 m-auto max-h-[92dvh] w-[min(95vw,640px)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-xl backdrop:bg-black/40">
     <h2 id="checkout-dialog-title" className="text-xl font-bold">Checkout</h2>
     {order ? <div className="mt-5"><p role="status" className="rounded-lg bg-green-50 p-4 text-green-800">{order.order_reference} is recorded at {order.store_name}.</p><p className="mt-3 text-sm">Status: {order.status}. Payment: {order.payment_status}. Total: {money.format(order.total_centavos / 100)}.</p><p className="mt-3 text-sm">{order.reservation_status === 'active' ? (order.payment_method === 'digital' ? 'Items are reserved pending sandbox payment. Complete payment before preparation; track progress in My Orders.' : 'Items are reserved. Track preparation in My Orders. Pay the store cashier before verified physical handover.') : 'This existing order has already been completed or canceled. See My Orders for details.'}</p>{order.pickup_window_start_at && order.pickup_window_end_at && <p className="mt-3 text-sm font-semibold">Pickup: {localTime.format(new Date(order.pickup_window_start_at))} to {localTime.format(new Date(order.pickup_window_end_at))}</p>}<OrderPayment order={order} /><button type="button" onClick={() => { dialog.current.close(); setShowSummary(true); }} className="mr-3 mt-5 rounded-lg border border-green-700 px-4 py-2 text-green-800">View / Print Order Summary</button><button type="button" onClick={onClose} className="mt-5 rounded-lg bg-green-700 px-4 py-2 text-white">Done</button></div> : <>
       {loading && <p role="status" className="mt-4 text-sm">Checking any previous checkout attempt...</p>}
@@ -200,8 +203,8 @@ function CheckoutDialog({ cart, userId, onPlaced, onClose }) {
         </div>
         <button disabled={loading || pending || (!uncertain && !selectionValid)} className="rounded-lg border border-green-700 px-4 py-2 text-sm text-green-800">{uncertain ? 'Check original order and refresh review' : 'Review current prices and pickup schedule'}</button>
       </form>
-      {review && <div className="mt-5 border-t border-gray-200 pt-4"><h3 className="font-semibold">{review.quote.store.store_name}</h3><p className="text-sm text-gray-600">{review.quote.store.address}</p><p className="mt-3 text-sm font-semibold">Pickup: {localTime.format(new Date(review.quote.pickup_window_start_at))}–{localTime.format(new Date(review.quote.pickup_window_end_at))}</p><p className="mt-1 text-xs text-gray-600">{review.quote.payment_method === 'digital' ? 'The store-approved 24/48-hour prepaid holding policy applies after the order is Ready. Collect during store hours.' : 'COP claiming deadline: ' + localTime.format(new Date(review.quote.cop_claim_deadline_at)) + '. Late claiming requires a Ready order and the store to be open.'}</p><ul className="mt-3 divide-y divide-gray-100">{review.quote.items.map(function (item) { return <li key={item.store_inventory_id} className="py-3 text-sm"><p className="font-semibold">{item.product_name} {item.size}</p><p>{item.quantity} × {money.format(item.unit_price_centavos / 100)} = {money.format(item.line_total_centavos / 100)}</p></li>; })}</ul><p className="mt-3 text-sm">Groceries: {money.format(review.quote.subtotal_centavos / 100)}</p><p className="mt-2 text-sm">Service fee: {money.format(review.quote.service_fee_centavos / 100)}. A service-fee policy remains pending supermarket approval.</p><p className="mt-3 text-lg font-bold">Total: {money.format(review.quote.total_centavos / 100)}</p><p className="mt-2 text-sm">{review.quote.payment_method === 'digital' ? 'Sandbox digital payment. No COP maximum applies. Payment remains pending until trusted provider confirmation.' : 'Cash on Pickup - Maximum ' + money.format(review.quote.cop_policy.maximum_centavos / 100) + ' - Payment remains unpaid at Checkout.'}</p></div>}
-      <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={pending || loading || !review || uncertain} onClick={placeOrder} className="rounded-lg bg-green-700 px-4 py-2.5 text-sm text-white disabled:opacity-50">{pending ? 'Checking...' : 'Confirm / Place Order'}</button><button type="button" disabled={pending || loading || uncertain} onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm disabled:opacity-50">Back to cart</button></div>
+      {review && <div className="mt-5 border-t border-gray-200 pt-4"><h3 className="font-semibold">{review.quote.store.store_name}</h3><p className="text-sm text-gray-600">{review.quote.store.address}</p><p className="mt-3 text-sm font-semibold">Pickup: {localTime.format(new Date(review.quote.pickup_window_start_at))}–{localTime.format(new Date(review.quote.pickup_window_end_at))}</p><p className="mt-1 text-xs text-gray-600">{review.quote.payment_method === 'digital' ? 'The store-approved 24/48-hour prepaid holding policy applies after the order is Ready. Collect during store hours.' : 'COP claiming deadline: ' + localTime.format(new Date(review.quote.cop_claim_deadline_at)) + '. Late claiming requires a Ready order and the store to be open.'}</p><ul className="mt-3 divide-y divide-gray-100">{review.quote.items.map(function (item) { return <li key={item.store_inventory_id} className="py-3 text-sm"><p className="font-semibold">{item.product_name} {item.size}</p><p>{item.quantity} × {money.format(item.unit_price_centavos / 100)} = {money.format(item.line_total_centavos / 100)}</p></li>; })}</ul><p className="mt-3 text-sm">Groceries: {money.format(review.quote.subtotal_centavos / 100)}</p><p className="mt-2 text-sm">Service fee: {money.format(review.quote.service_fee_centavos / 100)}. Calculated on groceries and included in the total.</p><p className="mt-3 text-lg font-bold">Total: {money.format(review.quote.total_centavos / 100)}</p><p className="mt-2 text-sm">{review.quote.payment_method === 'digital' ? 'Sandbox digital payment. No COP maximum applies. Payment remains pending until trusted provider confirmation.' : 'Cash on Pickup - Maximum ' + money.format(review.quote.cop_policy.maximum_centavos / 100) + ' - Payment remains unpaid at Checkout.'}</p></div>}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap"><button type="button" disabled={pending || loading || !review || uncertain} onClick={placeOrder} className="rounded-lg bg-green-700 px-4 py-2.5 text-sm text-white disabled:opacity-50">{pending ? 'Checking...' : 'Confirm / Place Order'}</button><button type="button" disabled={pending || loading || uncertain} onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm disabled:opacity-50">Back to cart</button></div>
     </>}
   </dialog></>;
 }

@@ -12,16 +12,19 @@ export function OrderDocumentDialog({ orderId, role, summary = false, onClose })
   const [error, setError] = useState('');
   useEffect(function () {
     const element = dialog.current;
+    const previous = document.activeElement;
+    const overflow = document.body.style.overflow;
+    if (role === 'shopper') document.body.style.overflow = 'hidden';
     element.showModal();
     const controller = new AbortController();
     let active = true;
     const read = summary ? getOrderSummary : getOrderReceipt;
     read(orderId, role, { signal: controller.signal }).then(function (result) { if (active) setDocumentData(summary ? result.summary : result.receipt); })
       .catch(function (failure) { if (active && failure.name !== 'AbortError') setError(failure.message); });
-    return function () { active = false; controller.abort(); element.close(); };
+    return function () { active = false; controller.abort(); element.close(); if (role === 'shopper') { document.body.style.overflow = overflow; if (previous?.isConnected) previous.focus({ preventScroll: true }); } };
   }, [orderId, role, summary]);
   const order = documentData?.order;
-  return createPortal(<dialog id="order-document" ref={dialog} aria-labelledby="document-title" onCancel={event => { event.preventDefault(); onClose(); }} className="fixed inset-0 m-auto max-h-[90dvh] w-[min(95vw,760px)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-xl backdrop:bg-black/40">
+  return createPortal(<dialog id="order-document" ref={dialog} aria-labelledby="document-title" onCancel={event => { event.preventDefault(); onClose(); }} className={(role === 'shopper' ? 'shopper-dialog ' : '') + "fixed inset-0 m-auto max-h-[90dvh] w-[min(95vw,760px)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-xl backdrop:bg-black/40"}>
     <style>{`@media print {
       @page { size: A4; margin: 15mm; }
       html, body { height: auto !important; overflow: visible !important; }

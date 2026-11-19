@@ -248,10 +248,10 @@ class CheckoutOrderTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
-    public function test_unapproved_fee_activation_fails_closed(): void
+    public function test_legacy_global_flag_cannot_activate_store_fees(): void
     {
         config(['checkout.service_fee.enabled' => true]);
-        $this->signIn($this->shopper)->postJson('/api/shopper/checkout/quote', $this->cart())->assertStatus(503);
+        $this->signIn($this->shopper)->postJson('/api/shopper/checkout/quote', $this->cart())->assertOk()->assertJsonPath('quote.service_fee_centavos', 0);
         $this->assertDatabaseCount('orders', 0);
     }
 

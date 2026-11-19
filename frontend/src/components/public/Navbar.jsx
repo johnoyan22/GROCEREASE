@@ -1,51 +1,20 @@
-import { Link } from "react-router-dom";
-import Logo from "../../assets/images/Logo.png";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Menu, Search, X } from 'lucide-react';
+import Logo from '../../assets/images/Logo.png';
 
-function Navbar() {
-  return (
-    <nav className="flex items-center justify-between px-8 py-4 bg-white border-b-1 border-gray-300">
-      <div className="flex items-center text-3xl font-bold">
-        <img src={Logo} className="h-14 w-14 object-contain" alt="Logo" />
-        Grocer<span className="text-green-700">Ease</span>
-      </div>
-
-      <div className="flex items-center gap-6 text-xl font-semibold">
-        <Link to="/">Home</Link>
-        <a href="#">Products</a>
-        <a href="#">Categories</a>
-      </div>
-
-      <div className="relative">
-        <input 
-          type="text" 
-          placeholder="Search for products"
-          className="w-80 rounded-md border-2 border-gray-400 px-3 py-2 text-sm pr-10"
-        />
-
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </div>
-
-      <div className="flex items-center gap-6">
-        <Link 
-          to="/login" 
-          className="rounded-md border-2 border-green-700 px-5 py-2 text-xs text-green-700 font-semibold flex items-center justify-center hover:bg-green-50 transition"
-        >
-          LOGIN
-        </Link>
-        
-        <Link 
-          to="/register" 
-          className="rounded-md border-2 border-red-500 bg-red-500 px-5 py-2 text-xs text-white font-semibold flex items-center justify-center hover:bg-red-600 transition"
-        >
-          REGISTER
-        </Link>
-      </div>
-    </nav>
-  );
+export default function Navbar() {
+  const [open, setOpen] = useState(false);
+  const link = 'flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold hover:bg-green-50';
+  return <header className="border-b border-gray-200 bg-white"><nav aria-label="Main navigation" className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:gap-5 lg:py-4">
+    <Link to="/" aria-label="GrocerEase home" className="mr-auto flex shrink-0 items-center gap-1 text-xl font-black sm:text-2xl"><img src={Logo} className="h-10 w-10 object-contain sm:h-12 sm:w-12" alt="" />Grocer<span className="-ml-1 text-green-700">Ease</span></Link>
+    <Link to="/login" className="flex min-h-11 items-center justify-center rounded-lg border border-green-700 px-3 text-sm font-semibold text-green-700 hover:bg-green-50 lg:order-3">Login</Link>
+    <button type="button" aria-label={open ? 'Close navigation' : 'Open navigation'} aria-expanded={open} aria-controls="public-navigation" onClick={() => setOpen(value => !value)} className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 lg:hidden">{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
+    <div id="public-navigation" className={(open ? 'flex' : 'hidden') + ' w-full flex-col gap-3 border-t border-gray-100 pt-3 lg:order-2 lg:flex lg:w-auto lg:min-w-0 lg:flex-1 lg:flex-row lg:items-center lg:border-0 lg:pt-0'}>
+      <div className="flex flex-wrap gap-1" onClick={() => setOpen(false)}><Link className={link} to="/">Home</Link><a className={link} href="#products">Products</a><a className={link} href="#categories">Categories</a></div>
+      <div role="search" className="relative min-w-0 lg:ml-auto lg:max-w-64 lg:flex-1"><input aria-label="Search for products" type="search" placeholder="Search for products" className="min-h-11 w-full rounded-lg border border-gray-300 py-2 pl-3 pr-10 text-base sm:text-sm" /><Search aria-hidden="true" className="pointer-events-none absolute right-3 top-3 h-5 w-5 text-gray-500" /></div>
+      <Link to="/register" className="flex min-h-11 items-center justify-center rounded-lg bg-red-500 px-4 text-sm font-semibold text-white hover:bg-red-600 lg:hidden">Register</Link>
+    </div>
+    <Link to="/register" className="order-4 hidden min-h-11 items-center justify-center rounded-lg bg-red-500 px-4 text-sm font-semibold text-white hover:bg-red-600 lg:flex">Register</Link>
+  </nav></header>;
 }
-
-export default Navbar;

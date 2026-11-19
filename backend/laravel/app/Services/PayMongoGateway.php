@@ -37,7 +37,8 @@ class PayMongoGateway
         try {
             $merchant = $this->merchant($storeId);
             $this->requireSchema();
-            return ['available' => true, 'mode' => 'test', 'channels' => $merchant['methods'], 'reason' => null];
+            $methods = app(FinancialPolicy::class)->methods(app(FinancialPolicy::class)->current($storeId), $merchant['methods']);
+            return ['available' => count($methods) > 0, 'mode' => 'test', 'channels' => $methods, 'reason' => $methods ? null : 'Digital checkout is disabled by the store payment policy.'];
         } catch (HttpException $error) {
             return ['available' => false, 'mode' => 'disabled', 'channels' => [], 'reason' => $error->getMessage()];
         }
@@ -58,6 +59,7 @@ class PayMongoGateway
         $items = $order->items()->orderBy('order_item_id')->get()->map(fn ($item) => [
             'name' => $item->product_name, 'amount' => $item->unit_price_centavos, 'quantity' => $item->quantity, 'currency' => 'PHP',
         ])->all();
+        if ($order->service_fee_centavos > 0) $items[] = ['name' => 'Service charge', 'amount' => $order->service_fee_centavos, 'quantity' => 1, 'currency' => 'PHP'];
         return $this->request($merchant, 'POST', '/v2/checkout_sessions', ['data' => ['attributes' => [
             'line_items' => $items, 'payment_method_types' => $attempt->channels,
             'reference_number' => 'GE-'.$order->order_id.'-'.$attempt->id,

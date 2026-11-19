@@ -19,6 +19,7 @@ class ReportAccess
         'payments' => ['Payments and Pickup Summary', true, ['admin', 'supervisor']],
         'order_operations' => ['Order Operations Summary', true, ['supervisor']],
         'store_operations' => ['Store Operations Summary', true, ['admin']],
+        'financial' => ['Admin Financial Summary', true, ['admin']],
         'cop' => ['COP Summary', true, ['admin']],
     ];
 
@@ -70,7 +71,11 @@ class ReportAccess
         $inventory = in_array($input['type'], ['current_stock', 'batches', 'stock_changes', 'availability'], true);
         abort_if(isset($input['search']) && !$inventory, 422, 'Search is not applicable to this report.');
         if ($inventory) $filters['search'] = trim($input['search'] ?? '');
-        abort_if(isset($input['mode']) && $input['type'] !== 'payments', 422, 'Payment mode is only available on payment reports.');
+        abort_if(isset($input['mode']) && !in_array($input['type'], ['payments', 'financial'], true), 422, 'Payment mode is only available on payment reports.');
+        if ($input['type'] === 'financial') {
+            abort_if(isset($input['mode']) && !in_array($input['mode'], ['actual', 'test'], true), 422, 'Select Actual or Test for financial reports.');
+            $filters['mode'] = $input['mode'] ?? 'actual';
+        }
         if ($input['type'] === 'payments') $filters['mode'] = $input['mode'] ?? 'all';
         $statuses = match ($input['type']) {
             'batches' => ['all', 'active', 'expired', 'depleted', 'on_hold', 'inactive', 'expiring_30'],

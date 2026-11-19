@@ -45,7 +45,7 @@ tr { page-break-inside: avoid; }
 </div>
 <table class="totals"><tbody>
 @foreach(array_chunk(array_values(array_filter($report['metrics'], fn ($metric) => $metric['visible'] ?? true)), 2) as $metrics)
-<tr>@foreach($metrics as $metric)<td><strong>{{ $metric['label_short'] ?? $metric['label'] }}:</strong> {{ $metric['format'] === 'money' ? 'PHP '.number_format($metric['value'] / 100, 2) : number_format($metric['value']) }}</td>@endforeach</tr>
+<tr>@foreach($metrics as $metric)<td><strong>{{ $metric['label_short'] ?? $metric['label'] }}:</strong> {{ $metric['format'] === 'money' ? \App\Services\FinancialMoney::format($metric['value']) : number_format($metric['value']) }}</td>@endforeach</tr>
 @endforeach
 </tbody></table>
 @foreach($report['sections'] as $section)
@@ -57,7 +57,7 @@ tr { page-break-inside: avoid; }
 @else
 <table class="{{ count($section['rows']) === 1 ? 'keep-table' : '' }}"><thead><tr>@foreach($section['columns'] as $column)<th style="width: {{ 100 * $column['weight'] / array_sum(array_column($section['columns'], 'weight')) }}%">{{ $column['label'] }}</th>@endforeach</tr></thead><tbody>
 @foreach($section['rows'] as $row)<tr>
-@foreach($section['columns'] as $column)<td>{{ $column['format'] === 'money' ? 'PHP '.number_format($row[$column['key']] / 100, 2) : ($row[$column['key']] ?? '') }}</td>@endforeach
+@foreach($section['columns'] as $column)<td>{{ $column['format'] === 'money' ? \App\Services\FinancialMoney::format($row[$column['key']]) : ($row[$column['key']] ?? '') }}</td>@endforeach
 </tr>@endforeach
 </tbody></table>
 @endif

@@ -28,6 +28,8 @@ class ReportPresentation
         }
         unset($metric);
         $headings = [
+            'financial_activity' => ['Period activity (PHP)', 'Bill creation / Admin verification / reversal / movement / grocery payment confirmation dates (PH).'],
+            'financial_balances' => ['Balances as of generation (PHP)', 'Current across all dates in this mode.'],
             'stock' => ['Stock summary', ''], 'batches' => ['Batches and expiry', ''],
             'impacts' => ['Approved stock changes', 'Approval date'],
             'requests' => ['Stock requests', 'Approved: decision date. Pending/rejected: request date.'],

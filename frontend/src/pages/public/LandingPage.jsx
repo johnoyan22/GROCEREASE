@@ -4,10 +4,12 @@ import CategorySection from "../../components/public/CategorySection";
 
 function LandingPage() {
     return (
-        <div className="">
+        <div className="public-site min-h-dvh bg-white">
             <Navbar />
-            <HeroSection />
-            <CategorySection />
+            <main className="px-4 pb-10 sm:px-6">
+                <HeroSection />
+                <CategorySection />
+            </main>
         </div>
     );
 }

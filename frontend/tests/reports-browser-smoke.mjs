@@ -8,7 +8,7 @@ import { createServer } from 'vite';
 const output = fileURLToPath(new URL('../../tmp/reports-browser/', import.meta.url)); await mkdir(output, { recursive: true });
 const pdf = await readFile(new URL('../../tmp/pdfs/reports/payments.pdf', import.meta.url));
 const entry = '/__reports-ui.js';
-const server = await createServer({ logLevel: 'error', server: { host: '127.0.0.1', port: 0, hmr: false }, plugins: [{
+const server = await createServer({ logLevel: 'error', cacheDir: output+'vite-cache', server: { host: '127.0.0.1', port: 0, hmr: false }, plugins: [{
   name: 'reports-ui-fixture', resolveId(id) { if (id === entry) return '\0reports-ui.js'; },
   load(id) { if (id !== '\0reports-ui.js') return; return `import React from 'react';import{createRoot}from'react-dom/client';import'/src/index.css';import Reports from'/src/components/reports/ReportsWorkspace.jsx';
     const role=new URLSearchParams(location.search).get('role');createRoot(document.getElementById('root')).render(React.createElement(React.StrictMode,null,React.createElement('main',{className:'mx-auto max-w-6xl p-4'},React.createElement(Reports,{role}))));`; },
@@ -19,7 +19,7 @@ const catalog = [
   ['current_stock','Current Stock Summary',false,['inventory_worker','supervisor']],['batches','Batches and Expiry',false,['inventory_worker','supervisor']],
   ['stock_changes','Stock Requests and Changes',true,['inventory_worker','supervisor']],['availability','Availability Activity',true,['inventory_worker','supervisor']],
   ['payments','Payments and Pickup Summary',true,['admin','supervisor']],['order_operations','Order Operations Summary',true,['supervisor']],
-  ['store_operations','Store Operations Summary',true,['admin']],['cop','COP Summary',true,['admin']],
+  ['store_operations','Store Operations Summary',true,['admin']],['cop','COP Summary',true,['admin']],['financial','Admin Financial Summary',true,['admin']],
 ];
 let browser;
 try {
@@ -77,6 +77,12 @@ try {
     empty=false;delayed=true;const previous=writes.length;await generate.click();await page.waitForFunction(count=>document.querySelector('button[type=submit]')?.disabled!==false,previous).catch(()=>{});
     await type.selectOption(role==='admin'?'cop':'batches');await page.waitForTimeout(650);assert.equal(await exportButton.isDisabled(),true);delayed=false;
     await generate.click();await page.getByRole('button',{name:'Next Saved grouped summary page',exact:true}).waitFor();expiredPdf=true;await exportButton.click();await page.getByRole('alert').filter({hasText:'expired'}).waitFor();assert.equal(await page.getByRole('region',{name:'Generated report',exact:true}).count(),0);
+    if(role==='admin'){
+      expiredPdf=false;await type.selectOption('financial');
+      const mode=page.getByLabel('Report payment mode',{exact:true});assert.deepEqual(await mode.locator('option').evaluateAll(nodes=>nodes.map(n=>n.value)),['actual','test']);assert.equal(await mode.inputValue(),'actual');
+      await generate.click();await page.getByRole('region',{name:'Generated report',exact:true}).waitFor();assert.equal(writes.at(-1).mode,'actual');
+      await mode.selectOption('test');assert.equal(await exportButton.isDisabled(),true);await generate.click();await page.getByRole('region',{name:'Generated report',exact:true}).waitFor();assert.equal(writes.at(-1).mode,'test');
+    }
     assert.deepEqual(errors,[]);await context.close();console.log(`PASS ${role} ${width}px: types/scope, snapshot pagination/totals, stale/reverted/late filters, empty state, PDF retry/download/expiry and overflow.`);
   }
 }finally{await browser?.close();await server.close();}

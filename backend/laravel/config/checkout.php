@@ -3,10 +3,6 @@
 return [
     // Technical lifetime of a price-confirmation token, not a pickup/no-show deadline.
     'quote_lifetime_seconds' => 600,
-    'service_fee' => [
-        'status' => 'pending_partner_approval',
-        'enabled' => false,
-        'rate_basis_points' => null,
-        'cap_centavos' => null,
-    ],
+    // Service charge and new digital-method rules use store_financial_policy_versions.
+    // Missing policy defaults to fee OFF; no global fee flag is consulted.
 ];

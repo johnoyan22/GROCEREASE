@@ -522,6 +522,15 @@ async function writeAction(path, method, body) {
   return sendRequest(path, { method, headers: { 'X-XSRF-TOKEN': xsrfToken }, body: JSON.stringify(body) });
 }
 
+export function getFinancialOptions({ signal } = {}) { return sendRequest('/admin/financial/options', { signal, cache: 'no-store' }); }
+export function getFinancialWorkspace(store, filters, { signal } = {}) {
+  return sendRequest(`/admin/financial/${encodeURIComponent(store)}?${new URLSearchParams(filters)}`, { signal, cache: 'no-store' });
+}
+export function getFinancialBill(store, bill, mode, page = 1, { signal } = {}) {
+  return sendRequest(`/admin/financial/${encodeURIComponent(store)}/bills/${encodeURIComponent(bill)}?${new URLSearchParams({ mode, page })}`, { signal, cache: 'no-store' });
+}
+export function postFinancial(store, action, body) { return writeAction(`/admin/financial/${encodeURIComponent(store)}/${encodeURIComponent(action)}`, 'POST', body); }
+
 export function getStorePickupSettings(id, { signal } = {}) {
   return sendRequest(`/admin/stores/${encodeURIComponent(id)}/pickup-settings`, { signal, cache: 'no-store' });
 }

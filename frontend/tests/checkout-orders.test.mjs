@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { createCopOrder, getCheckoutQuote, findCheckoutAttempt, getShopperOrders, getStaffOrders, cancelShopperOrder, updateOrderStatus } from '../src/services/api.js';
-import { clearCheckoutAttempt, readCheckoutAttempt, saveCheckoutAttempt } from '../src/services/checkout.js';
+import { clearCheckoutAttempt, createCheckoutKey, readCheckoutAttempt, saveCheckoutAttempt } from '../src/services/checkout.js';
+import { webcrypto } from 'node:crypto';
 
 const schedule = { pickup_date: '2026-10-20', pickup_start: '15:00', pickup_end: '16:00' };
 const cart = { ...schedule, store_id: 1, items: [{ store_inventory_id: 7, quantity: 2, price: 1 }] };
@@ -17,6 +18,23 @@ afterEach(function () {
 });
 
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
+
+test('checkout uses the native UUID method when available with its Crypto receiver', () => {
+  const provider = { randomUUID() { assert.equal(this, provider); return key; }, getRandomValues() { assert.fail('Native UUIDs need no fallback.'); } };
+  assert.equal(createCheckoutKey(provider), key);
+});
+
+test('checkout creates valid random v4 retry keys without randomUUID on HTTP', () => {
+  const provider = { getRandomValues(bytes) { assert.equal(this, provider); assert.ok(bytes instanceof Uint8Array); assert.equal(bytes.length, 16); return webcrypto.getRandomValues(bytes); } };
+  const keys = Array.from({ length: 128 }, () => createCheckoutKey(provider));
+  for (const value of keys) assert.match(value, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.equal(new Set(keys).size, keys.length);
+  assert.equal(createCheckoutKey({ getRandomValues: bytes => bytes.fill(255) }), 'ffffffff-ffff-4fff-bfff-ffffffffffff');
+});
+
+test('checkout reports unsupported randomness instead of creating a weak retry key', () => {
+  for (const provider of [null, {}]) assert.throws(() => createCheckoutKey(provider), /cannot create a checkout key/);
+});
 
 test('quote sends only selected store and item identities/quantities with CSRF and cancellation', async function (t) {
   const signal = new AbortController().signal;
