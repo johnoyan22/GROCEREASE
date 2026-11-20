@@ -5,10 +5,16 @@ import { financialPayload } from '../src/services/financial.js';
 
 test('Xendit hosted links accept documented TEST hosts and reject arbitrary/live redirects', () => {
   const session='ps-1234567890abcdef12345678';
-  for(const value of ['https://checkout-staging.xendit.co/sessions/'+session,'https://dev.xen.to/kGxPCi76']) assert.equal(hostedPaymentUrl(value,'xendit'),value);
+  for(const value of ['https://checkout-staging.xendit.co/sessions/'+session,'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcdef',
+    'https://dev.xen.to/kGxPCi76','https://dev.xen.to/qZx5RD_7','https://dev.xen.to/aBcD-123']) assert.equal(hostedPaymentUrl(value,'xendit'),value);
   for(const value of ['http://dev.xen.to/kGxPCi76','https://xen.to/kGxPCi76','https://checkout.xendit.co/sessions/'+session,
     'https://checkout-staging.xendit.co.evil.test/sessions/'+session,'https://user@dev.xen.to/kGxPCi76','javascript:alert(1)',
-    'https://dev.xen.to/kGxPCi76?next=evil','https://dev.xen.to:444/kGxPCi76']) assert.equal(hostedPaymentUrl(value,'xendit'),null);
+    'https://dev.xen.to/kGxPCi76?next=evil','https://dev.xen.to:444/kGxPCi76','https://dev.xen.to/qZx5RD_7/extra',
+    'https://dev.xen.to/qZx5RD%5f7','https://dev.xen.to/qZx5RD_7#evil',
+    'https://checkout.xendit.co/session/session-1234567890abcdef1234567890abcdef',
+    'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcdef/extra',
+    'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcdef?next=evil',
+    'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcde']) assert.equal(hostedPaymentUrl(value,'xendit'),null);
   assert.equal(hostedPaymentUrl('https://checkout.paymongo.com/cs_existing','paymongo'),'https://checkout.paymongo.com/cs_existing');
   assert.equal(hostedPaymentUrl('https://checkout.paymongo.com/cs_existing','xendit'),null);
   assert.equal(providerLabel('xendit'),'Xendit (Test)');assert.equal(channelLabel('gcash'),'GCash');

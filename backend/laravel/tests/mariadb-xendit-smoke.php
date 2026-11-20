@@ -75,7 +75,7 @@ try{
     $session['payment_link_url']='https://checkout-staging.xendit.co/sessions/'.$session['payment_session_id'];
     $payment=['payment_id'=>$py,'payment_request_id'=>$pr,'business_id'=>$a->merchant_id,'reference_id'=>$a->provider_reference,'type'=>'PAY','country'=>'PH','currency'=>'PHP',
         'request_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_method'=>'AUTOMATIC','channel_code'=>'GCASH','status'=>'SUCCEEDED',
-        'captures'=>[['capture_id'=>'cap-'.$a->id,'capture_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_timestamp'=>now()->toIso8601String()]]];
+        'captures'=>[['capture_id'=>'cptr-'.$a->id,'capture_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_timestamp'=>now()->toIso8601String()]]];
     $request=['payment_request_id'=>$pr,'latest_payment_id'=>$py,'business_id'=>$a->merchant_id,'reference_id'=>$a->provider_reference,'type'=>'PAY','country'=>'PH','currency'=>'PHP',
         'request_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_method'=>'AUTOMATIC','channel_code'=>'GCASH','status'=>'SUCCEEDED'];
     Http::preventStrayRequests();Http::fake(function($r)use($runtime,$session,$request,$payment){

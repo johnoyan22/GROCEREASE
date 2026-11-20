@@ -68,7 +68,8 @@ class XenditGateway
 
     public function id(mixed $id, string $prefix): string
     {
-        $pattern = $prefix === 'ps' ? '/^ps-[a-f0-9]{24}$/D' : '/^'.preg_quote($prefix, '/').'-(?:[a-f0-9]{24}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/D';
+        $identifierPrefix = $prefix === 'cap' ? '(?:cap|cptr)' : preg_quote($prefix, '/');
+        $pattern = $prefix === 'ps' ? '/^ps-[a-f0-9]{24}$/D' : '/^'.$identifierPrefix.'-(?:[a-f0-9]{24}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/D';
         abort_unless(is_string($id) && preg_match($pattern, $id), 409, 'Invalid Xendit '.$prefix.' identifier.');
         return $id;
     }
@@ -76,8 +77,9 @@ class XenditGateway
     public function hostedUrl(string $url, string $session): string
     {
         $p = parse_url($url);
-        $validPath = ($p['host'] ?? '') === 'checkout-staging.xendit.co' ? ($p['path'] ?? '') === '/sessions/'.$session
-            : (($p['host'] ?? '') === 'dev.xen.to' && preg_match('/^\/[a-zA-Z0-9]{6,64}$/D', $p['path'] ?? ''));
+        $validPath = ($p['host'] ?? '') === 'checkout-staging.xendit.co' ? (($p['path'] ?? '') === '/sessions/'.$session
+            || preg_match('/^\/session\/session-[a-f0-9]{32}$/D', $p['path'] ?? ''))
+            : (($p['host'] ?? '') === 'dev.xen.to' && preg_match('/^\/[a-zA-Z0-9_-]{6,64}$/D', $p['path'] ?? ''));
         abort_unless(($p['scheme'] ?? '') === 'https' && $validPath && !isset($p['user']) && !isset($p['pass']) && !isset($p['port'])
             && !isset($p['query']) && !isset($p['fragment']), 502, 'The Xendit TEST hosted URL is invalid. Reconcile the existing session.');
         return $url;

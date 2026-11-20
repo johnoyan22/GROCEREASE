@@ -33,6 +33,13 @@ class XenditCheckout
         }
         try {
             $session = $this->gateway->create($order, $attempt);
+            // Keep the verified session identity even if later checkout-link validation fails.
+            // A separate commit lets refresh/reconciliation recover the original session.
+            app(PaymentCheckout::class)->locked($orderId, $shopper, function ($o, $a) use ($session) {
+                $this->validateEnvelope($o, $a, $session);
+                $a->provider_session_id = $session['payment_session_id'];
+                $a->save();
+            });
             return app(PaymentCheckout::class)->locked($orderId, $shopper, function ($o, $a) use ($session) {
                 $this->validateSession($o, $a, $session);
                 $url = $this->gateway->hostedUrl($session['payment_link_url'] ?? '', $session['payment_session_id']);

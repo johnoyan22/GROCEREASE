@@ -45,7 +45,7 @@ Financial Setup's Actual/Test selector scopes subscription and funding records. 
 
 ## 3. One public HTTPS origin for phone, sessions and callbacks
 
-Xendit return URLs require HTTPS. Run Laravel and Vite locally, then expose **Vite** through one HTTPS tunnel. Vite proxies `/api` and `/sanctum` to Laravel.
+Xendit return URLs require HTTPS. Run Laravel and Vite locally, then expose **Vite** through one HTTPS tunnel. Vite proxies `/api`, `/sanctum`, and `/email/verify` to Laravel so email verification uses the same origin and session as login.
 
 PowerShell window 1, from `backend/laravel`:
 

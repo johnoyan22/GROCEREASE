@@ -35,8 +35,8 @@ export default defineConfig(({ mode }) => {
   server: {
     https: tls,
     allowedHosts: demoHost ? [demoHost] : [],
-    // With VITE_API_URL=/api, browser auth/API requests share the trusted HTTPS origin.
-    proxy: { '/api': proxy(), '/sanctum': proxy() },
+    // Verification links must reach Laravel on the same origin as the session cookie.
+    proxy: { '/api': proxy(), '/sanctum': proxy(), '/email/verify': proxy() },
   },
   }
 })

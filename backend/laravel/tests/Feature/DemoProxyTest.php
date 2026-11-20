@@ -13,7 +13,8 @@ class DemoProxyTest extends TestCase
     {
         app(\Illuminate\Contracts\Http\Kernel::class);
         Route::get('/api/test-demo-transport',fn(Request $request)=>response()->json(['https'=>$request->isSecure(),'host'=>$request->getHost(),'port'=>$request->getPort()]));
-        TrustProxies::at(['127.0.0.1']);
+        TrustProxies::at([]);
+        config(['trustedproxy.proxies' => ['127.0.0.1']]);
         TrustProxies::withHeaders(Request::HEADER_X_FORWARDED_FOR|Request::HEADER_X_FORWARDED_HOST|Request::HEADER_X_FORWARDED_PORT|Request::HEADER_X_FORWARDED_PROTO);
         $this->withServerVariables(['REMOTE_ADDR'=>'127.0.0.1'])->withHeaders(['X-Forwarded-Proto'=>'https','X-Forwarded-Host'=>'demo.example','X-Forwarded-Port'=>'443'])
             ->getJson('http://localhost/api/test-demo-transport')->assertOk()->assertJsonPath('https',true)->assertJsonPath('host','demo.example')->assertJsonPath('port',443);

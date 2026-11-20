@@ -15,9 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $trustedProxies = array_values(array_filter(array_map('trim', explode(',', (string) env('GROCEREASE_TRUSTED_PROXIES', '')))));
-        foreach ($trustedProxies as $proxy) { if (!filter_var($proxy, FILTER_VALIDATE_IP)) throw new RuntimeException('GROCEREASE_TRUSTED_PROXIES must contain exact trusted proxy IPs, never wildcards.'); }
-        $middleware->trustProxies(at: $trustedProxies, headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);
+        // Proxy IPs load from config/trustedproxy.php after the environment is available.
+        $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);
         $middleware->statefulApi();
         $middleware->trimStrings(except: ['credential']);
         $middleware->api(append: [\App\Http\Middleware\EnsureAccountActive::class]);

@@ -15,7 +15,7 @@ const cart = { store_id: 1, items: [{ store_inventory_id: 7, quantity: 2 }] };
 const windows = [{ pickup_start: '12:00', pickup_end: '13:00' }, { pickup_start: '13:00', pickup_end: '14:00' }];
 const hours = (date = day, options = windows) => ({ date, today: day, opens_at: '08:00', closes_at: '18:00', store_opens_at: '08:00', store_closes_at: '18:00', earliest_start_at: options[0]?.pickup_start ?? null, windows: options });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
-let server, Checkout, root, calls, availability, placeMode, attemptMode, placed, finishPlacement;
+let server, Checkout, root, calls, availability, paymentAvailability, placeMode, attemptMode, placed, finishPlacement;
 const onPlaced = () => { placed++; };
 const props = { cart, userId: 5, onPlaced, onClose() {} };
 const button = (name) => [...document.querySelectorAll('button')].find((el) => el.textContent.trim() === name);
@@ -41,13 +41,14 @@ before(async () => {
 beforeEach((t) => {
   calls = []; placed = 0; sessionStorage.clear(); document.cookie = 'XSRF-TOKEN=test';
   availability = async (url) => json({ store_id: Number(url.pathname.match(/stores\/(\d+)/)[1]), hours: hours(url.searchParams.get('date') || day) });
+  paymentAvailability = async () => json({ digital: { available: false, channels: [], reason: 'Configure the prepaid holding policy first.' } });
   placeMode = 'success'; attemptMode = 'missing'; finishPlacement = null;
   t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
     calls.push({ url, options });
     if (url.endsWith('/sanctum/csrf-cookie')) return new Response(null, { status: 204 });
     if (url.includes('/pickup-hours')) return availability(new URL(url, 'http://localhost:5173'), options);
     if (url.endsWith('/cop-status')) return json({ cop: { allowed: true, policy: { maximum_centavos: 250000 } } });
-    if (url.includes('/payment-options')) return json({ available: false, channels: [] });
+    if (url.includes('/payment-options')) return paymentAvailability(url, options);
     if (url.includes('/checkout-attempts/')) return attemptMode === 'found' ? json({ order: order() }) : json({ message: 'Not found' }, 404);
     if (url.endsWith('/checkout/quote')) return json({ quote_token: 'reviewed-token', quote: { cop_policy: { maximum_centavos: 250000 }, store: { store_name: 'QA Store', address: 'A' }, items: [], subtotal_centavos: 10000, total_centavos: 10000, service_fee_centavos: 0, payment_method: 'cash_on_pickup', pickup_window_start_at: day + 'T04:00:00Z', pickup_window_end_at: day + 'T05:00:00Z', cop_claim_deadline_at: day + 'T10:00:00Z' } });
     if (url.endsWith('/shopper/orders')) {
@@ -162,4 +163,70 @@ test('store changes discard the previous selection and reviewed quote', async ()
   await mount({ cart: { ...cart, store_id: 2 } });
   assert.equal(dropdown().value, ''); assert.equal(button('Confirm / Place Order').disabled, true);
   assert.match(hourCalls().at(-1).url, /stores\/2\/pickup-hours/);
+});
+
+test('returning to checkout refreshes GCash and uses the wallet API category for quote and order', async () => {
+  await mount();
+  assert.equal(document.querySelector('input[value="wallet"]').disabled, true);
+  assert.match(document.body.textContent, /Configure the prepaid holding policy first/);
+  paymentAvailability = async () => json({ digital: { available: true, provider: 'xendit', channels: ['gcash'], reason: null } });
+  await focus();
+  const gcash = document.querySelector('input[value="wallet"]');
+  assert.equal(gcash.disabled, false); assert.match(gcash.parentElement.textContent, /GCash Xendit \(Test\)/);
+  assert.equal(document.querySelector('input[value="card"]').disabled, true);
+  await act(async () => gcash.click()); await settle();
+  await choose('12:00/13:00'); await click('Review current prices and pickup schedule');
+  const payload = JSON.parse(quoteCalls().at(-1).options.body);
+  assert.equal(payload.payment_method, 'digital'); assert.equal(payload.payment_channel, 'wallet');
+  assert.equal(gcash.checked, true);
+  await click('Confirm / Place Order');
+  const placedPayload = JSON.parse(calls.find(call => call.url.endsWith('/shopper/orders')).options.body);
+  assert.equal(placedPayload.payment_method, 'digital'); assert.equal(placedPayload.payment_channel, 'wallet');
+});
+
+test('a fresh payment check ignores an older unavailable result and can retry network failures', async () => {
+  let finish;
+  paymentAvailability = async () => new Promise(resolve => { finish = resolve; });
+  await mount();
+  assert.match(document.querySelector('input[value="wallet"]').parentElement.textContent, /checking/);
+  assert.equal(button('Refresh payment methods').disabled, true);
+  paymentAvailability = async () => json({ digital: { available: true, provider: 'xendit', channels: ['gcash'] } });
+  await focus();
+  const requests = () => calls.filter(call => call.url.includes('/payment-options'));
+  assert.equal(requests()[0].options.signal.aborted, true);
+  await act(async () => finish(json({ digital: { available: false, channels: [], reason: 'Old settings' } }))); await settle();
+  assert.equal(document.querySelector('input[value="wallet"]').disabled, false);
+  assert.doesNotMatch(document.body.textContent, /Old settings/);
+  paymentAvailability = async () => { throw new TypeError('Connection lost'); };
+  await click('Refresh payment methods');
+  assert.match(document.body.textContent, /Connection lost/);
+  assert.equal(document.querySelector('input[value="wallet"]').disabled, true);
+  paymentAvailability = async () => json({ digital: { available: true, provider: 'xendit', channels: ['gcash'] } });
+  await click('Refresh payment methods');
+  assert.equal(document.querySelector('input[value="wallet"]').disabled, false);
+  assert.equal(requests().length, 4);
+  assert.equal(quoteCalls().length, 0);
+  assert.equal(calls.filter(call => call.url.endsWith('/shopper/orders')).length, 0);
+});
+
+test('phone tab visibility rechecks payment availability and switching stores keeps methods isolated', async t => {
+  const previous = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+  let visibility = 'hidden';
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => visibility });
+  t.after(() => { if (previous) Object.defineProperty(document, 'visibilityState', previous); else delete document.visibilityState; });
+  await mount();
+  paymentAvailability = async url => json({ digital: url.includes('/stores/1/')
+    ? { available: true, provider: 'xendit', channels: ['gcash'] }
+    : { available: false, channels: [], reason: 'This supermarket has no configured Xendit TEST business.' } });
+  const requests = () => calls.filter(call => call.url.includes('/payment-options'));
+  await act(async () => document.dispatchEvent(new Event('visibilitychange'))); await settle();
+  assert.equal(requests().length, 1);
+  visibility = 'visible';
+  await act(async () => document.dispatchEvent(new Event('visibilitychange'))); await settle();
+  assert.equal(requests().length, 2);
+  assert.equal(document.querySelector('input[value="wallet"]').disabled, false);
+  await mount({ cart: { ...cart, store_id: 2 } });
+  assert.doesNotMatch(document.querySelector('input[value="wallet"]').parentElement.textContent, /GCash Xendit/);
+  assert.equal(document.querySelector('input[value="wallet"]').disabled, true);
+  assert.match(document.body.textContent, /no configured Xendit TEST business/);
 });

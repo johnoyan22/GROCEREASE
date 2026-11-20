@@ -50,7 +50,7 @@ class XenditCheckoutTest extends TransactionTestCase
             'request_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_method'=>'AUTOMATIC','channel_code'=>'GCASH','status'=>'REQUIRES_ACTION'];
         $this->payment=['payment_id'=>$py,'business_id'=>$a->merchant_id,'reference_id'=>$a->provider_reference,'payment_request_id'=>$pr,'type'=>'PAY',
             'country'=>'PH','currency'=>'PHP','request_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_method'=>'AUTOMATIC','channel_code'=>'GCASH','status'=>'SUCCEEDED',
-            'captures'=>[['capture_id'=>'cap-'.$a->id,'capture_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_timestamp'=>now()->toIso8601String()]]];
+            'captures'=>[['capture_id'=>'cptr-'.$a->id,'capture_amount'=>XenditMoney::decimal($a->amount_centavos),'capture_timestamp'=>now()->toIso8601String()]]];
         return $order;
     }
 
@@ -87,6 +87,26 @@ class XenditCheckoutTest extends TransactionTestCase
     private function start(Order $order)
     {
         return $this->signIn($this->shopper)->postJson('/api/shopper/orders/'.$order->order_id.'/payment-session',[]);
+    }
+
+    public function test_gcash_option_uses_wallet_category_through_quote_order_and_attempt(): void
+    {
+        $this->signIn($this->shopper)->getJson('/api/shopper/stores/'.$this->store->store_id.'/payment-options')
+            ->assertOk()->assertJsonPath('digital.available', true)->assertJsonPath('digital.channels', ['gcash']);
+        $cart = [...$this->cart(), 'payment_method' => 'digital', 'payment_channel' => 'wallet'];
+        $this->postJson('/api/shopper/checkout/quote', [...$cart, 'payment_method' => 'gcash'])
+            ->assertUnprocessable()->assertJsonValidationErrors('payment_method');
+        $this->postJson('/api/shopper/checkout/quote', [...$cart, 'payment_channel' => 'gcash'])
+            ->assertUnprocessable()->assertJsonValidationErrors('payment_channel');
+        $quote = $this->postJson('/api/shopper/checkout/quote', $cart)->assertOk()
+            ->assertJsonPath('quote.payment_method', 'digital')->assertJsonPath('quote.payment_channel', 'wallet');
+        $id = $this->postJson('/api/shopper/orders', [...$cart, 'quote_token' => $quote->json('quote_token'), 'idempotency_key' => (string) Str::uuid()])
+            ->assertCreated()->assertJsonPath('order.payment_method', 'digital')->assertJsonPath('order.payment_status', 'unpaid')->json('order.order_id');
+        $this->assertSame(['gcash'], $this->attempt($id)->channels);
+        $this->assertSame('xendit', $this->attempt($id)->provider);
+        $this->assertSame('pending', $this->attempt($id)->status);
+        $this->assertDatabaseCount('order_payments', 0);
+        Http::assertNothingSent();
     }
 
     public function test_fee_inclusive_number_tokens_allowlist_id_binding_and_nonduplicate_resume(): void
@@ -148,7 +168,36 @@ class XenditCheckoutTest extends TransactionTestCase
         $this->postJson('/api/shopper/orders/'.$order->order_id.'/payment-session',['amount'=>1])->assertUnprocessable();
     }
 
-    public static function invalidEvidence(): array { return array_map(fn($v)=>[$v],['amount','currency','business','request','reference','channel','capture','capture_count','authorized']); }
+    public function test_verified_cptr_capture_is_recorded_once_on_refresh_and_duplicate_callbacks(): void
+    {
+        $order = $this->digital(); $this->fake(); $this->start($order)->assertOk(); $this->complete();
+        $url = '/api/shopper/orders/'.$order->order_id.'/payment-session';
+        $this->getJson($url)->assertOk()->assertJsonPath('payment.status', 'paid')->assertJsonPath('payment.verified', true);
+        $this->getJson($url)->assertOk()->assertJsonPath('payment.verified', true);
+        $this->webhook()->assertOk(); $this->webhook()->assertOk();
+        $attempt = $this->attempt($order->order_id);
+        $this->assertSame($this->payment['captures'][0]['capture_id'], $attempt->provider_capture_id);
+        $this->assertSame($attempt->provider_capture_id, $attempt->verified_evidence['capture_id']);
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertSame('waiting', $order->fresh()->status);
+        $this->assertSame(100, $this->inventory->fresh()->hard_stock_qty);
+        $this->assertSame(4, $this->inventory->fresh()->soft_stock_qty);
+        $this->assertDatabaseCount('order_payments', 1);
+        $payment = DB::table('order_payments')->where('order_id', $order->order_id)->first();
+        $this->assertTrue((bool) app(PaymentEvidence::class)->valid($order->fresh(), $payment));
+    }
+
+    public function test_capture_identifier_accepts_current_and_legacy_prefixes_and_rejects_other_values(): void
+    {
+        $gateway = app(\App\Services\XenditGateway::class);
+        $uuid = '12345678-1234-1234-1234-123456789abc';
+        foreach (['cptr-'.$uuid, 'cap-'.$uuid, 'cap-1234567890abcdef12345678'] as $id) $this->assertSame($id, $gateway->id($id, 'cap'));
+        foreach ([null, '', 'cptr-', 'py-'.$uuid, 'cptr-'.$uuid.'/extra', 'cptr-'.$uuid.'?next=evil', 'cptr-'.$uuid."\n"] as $id) $this->expectHttp(409, fn () => $gateway->id($id, 'cap'));
+        $this->expectHttp(409, fn () => $gateway->id('cptr-'.$uuid, 'py'));
+        $this->expectHttp(409, fn () => $gateway->id('cptr-'.$uuid, 'pr'));
+    }
+
+    public static function invalidEvidence(): array { return array_map(fn($v)=>[$v],['amount','currency','business','request','reference','channel','capture','capture_id','capture_count','authorized']); }
     #[DataProvider('invalidEvidence')]
     public function test_invalid_v3_evidence_stays_retryable_and_never_marks_paid(string $field): void
     {
@@ -157,6 +206,7 @@ class XenditCheckoutTest extends TransactionTestCase
             'amount'=>$this->payment['request_amount']='999.99','currency'=>$this->payment['currency']='IDR','business'=>$this->payment['business_id']=str_repeat('b',24),
             'request'=>$this->payment['payment_request_id']='pr-'.(string)Str::uuid(),'reference'=>$this->payment['reference_id']='other',
             'channel'=>$this->payment['channel_code']='CARDS','capture'=>$this->payment['captures'][0]['capture_amount']='999.99',
+            'capture_id'=>$this->payment['captures'][0]['capture_id']='py-'.(string)Str::uuid(),
             'capture_count'=>$this->payment['captures']=[],'authorized'=>$this->payment['status']='AUTHORIZED',
         };
         $this->webhook()->assertOk();$this->assertDatabaseCount('order_payments',0);$this->assertDatabaseCount('xendit_session_events',1);
@@ -176,6 +226,47 @@ class XenditCheckoutTest extends TransactionTestCase
         $this->assertSame(4,$this->inventory->fresh()->soft_stock_qty);
         $this->fake();app(PaymentCheckout::class)->reconcileSession($this->attempt($order->order_id)->id,$this->session['payment_session_id']);
         $this->assertSame('pending_payment',$this->attempt($order->order_id)->status);$this->assertSame('unpaid',$order->fresh()->payment_status);
+    }
+
+    public static function hostedCheckoutLinks(): array
+    {
+        return [
+            'staging session token' => ['https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcdef'],
+            'shortlink underscore' => ['https://dev.xen.to/qZx5RD_7'],
+            'shortlink hyphen' => ['https://dev.xen.to/aBcD-123'],
+        ];
+    }
+
+    #[DataProvider('hostedCheckoutLinks')]
+    public function test_provider_checkout_link_opens_and_resumes_the_same_session(string $url): void
+    {
+        $order = $this->digital();
+        $this->session['payment_link_url'] = $url;
+        $this->fake();
+        $this->start($order)->assertOk()->assertJsonPath('payment.checkout_url', $this->session['payment_link_url']);
+        $this->start($order)->assertOk()->assertJsonPath('payment.checkout_url', $this->session['payment_link_url']);
+        $this->assertSame($this->session['payment_session_id'], $this->attempt($order->order_id)->provider_session_id);
+        $this->assertCount(1, Http::recorded(fn ($r) => $r->method() === 'POST' && str_ends_with($r->url(), '/sessions')));
+        $this->assertSame('unpaid', $order->fresh()->payment_status);
+    }
+
+    public function test_rejected_checkout_link_keeps_original_session_id_for_safe_recovery(): void
+    {
+        $order = $this->digital();
+        $this->session['payment_link_url'] = 'https://untrusted.example/payment';
+        $this->fake();
+        $this->start($order)->assertStatus(502);
+        $attempt = $this->attempt($order->order_id);
+        $this->assertSame('reconciliation_required', $attempt->status);
+        $this->assertSame($this->session['payment_session_id'], $attempt->provider_session_id);
+        $this->assertNull($attempt->checkout_url);
+        $this->start($order)->assertStatus(502);
+        $this->assertCount(1, Http::recorded(fn ($r) => $r->method() === 'POST' && str_ends_with($r->url(), '/sessions')));
+        $this->session['payment_link_url'] = 'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcdef';
+        $this->getJson('/api/shopper/orders/'.$order->order_id.'/payment-session')->assertOk()
+            ->assertJsonPath('payment.status', 'pending_payment')->assertJsonPath('payment.checkout_url', $this->session['payment_link_url']);
+        $this->assertSame(4, $this->inventory->fresh()->soft_stock_qty);
+        $this->assertDatabaseCount('order_payments', 0);
     }
 
     public function test_expiry_and_cancel_wait_for_linked_requests_then_late_payment_never_reopens_stock(): void
@@ -297,7 +388,12 @@ class XenditCheckoutTest extends TransactionTestCase
         $this->signIn($this->shopper)->getJson('/api/shopper/stores/'.$this->store->store_id.'/payment-options')->assertJsonPath('digital.available',false);
         $gateway=app(\App\Services\XenditGateway::class);$id='ps-1234567890abcdef12345678';
         $this->assertSame('https://dev.xen.to/kGxPCi76',$gateway->hostedUrl('https://dev.xen.to/kGxPCi76',$id));
+        foreach (self::hostedCheckoutLinks() as [$url]) $this->assertSame($url, $gateway->hostedUrl($url, $id));
         foreach(['https://checkout.xendit.co/sessions/'.$id,'https://checkout-staging.xendit.co.evil.test/sessions/'.$id,
-            'https://user@dev.xen.to/kGxPCi76','http://dev.xen.to/kGxPCi76','https://dev.xen.to/kGxPCi76?next=evil'] as $url)$this->expectHttp(502,fn()=>$gateway->hostedUrl($url,$id));
+            'https://user@dev.xen.to/kGxPCi76','http://dev.xen.to/kGxPCi76','https://dev.xen.to/kGxPCi76?next=evil',
+            'https://checkout.xendit.co/session/session-1234567890abcdef1234567890abcdef',
+            'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcdef/extra',
+            'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcdef?next=evil',
+            'https://checkout-staging.xendit.co/session/session-1234567890abcdef1234567890abcde'] as $url)$this->expectHttp(502,fn()=>$gateway->hostedUrl($url,$id));
     }
 }
