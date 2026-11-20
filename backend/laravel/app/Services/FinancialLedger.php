@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class FinancialLedger
@@ -46,6 +47,7 @@ class FinancialLedger
                 'verify', 'reverse_payment' => $this->paymentAction($actor, $store, $mode, $kind, $key, $input),
                 'contribute' => $this->contribute($actor, $store, $mode, $key, $input),
                 'return_contribution', 'reserve', 'release' => $this->fundAction($actor, $store, $mode, $kind, $key, $input),
+                'plan_release', 'worker_settlement', 'worker_settlement_correction' => $this->reservationEntry($actor, $store, $mode, $kind, $key, $input),
                 'policy' => $this->policy($actor, $store, $input),
                 default => abort(422, 'Unsupported financial operation.'),
             };
@@ -181,13 +183,18 @@ class FinancialLedger
             'kind' => $kind, 'amount_centavos' => $amount, 'operation_id' => $key, 'actor_id' => $actor, 'reason' => $reason, 'created_at' => now()]);
     }
 
-    private function balance(object $budget, int $availableChange, int $reservedChange): void
+    private function balance(object $budget, int $availableChange, int $reservedChange, int $disbursedChange = 0): void
     {
         $available = (int) $budget->available_centavos + $availableChange;
         $reserved = (int) $budget->reserved_centavos + $reservedChange;
-        abort_if(min($available, $reserved) < 0 || $available + $reserved > FinancialMoney::MAX_BUDGET, 409, 'Insufficient available funding or the supported budget limit would be exceeded.');
-        DB::table('incentive_budgets')->where('id', $budget->id)->update(['available_centavos' => $available, 'reserved_centavos' => $reserved, 'version' => $budget->version + 1]);
+        $disbursed = (int) ($budget->disbursed_centavos ?? 0) + $disbursedChange;
+        abort_if(min($available, $reserved, $disbursed) < 0 || $available + $reserved + $disbursed > FinancialMoney::MAX_BUDGET, 409, 'Insufficient available funding or the supported budget limit would be exceeded.');
+        $values = ['available_centavos' => $available, 'reserved_centavos' => $reserved, 'version' => $budget->version + 1];
+        if (property_exists($budget, 'disbursed_centavos')) $values['disbursed_centavos'] = $disbursed;
+        else abort_if($disbursedChange !== 0, 503, 'Apply the worker incentive migration before recording settlements.');
+        DB::table('incentive_budgets')->where('id', $budget->id)->update($values);
         $budget->available_centavos = $available; $budget->reserved_centavos = $reserved; $budget->version++;
+        if (array_key_exists('disbursed_centavos', $values)) $budget->disbursed_centavos = $disbursed;
     }
 
     private function contribute(int $actor, int $store, string $mode, string $key, array $in): array
@@ -227,6 +234,8 @@ class FinancialLedger
                 'kind' => $kind === 'release' ? 'reservation' : 'contribution'])->lockForUpdate()->first() ?? abort(404);
             if ($kind === 'return_contribution') $id = $this->returnContribution($actor, $budget, $movement, $key, $in['reason']);
             else {
+                abort_if(Schema::hasTable('worker_incentive_allocations') && DB::table('worker_incentive_allocations')->where('reservation_id', $movement->id)->exists(), 409, 'Return only unused capacity through Worker Tip Incentives.');
+                abort_unless($this->reservationRemaining($movement) === (int) $movement->amount_centavos, 409, 'This reservation was partly released or consumed.');
                 abort_if(DB::table('incentive_movements')->where(['kind' => 'release', 'related_id' => $movement->id])->lockForUpdate()->first(), 409, 'This reservation has already been released in full.');
                 $this->balance($budget, (int) $movement->amount_centavos, -(int) $movement->amount_centavos);
                 $id = $this->move($actor, $budget, 'release', (int) $movement->amount_centavos, null, $movement->id, $key, $in['reason']);
@@ -264,5 +273,47 @@ class FinancialLedger
     public function release(int $admin, int $store, string $mode, int $reservation, string $key, string $reason): array
     {
         return $this->execute($admin, $store, $mode, 'release', $key, ['id' => $reservation, 'reason' => $reason]);
+    }
+
+    // Caller holds the store mutex. Historical full releases retain their original meaning.
+    public function reservationRemaining(object $reservation): int
+    {
+        if (DB::table('incentive_movements')->where(['kind' => 'release', 'related_id' => $reservation->id])->lockForUpdate()->first()) return 0;
+        $remaining = (int) $reservation->amount_centavos;
+        if (!Schema::hasTable('incentive_reservation_entries')) return $remaining;
+        foreach (DB::table('incentive_reservation_entries')->where('reservation_id', $reservation->id)->orderBy('id')->lockForUpdate()->get() as $entry) {
+            $remaining += ($entry->kind === 'worker_settlement_correction' ? 1 : -1) * (int) $entry->amount_centavos;
+        }
+        abort_unless($remaining >= 0 && $remaining <= (int) $reservation->amount_centavos, 409, 'Reservation ledger requires review.');
+        return $remaining;
+    }
+
+    // Admin-only, internal calls from the incentive payment/allocation service; no public financial route.
+    public function postReservation(int $admin, int $store, string $mode, string $kind, int $id, int $amount, string $key, string $reason): array
+    {
+        abort_unless(in_array($kind, ['plan_release', 'worker_settlement', 'worker_settlement_correction'], true), 422);
+        return $this->execute($admin, $store, $mode, $kind, $key, ['id' => $id,
+            'amount' => intdiv($amount, 100).'.'.str_pad((string) ($amount % 100), 2, '0', STR_PAD_LEFT), 'reason' => $reason]);
+    }
+
+    private function reservationEntry(int $actor, int $store, string $mode, string $kind, string $key, array $in): array
+    {
+        $budget = $this->budget($store, $mode);
+        $amount = FinancialMoney::parse($in['amount']); $related = null;
+        if ($kind === 'worker_settlement_correction') {
+            $original = DB::table('incentive_reservation_entries')->where(['id' => $in['id'], 'kind' => 'worker_settlement'])->lockForUpdate()->first() ?? abort(404);
+            $reservationId = $original->reservation_id; $related = $original->id;
+            abort_unless((int) $original->amount_centavos === $amount, 422, 'Only a full correction of this recorded settlement is supported.');
+            abort_if(DB::table('incentive_reservation_entries')->where(['kind' => $kind, 'related_id' => $related])->exists(), 409, 'This settlement was already corrected.');
+        } else $reservationId = $in['id'];
+        $reservation = DB::table('incentive_movements')->where(['id' => $reservationId, 'budget_id' => $budget->id, 'kind' => 'reservation'])->lockForUpdate()->first() ?? abort(404);
+        if ($kind !== 'worker_settlement_correction') abort_if($amount > $this->reservationRemaining($reservation), 409, 'Insufficient reserved allocation.');
+        $this->balance($budget, $kind === 'plan_release' ? $amount : 0,
+            $kind === 'worker_settlement_correction' ? $amount : -$amount,
+            match ($kind) { 'worker_settlement' => $amount, 'worker_settlement_correction' => -$amount, default => 0 });
+        $id = DB::table('incentive_reservation_entries')->insertGetId(['reservation_id' => $reservation->id, 'kind' => $kind,
+            'amount_centavos' => $amount, 'related_id' => $related, 'operation_id' => $key, 'actor_id' => $actor, 'reason' => $in['reason'], 'created_at' => now()]);
+        return ['id' => $id, 'amount_centavos' => $amount, 'available_centavos' => $budget->available_centavos,
+            'reserved_centavos' => $budget->reserved_centavos, 'disbursed_centavos' => $budget->disbursed_centavos];
     }
 }
